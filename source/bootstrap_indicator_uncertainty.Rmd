@@ -103,14 +103,52 @@ insect_data_new %>%
 
 ## Bootstrapping
 
-We calculate bootstrap replicates for evenness (`boot::boot()`).
+We perform bootstrapping for evenness (`boot::boot()`).
+Bootstrapping is a statistical technique used to estimate the distribution of a statistic by resampling with replacement from the original data.
+Below are the common notations used in bootstrapping:
+
+1. **Original Sample Data**: $\mathbf{X} = \{X_1, X_2, \ldots, X_n\}$
+    - The initial set of observed data points. Here, $n$ is the sample size.
+
+2. **Bootstrap Sample**: $\mathbf{X}^* = \{X_1^*, X_2^*, \ldots, X_n^*\}$
+    - A sample of size $n$ drawn with replacement from the original sample $\mathbf{X}$. Each $X_i^*$ is drawn independently from $\mathbf{X}$.
+
+3. **Statistic of Interest**: $\theta$
+    - The parameter or statistic being estimated, such as the mean $\bar{X}$, variance $\sigma^2$, or median.
+
+4. **Bootstrap Replication**: $\hat{\theta}^*_b$
+    - The value of the statistic of interest calculated from the $b$-th bootstrap sample $\mathbf{X}^*_b$. For example, if $\theta$ is the sample mean, $\hat{\theta}^*_b = \bar{X}^*_b$.
+
+5. **Number of Bootstrap Samples**: $B$
+    - The number of bootstrap samples drawn from the original data. Common choices for $B$ are 1000 or 10,000 to ensure a good approximation of the distribution.
+
+6. **Bootstrap Estimate of the Statistic**: $\hat{\theta}_{\text{boot}}$
+    - The average of the bootstrap replications:
+
+$$
+\hat{\theta}_{\text{boot}} = \frac{1}{B} \sum_{b=1}^B \hat{\theta}^*_b
+$$
+
+7. **Bootstrap Standard Error**: $\text{SE}_{\text{boot}}$
+    - The standard deviation of the bootstrap replications, which estimates the variability of the statistic.
+
+8. **Bootstrap Bias**: $\text{Bias}_{\text{boot}}$
+    - This bias indicates how much the bootstrap estimate deviates from the original sample estimate. It is calculated as the difference between the average bootstrap estimate and the original estimate:
+
+$$
+\text{Bias}_{\text{boot}} = \frac{1}{B} \sum_{b=1}^B (\hat{\theta}^*_b - \hat{\theta})
+$$
+
+8. **Bootstrap Confidence Interval**
+    - Confidence intervals for the statistic of interest can be constructed using the bootstrap distribution of $\hat{\theta}^*$. Several methods are explained below.
+
 
 ```{r}
 # Bootstrapping
 bootstrap_insect_data <- perform_bootstrap(
   data_cube_df = insect_data_new,
   fun = evenness_formula,
-  replicates = 1000,
+  samples = 1000,
   seed = 123)
 
 # Summarise in dataframe
@@ -118,6 +156,23 @@ bootstrap_insect_data_full <- bootstrap_list_to_df(bootstrap_insect_data)
 ```
 
 We get confidence intervals (`boot::boot.ci()`) and add it to the dataframe.
+There are five types of intervals that can be calculated.
+The default calculates all intervals.
+
+1. Normal approximation
+
+$$
+\hat{\theta} - \text{Bias}_{\text{boot}} \pm \text{SE}_{\text{boot}} \times z_{1-\alpha/2}
+$$
+
+where $z_{1-\alpha/2}$ is the $1-\alpha/2$ quantile of the standard normal distribution for $\alpha$ confidence level.
+
+2. Basic bootstrap method
+3. Studentized bootstrap method
+4. Bootstrap percentile method
+5. Adjusted bootstrap percentile (BCa) method
+
+Davison, A.C. & Hinkley, D.V. (1997). *Bootstrap Methods and Their Application*, Chapter 5. Cambridge University Press.
 
 ```{r}
 # Calculate confidence intervals
