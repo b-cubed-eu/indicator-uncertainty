@@ -7,17 +7,17 @@ add_bootstrap_to_dataframe <- function(
 
   bootstrap_list <- data_cube_df %>%
     dplyr::summarize(num_occ = sum(.data$obs),
-                     .by = c(.data$year, .data$taxonKey)) %>%
+                     .by = c("year", "taxonKey")) %>%
     dplyr::arrange(year) %>%
-    tidyr::pivot_wider(names_from = .data$year,
-                       values_from = .data$num_occ) %>%
-    replace(is.na(.data), 0) %>%
+    tidyr::pivot_wider(names_from = "year",
+                       values_from = "num_occ",
+                       values_fill = 0) %>%
     tibble::column_to_rownames("taxonKey") %>%
     as.list() %>%
-    purrr::map(~boot::boot(data = .data,
+    purrr::map(~boot::boot(data = .,
                            statistic = boot_statistic,
                            R = replicates,
-                           FUN = fun))
+                           fun = fun))
 
   return(bootstrap_list)
 }
