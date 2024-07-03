@@ -60,7 +60,7 @@ plot(map_obs_rich_insects,
 
 ## Calculate an index over time
 
-Lets calculate Pietlou's eveness over time using b3gbi.
+Let's calculate Pietlou's eveness over time using b3gbi.
 
 ```{r}
 eveness_insect_data <- pielou_evenness_ts(insect_data)
