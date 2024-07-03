@@ -1,4 +1,4 @@
-add_bootstrap_to_dataframe <- function(
+perform_bootstrap <- function(
     data_cube_df,
     fun,
     replicates = 1000,

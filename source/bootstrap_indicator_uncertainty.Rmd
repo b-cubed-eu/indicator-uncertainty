@@ -21,7 +21,7 @@ library(here)      # Relative paths
 # Source functions
 source(here("source", "R", "evenness_formula.R"))
 source(here("source", "R", "boot_statistic.R"))
-source(here("source", "R", "add_bootstrap_to_dataframe.R"))
+source(here("source", "R", "perform_bootstrap.R"))
 ```
 
 # Exploration of the b3gbi package
@@ -102,7 +102,7 @@ insect_data_new %>%
 We add 
 
 ```{r}
-test <- add_bootstrap_to_dataframe(
+test <- perform_bootstrap(
   data_cube_df = insect_data_new,
   fun = evenness_formula,
   replicates = 1000,
