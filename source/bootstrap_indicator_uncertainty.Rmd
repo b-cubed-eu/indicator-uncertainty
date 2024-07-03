@@ -123,6 +123,5 @@ ci_df <- get_bootstrap_ci(bootstrap_insect_data)
 
 # Join dataframes
 bootstrap_insect_data_final <- bootstrap_insect_data_full %>%
-  full_join(ci_df, by = join_by(year))
+  full_join(ci_df, by = join_by(year), relationship = "many-to-many")
 ```
-
