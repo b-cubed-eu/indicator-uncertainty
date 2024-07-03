@@ -32,8 +32,8 @@ Scripts to explore calculation, interpretation and visualisation of uncertainty 
 ### Repo structure
 
 ```
-├── source                         ├ R markdown files
-├── data                           ├ R markdown files
+├── source                         ├ R markdown and R files
+├── data                           ├ data folder
 ├── checklist.yml                  ├ options checklist package (https://github.com/inbo/checklist)
 ├── organisation.yml               ├ organisation info (https://inbo.github.io/checklist/articles/organisation.html)
 ├── inst

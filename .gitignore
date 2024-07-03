@@ -11,10 +11,12 @@
 # Temporary files created by R markdown
 # User-specific files
 # knitr and R markdown default cache directories
+# large files
 # pkgdown site
 # produced vignettes
 # translation temp files
 *-Ex.R
+*.csv
 *.dbf
 *.doc*
 *.gddoc
@@ -23,10 +25,13 @@
 *.html
 *.knit.md
 *.mdb
+*.pdf
 *.shp*
 *.shx
+*.txt
 *.utf8.md
 *.xls*
+*.xml
 *_cache/
 *_files
 .DS_Store
