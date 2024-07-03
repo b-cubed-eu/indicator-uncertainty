@@ -24,6 +24,7 @@ source(here("source", "R", "boot_statistic.R"))
 source(here("source", "R", "perform_bootstrap.R"))
 source(here("source", "R", "bootstrap_list_to_df.R"))
 source(here("source", "R", "get_bootstrap_ci.R"))
+source(here("source", "R", "utils.R"))
 ```
 
 # Exploration of the b3gbi package
@@ -211,12 +212,58 @@ where $\alpha_1$ and $\alpha_2$ are adjusted percentiles taking into account the
 ci_df <- get_bootstrap_ci(bootstrap_insect_data)
 
 # Join dataframes
-bootstrap_insect_data_final <- bootstrap_insect_data_full %>%
+bootstrap_insect_data_joined <- bootstrap_insect_data_full %>%
   full_join(ci_df, by = join_by(year), relationship = "many-to-many")
 ```
 
 Calculation of studentized intervals failed.
 Its use is further explained in `?boot::boot.ci()`.
+
+Because evenness is a value between 0 and 1, we also calculate an extra interval as the logit transformation of the normal interval (logit_normal).
+We first transform the original estimate $\hat{\theta}$ and the bootstrap replications $\hat{\theta}^*_b$.
+
+$$
+\text{logit}(p) = \text{log}\left(\frac{p}{1 - p}\right)
+$$
+
+We compute the standard error on the logit scale (standard deviation of logit-transformed bootstrap replications) and the bias on the logit scale.
+We compute the normal bootstrap confidence limits as described above but based on the values on the logit scale.
+Finally, we transform these limits back using the inverse logit transformation.
+
+$$
+\text{inv_logit}(l) = \frac{e^l}{1 + e^l}
+$$
+
+```{r}
+# Define confidence level and quantile
+alpha <- 0.05
+z_value <- qnorm(1 - alpha / 2)
+
+# Calculated logit transormed normal interval
+bootstrap_insect_data_final <- bootstrap_insect_data_joined %>%
+  select(-"conf_name", -"ll", -"ul") %>%
+  mutate(est_logit_boot = logit(est_boot),
+         est_logit_original = logit(est_original),
+         diff_logit = est_logit_boot - est_logit_original) %>%
+  group_by(year) %>%
+  mutate(se_logit_boot = sd(est_logit_boot),
+         bias_logit_boot = mean(diff_logit)) %>%
+  ungroup() %>%
+  rowwise() %>%
+  mutate(
+    conf_name = "logit_normal",
+    ll = inv_logit(est_logit_original - bias_logit_boot -
+                     z_value * se_logit_boot),
+    ul = inv_logit(est_logit_original - bias_logit_boot +
+                     z_value * se_logit_boot)
+  ) %>%
+  ungroup() %>%
+  select(-"est_logit_boot", -"est_logit_original", -"se_logit_boot",
+         -"diff_logit", -"bias_logit_boot") %>%
+  distinct() %>%
+  select(-"conf_level", everything(), "conf_level") %>%
+  bind_rows(bootstrap_insect_data_joined)
+```
 
 ## Visualise confidence intervals
 
@@ -250,29 +297,38 @@ bootstrap_insect_data_final %>%
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = conf_name),
                   position = position_dodge(0.8), linewidth = 1) +
     geom_point(colour = "firebrick", size = 3, position = position_dodge(0.8)) +
-    labs(y = "evenness") +
-    scale_y_continuous(limits = c(NA, 1))
+    labs(y = "evenness", colour = "Confidence interval") +
+    scale_y_continuous(limits = c(NA, 1)) +
+    theme(legend.position = "bottom")
 ```
+
+The normal and basic intervals are not applicable here.
+We leave them out for further visualisation.
 
 We compare the confidence intervals with the distribution of the bootstrap replicates.
 
 ```{r}
 bootstrap_insect_data_final %>%
+  filter(!conf_name %in% c("basic", "normal")) %>%
   ggplot(aes(x = year)) +
     geom_boxplot(aes(y = est_boot)) +
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = conf_name),
                   position = position_dodge(0.8), linewidth = 1) +
     geom_point(aes(y = est_original), colour = "firebrick", size = 3) +
-    scale_y_continuous(limits = c(NA, 1))
+    labs(y = "evenness", colour = "Confidence interval") +
+    scale_y_continuous(limits = c(0, 1)) +
+    theme(legend.position = "bottom")
 ```
 
 ```{r}
 bootstrap_insect_data_final %>%
+  filter(!conf_name %in% c("basic", "normal")) %>%
   ggplot(aes(x = year)) +
     geom_violin(aes(y = est_boot)) +
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = conf_name),
                   position = position_dodge(0.8), linewidth = 1) +
     geom_point(aes(y = est_original), colour = "firebrick", size = 3) +
-    labs(y = "evenness") +
-    scale_y_continuous(limits = c(NA, 1))
+    labs(y = "evenness", colour = "Confidence interval") +
+    scale_y_continuous(limits = c(0, 1)) +
+    theme(legend.position = "bottom")
 ```
