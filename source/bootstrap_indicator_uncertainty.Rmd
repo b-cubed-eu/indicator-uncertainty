@@ -22,6 +22,8 @@ library(here)      # Relative paths
 source(here("source", "R", "evenness_formula.R"))
 source(here("source", "R", "boot_statistic.R"))
 source(here("source", "R", "perform_bootstrap.R"))
+source(here("source", "R", "bootstrap_list_to_df.R"))
+source(here("source", "R", "get_bootstrap_ci.R"))
 ```
 
 # Exploration of the b3gbi package
@@ -99,14 +101,28 @@ insect_data_new %>%
   labs(x = "year", y = "number of observations")
 ```
 
-We add 
+We calculate bootstrap replicates for evenness (`boot::boot()`).
 
 ```{r}
-test <- perform_bootstrap(
+# Bootstrapping
+bootstrap_insect_data <- perform_bootstrap(
   data_cube_df = insect_data_new,
   fun = evenness_formula,
   replicates = 1000,
   seed = 123)
 
+# Summarise in dataframe
+bootstrap_insect_data_full <- bootstrap_list_to_df(bootstrap_insect_data)
+```
+
+We get confidence intervals (`boot::boot.ci()`) and add it to the dataframe.
+
+```{r}
+# Calculate confidence intervals
+ci_df <- get_bootstrap_ci(bootstrap_insect_data)
+
+# Join dataframes
+bootstrap_insect_data_final <- bootstrap_insect_data_full %>%
+  full_join(ci_df, by = join_by(year))
 ```
 
