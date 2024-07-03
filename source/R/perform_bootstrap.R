@@ -3,7 +3,7 @@ perform_bootstrap <- function(
     fun,
     replicates = 1000,
     seed = 123) {
-  set.seed(seed)  # For reproducibility
+  withr::local_seed(seed)
 
   bootstrap_list <- data_cube_df %>%
     dplyr::summarize(num_occ = sum(.data$obs),
