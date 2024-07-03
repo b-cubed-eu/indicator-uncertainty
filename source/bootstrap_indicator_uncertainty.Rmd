@@ -58,3 +58,36 @@ plot(map_obs_rich_insects,
      title = "Observed Species Richness: Insects in Europe")
 ```
 
+## Calculate an index over time
+
+Lets calculate Pietlou's eveness over time using b3gbi.
+
+```{r}
+eveness_insect_data <- pielou_evenness_ts(insect_data)
+head(eveness_insect_data)
+```
+
+```{r}
+plot(eveness_insect_data)
+```
+
+> Visualisation of trend not correct.
+
+Let's calculate this metric from scratch.
+We select the data after 2010 to ensure calculations with enough data.
+
+```{r}
+insect_data_df <- insect_data$data %>%
+  group_by(year) %>%
+  mutate(n = sum(obs)) %>%
+  ungroup() %>%
+  filter(year > 2010) %>%
+  select(-n)
+
+insect_data_df %>%
+  group_by(year) %>%
+  summarise(n_obs = sum(obs)) %>%
+  ggplot() +
+  geom_bar(aes(x = as.factor(year), y = n_obs), stat = "identity") +
+  labs(x = "year", y = "number of observations")
+```
