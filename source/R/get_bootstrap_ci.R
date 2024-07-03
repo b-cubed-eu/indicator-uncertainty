@@ -23,16 +23,16 @@ get_bootstrap_ci <- function(bootstrap_list, ...) {
       vec[length(vec)]
     })
 
-    out_df <- data.frame(ll, ul)
-    names(out_df) <- c(paste(name, "ll", sep = "_"),
-                       paste(name, "ul", sep = "_"))
-    out_list[[i]] <- out_df
+    out_list[[i]] <- data.frame(year = names(conf_ints),
+                                conf_name = name,
+                                ll = ll,
+                                ul = ul)
   }
 
   # Create combined dataframe
-  conf_df_out <- do.call(cbind.data.frame, out_list) %>%
-    tibble::rownames_to_column(var = "year") %>%
+  conf_df_out <- do.call(rbind.data.frame, out_list) %>%
     dplyr::mutate(conf_level = conf_level)
+  rownames(conf_df_out) <- NULL
 
   return(conf_df_out)
 }
