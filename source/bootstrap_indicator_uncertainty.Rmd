@@ -99,5 +99,14 @@ insect_data_new %>%
   labs(x = "year", y = "number of observations")
 ```
 
+We add 
 
+```{r}
+test <- add_bootstrap_to_dataframe(
+  data_cube_df = insect_data_new,
+  fun = evenness_formula,
+  replicates = 1000,
+  seed = 123)
+
+```
 
