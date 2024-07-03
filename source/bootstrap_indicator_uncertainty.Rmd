@@ -159,20 +159,52 @@ We get confidence intervals (`boot::boot.ci()`) and add it to the dataframe.
 There are five types of intervals that can be calculated.
 The default calculates all intervals.
 
-1. Normal approximation
+Davison, A.C. & Hinkley, D.V. (1997). *Bootstrap Methods and Their Application*, Chapter 5. Cambridge University Press.
+
+**1. Normal approximation** (normal)
+
+Assuming the bootstrap distribution of the statistic is approximately normal.
 
 $$
-\hat{\theta} - \text{Bias}_{\text{boot}} \pm \text{SE}_{\text{boot}} \times z_{1-\alpha/2}
+\left[ \hat{\theta} - \text{Bias}_{\text{boot}} - \text{SE}_{\text{boot}} \times z_{1-\alpha/2}, \hat{\theta} - \text{Bias}_{\text{boot}} + \text{SE}_{\text{boot}} \times z_{1-\alpha/2} \right]
 $$
 
 where $z_{1-\alpha/2}$ is the $1-\alpha/2$ quantile of the standard normal distribution for $\alpha$ confidence level.
 
-2. Basic bootstrap method
-3. Studentized bootstrap method
-4. Bootstrap percentile method
-5. Adjusted bootstrap percentile (BCa) method
+**2. Basic bootstrap method** (basic)
 
-Davison, A.C. & Hinkley, D.V. (1997). *Bootstrap Methods and Their Application*, Chapter 5. Cambridge University Press.
+Centering the interval around the original estimate $\hat{\theta}$.
+
+$$
+\left[ 2\hat{\theta} - \hat{\theta}^*_{(1-\alpha/2)}, 2\hat{\theta} - \hat{\theta}^*_{(\alpha/2)} \right]
+$$
+
+where $\hat{\theta}^*_{(\alpha/2)}$ and $\hat{\theta}^*_{(1-\alpha/2)}$ are the $\alpha/2$ and $1-\alpha/2$ percentiles of the bootstrap distribution, respectively.
+
+**3. Studentized bootstrap method** (studentized)
+
+Similar as **1**, but $z_{1-\alpha/2}$ estimated based on the bootstrap distribution.
+
+**4. Bootstrap percentile method** (percent)
+
+Using the percentiles of the bootstrap distribution.
+
+$$
+\left[ \hat{\theta}^*_{(\alpha/2)}, \hat{\theta}^*_{(1-\alpha/2)} \right]
+$$
+
+where $\hat{\theta}^*_{(\alpha/2)}$ and $\hat{\theta}^*_{(1-\alpha/2)}$ are the $\alpha/2$ and $1-\alpha/2$ percentiles of the bootstrap distribution, respectively.
+
+
+**5. Adjusted bootstrap percentile method (Bias-Corrected and Accelerated)** (bca)
+
+Adjusting for bias and skewness in the bootstrap distribution.
+
+$$
+\left[ \hat{\theta}^*_{(\alpha_1)}, \hat{\theta}^*_{(\alpha_2)} \right]
+$$
+
+where $\alpha_1$ and $\alpha_2$ are adjusted percentiles taking into account the bias and acceleration (adjust for skewness).
 
 ```{r}
 # Calculate confidence intervals
