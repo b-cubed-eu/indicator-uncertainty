@@ -19,7 +19,7 @@ European Union's Horizon Europe Research and Innovation Programme (ID No 1010595
 [^INBO]: Research Institute for Nature and Forest (INBO), Herman Teirlinckgebouw, Havenlaan 88 PO Box 73, B-1000 Brussels, Belgium
 [^JLU]: Justus-Liebig-Universitaet Giessen (JLU), Ludwigstrasse 23, 35390 Giessen, Germany
 
-**keywords**: structured data; data quality; unstructured data; data cubes; biodiversity informatics
+**keywords**: uncertainty quantification; uncertainty visualisation; biodiversity indicators; data cubes
 
 <!-- community: b3 -->
 

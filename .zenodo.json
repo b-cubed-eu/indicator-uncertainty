@@ -3,11 +3,10 @@
   "title": "Investigate indicator uncertainty",
   "description": "<p>Scripts to explore calculation, interpretation and visualisation of uncertainty related to indicators based on biodiversity data cubes.<\/p>",
   "keywords": [
-    "structured data",
-    "data quality",
-    "unstructured data",
-    "data cubes",
-    "biodiversity informatics"
+    "uncertainty quantification",
+    "uncertainty visualisation",
+    "biodiversity indicators",
+    "data cubes"
   ],
   "upload_type": "software",
   "license": "CC-BY-4.0",
