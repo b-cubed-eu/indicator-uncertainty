@@ -215,6 +215,9 @@ bootstrap_insect_data_final <- bootstrap_insect_data_full %>%
   full_join(ci_df, by = join_by(year), relationship = "many-to-many")
 ```
 
+Calculation of studentized intervals failed.
+Its use is further explained in `?boot::boot.ci()`.
+
 ## Visualise confidence intervals
 
 We visualise the distribution of the bootstrap replicates.
