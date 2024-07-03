@@ -1,6 +1,6 @@
 ---
 title: "Calculate biodiversity indicator uncertainty"
-subtitle: "Bootstrapping
+subtitle: "Bootstrapping"
 author: "Ward Langeraert"
 date: "`r Sys.Date()`"
 output: html_document
@@ -13,8 +13,15 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-library(b3gbi)
-library(tidyverse)
+# Load packages
+library(b3gbi)     # Biodiversity indicators for data cubes
+library(tidyverse) # Data wrangling and visualisation
+library(here)      # Relative paths
+
+# Source functions
+source(here("source", "R", "evenness_formula.R"))
+source(here("source", "R", "boot_statistic.R"))
+source(here("source", "R", "add_bootstrap_to_dataframe.R"))
 ```
 
 # Exploration of the b3gbi package
@@ -77,17 +84,20 @@ Let's calculate this metric from scratch.
 We select the data after 2010 to ensure calculations with enough data.
 
 ```{r}
-insect_data_df <- insect_data$data %>%
+insect_data_new <- insect_data$data %>%
   group_by(year) %>%
   mutate(n = sum(obs)) %>%
   ungroup() %>%
   filter(year > 2010) %>%
   select(-n)
 
-insect_data_df %>%
+insect_data_new %>%
   group_by(year) %>%
   summarise(n_obs = sum(obs)) %>%
   ggplot() +
   geom_bar(aes(x = as.factor(year), y = n_obs), stat = "identity") +
   labs(x = "year", y = "number of observations")
 ```
+
+
+
