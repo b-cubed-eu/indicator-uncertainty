@@ -186,13 +186,13 @@ bootstrap_insect_data_final <- bootstrap_insect_data_full %>%
 ## Visualise confidence intervals
 
 We visualise the distribution of the bootstrap replicates.
-The red dots are the evenness measures based on all the data.
+The red dots are the the original sample estimates $\hat{\theta}$.
 
 ```{r}
 bootstrap_insect_data_final %>%
   ggplot(aes(x = year)) +
-    geom_boxplot(aes(y = original)) +
-    geom_point(aes(y = stat_value), colour = "firebrick", size = 3) +
+    geom_boxplot(aes(y = est_boot)) +
+    geom_point(aes(y = est_original), colour = "firebrick", size = 3) +
     labs(y = "evenness") +
     scale_y_continuous(limits = c(0, 1))
 ```
@@ -200,8 +200,8 @@ bootstrap_insect_data_final %>%
 ```{r}
 bootstrap_insect_data_final %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = original)) +
-    geom_point(aes(y = stat_value), colour = "firebrick", size = 3) +
+    geom_violin(aes(y = est_boot)) +
+    geom_point(aes(y = est_original), colour = "firebrick", size = 3) +
     labs(y = "evenness") +
     scale_y_continuous(limits = c(0, 1))
 ```
@@ -210,8 +210,8 @@ We visualise the confidence intervals.
 
 ```{r}
 bootstrap_insect_data_final %>%
-  distinct(year, stat_value, stat_se, conf_name, ll, ul, conf_level) %>%
-  ggplot(aes(x = year, y = stat_value, group = conf_name)) +
+  distinct(year, est_original, se_boot, conf_name, ll, ul, conf_level) %>%
+  ggplot(aes(x = year, y = est_original, group = conf_name)) +
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = conf_name),
                   position = position_dodge(0.8), linewidth = 1) +
     geom_point(colour = "firebrick", size = 3, position = position_dodge(0.8)) +
@@ -224,20 +224,20 @@ We compare the confidence intervals with the distribution of the bootstrap repli
 ```{r}
 bootstrap_insect_data_final %>%
   ggplot(aes(x = year)) +
-    geom_boxplot(aes(y = original)) +
+    geom_boxplot(aes(y = est_boot)) +
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = conf_name),
                   position = position_dodge(0.8), linewidth = 1) +
-    geom_point(aes(y = stat_value), colour = "firebrick", size = 3) +
+    geom_point(aes(y = est_original), colour = "firebrick", size = 3) +
     scale_y_continuous(limits = c(NA, 1))
 ```
 
 ```{r}
 bootstrap_insect_data_final %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = original)) +
+    geom_violin(aes(y = est_boot)) +
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = conf_name),
                   position = position_dodge(0.8), linewidth = 1) +
-    geom_point(aes(y = stat_value), colour = "firebrick", size = 3) +
+    geom_point(aes(y = est_original), colour = "firebrick", size = 3) +
     labs(y = "evenness") +
     scale_y_continuous(limits = c(NA, 1))
 ```
