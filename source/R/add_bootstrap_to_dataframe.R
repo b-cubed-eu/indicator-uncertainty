@@ -1,8 +1,7 @@
 add_bootstrap_to_dataframe <- function(
     data_cube_df,
-    replicates = 1000,
     fun,
-    ...,
+    replicates = 1000,
     seed = 123) {
   set.seed(seed)  # For reproducibility
 
