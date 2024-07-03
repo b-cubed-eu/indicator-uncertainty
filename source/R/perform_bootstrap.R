@@ -1,7 +1,7 @@
 perform_bootstrap <- function(
     data_cube_df,
     fun,
-    replicates = 1000,
+    samples = 1000,
     seed = 123) {
   withr::local_seed(seed)
 
@@ -16,7 +16,7 @@ perform_bootstrap <- function(
     as.list() %>%
     purrr::map(~boot::boot(data = .,
                            statistic = boot_statistic,
-                           R = replicates,
+                           R = samples,
                            fun = fun))
 
   return(bootstrap_list)
