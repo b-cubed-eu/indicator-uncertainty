@@ -23,6 +23,7 @@ library(b3gbi)       # Biodiversity indicators for data cubes
 library(tidyverse)   # Data wrangling and visualisation
 library(here)        # Relative paths
 library(effectclass) # Classification and visualisation of effects
+library(knitr)       # Nice tables
 
 # Source functions
 source(here("source", "scripts", "evenness_formula.R"))
@@ -354,7 +355,7 @@ bootstrap_insect_data_final %>%
   group_modify(~ grouped_regression(df = ., formula = ci_width ~ se_boot)) %>%
   ungroup() %>%
   filter(param == "se_boot") %>%
-  knitr::kable()
+  kable()
 ```
 
 We see the same when we look at bias.
@@ -378,7 +379,7 @@ bootstrap_insect_data_final %>%
   group_modify(~ grouped_regression(df = ., formula = ci_width ~ bias_boot)) %>%
   ungroup() %>%
   filter(param == "bias_boot") %>%
-  knitr::kable()
+  kable()
 ```
 
 There is some discussion on the use of [the percentile interval](https://stats.stackexchange.com/questions/355781/is-it-true-that-the-percentile-bootstrap-should-never-be-used).
@@ -393,6 +394,158 @@ The benefits of this approach are twofold:
 1. A visual tool that simplifies interpretation of results, even for people who are not familiar with the data and/or methods used
 2. The use of arbitrary thresholds allows to make the distinction between 'no effect' (small interval covering reference) and 'uncertain effect' (large interval covering reference and one or both thresholds)
 
+```{r}
+ds <- data.frame(
+  mean = c(0, 0.5, -0.5, 1, -1, 1.5, -1.5, 0.5, -0.5, 0),
+  sd = c(1, 0.5, 0.5, 0.5, 0.5, 0.25, 0.25, 0.25, 0.25, 0.5)
+)
+ds$lcl <- qnorm(0.05, ds$mean, ds$sd)
+ds$ucl <- qnorm(0.95, ds$mean, ds$sd)
+ds$effect <- classification(ds$lcl, ds$ucl, 1)
+ggplot(ds, aes(x = effect, y = mean, ymin = lcl, ymax = ucl, link_sd = sd)) +
+  stat_effect(threshold = 1)
+```
+
+
 ## Comparing with a constant
 
+We select the summary statistics from the previous section.
+We only keep the BCa interval.
 
+```{r}
+insect_eveness_df <- bootstrap_insect_data_final %>%
+  filter(int_type == "bca") %>%
+  distinct(year, est_original, int_type, ll, ul, conf_level)
+
+insect_eveness_df %>%
+  kable()
+```
+
+Let's say we want to test whether the eveness of insects differs from 0.6.
+We use thresholds of 0.1 to distinguish between strong and moderate effects.
+
+```{r}
+insect_eveness_df$effect <- classification(
+  lcl = insect_eveness_df$ll,
+  ucl = insect_eveness_df$ul,
+  threshold = 0.1,
+  reference = 0.6)
+
+insect_eveness_df$effect_coarse <- coarse_classification(
+  insect_eveness_df$effect)
+
+insect_eveness_effects <- insect_eveness_df %>%
+  mutate(
+    effect = case_when(
+        effect == "++" ~ "strong increase",
+        effect == "+" ~ "increase",
+        effect == "+~" ~ "moderate increase",
+        effect == "~" ~ "stable",
+        effect == "-" ~ "decrease",
+        effect == "-~" ~ "moderate decrease",
+        effect == "--" ~ "strong decrease",
+        effect == "?+" ~ "potential increase",
+        effect == "?-" ~ "potential decrease",
+        effect == "?" ~ "unknown"
+    ),
+    effect = factor(effect,
+      levels = c(
+        "strong increase",
+        "increase",
+        "moderate increase",
+        "stable",
+        "moderate decrease",
+        "decrease",
+        "strong decrease",
+        "potential increase",
+        "potential decrease",
+        "unknown"),
+      ordered = TRUE)
+  ) %>%
+  mutate(
+    effect_coarse = case_when(
+        effect_coarse == "+" ~ "increase",
+        effect_coarse == "-" ~ "decrease",
+        effect_coarse == "~" ~ "stable",
+        TRUE ~ "unknown",
+    ),
+    effect_coarse = factor(effect_coarse,
+      levels = c("increase",
+                 "stable",
+                 "decrease",
+                 "unknown"),
+      ordered = TRUE)
+  )
+
+insect_eveness_effects %>%
+  kable(digits = 3)
+```
+
+We can visualise this as such.
+Coarse classification:
+
+```{r}
+insect_eveness_effects %>%
+  ggplot(aes(x = year, y = est_original, ymin = ll, ymax = ul)) +
+    stat_effect(reference = 0.6, threshold = c(0.5, 0.7), detailed = FALSE) +
+    labs(y = "evenness") +
+    scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
+    scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year)))
+```
+
+We can create this figure ourselves:
+
+```{r}
+insect_eveness_effects %>%
+  ggplot(aes(x = year)) +
+    geom_hline(yintercept = 0.6, linetype = "longdash", colour = "black") +
+    geom_hline(yintercept = c(0.5, 0.7), linetype = "dotdash") +
+    geom_errorbar(aes(ymin = ll, ymax = ul, colour = effect_coarse),
+                  linewidth = 1.5, show.legend = TRUE) +
+    geom_point(aes(y = est_original), colour = "black", size = 3.5) +
+    scale_colour_manual(values =  c("chartreuse3",
+                                    "gold",
+                                    "firebrick1",
+                                    "skyblue"),
+                        drop = FALSE) +
+    labs(y = "evenness", colour = "Classification") +
+    scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
+    scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year))) +
+    theme_minimal()
+```
+
+Fine classification:
+
+```{r}
+insect_eveness_effects %>%
+  ggplot(aes(x = year, y = est_original, ymin = ll, ymax = ul)) +
+  stat_effect(threshold = c(0.5, 0.7), reference = 0.6) +
+  labs(y = "evenness") +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
+  scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year)))
+```
+
+```{r}
+insect_eveness_effects %>%
+  ggplot(aes(x = year)) +
+    geom_hline(yintercept = 0.6, linetype = "longdash", colour = "black") +
+    geom_hline(yintercept = c(0.5, 0.7), linetype = "dotdash") +
+    geom_errorbar(aes(ymin = ll, ymax = ul, colour = effect),
+                  linewidth = 1.5, show.legend = TRUE) +
+    geom_point(aes(y = est_original), colour = "black", size = 3.5) +
+    scale_colour_manual(values =  c("darkgreen",
+                                    "chartreuse3",
+                                    "darkolivegreen1",
+                                    "gold",
+                                    "orange",
+                                    "firebrick1",
+                                    "darkred",
+                                    "gray80",
+                                    "gray30",
+                                    "grey55"),
+                        drop = FALSE) +
+    labs(y = "evenness", colour = "Classification") +
+    scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
+    scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year))) +
+    theme_minimal()
+```
