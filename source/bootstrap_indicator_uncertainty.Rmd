@@ -382,3 +382,12 @@ bootstrap_insect_data_final %>%
 
 There is some discussion on the use of [the percentile interval](https://stats.stackexchange.com/questions/355781/is-it-true-that-the-percentile-bootstrap-should-never-be-used).
 The BCa approach takes into account both bias and skewness and seems to be the best approach for this situation.
+
+# Interpretation and visualisation of uncertainty
+
+Here we will follow the methods implemented by the [effectclass package](https://inbo.github.io/effectclass/).
+It classifies effects by comparing a coverage interval with a reference, lower and upper threshold.
+The benefits of this approach are twofold:
+
+1. A visual tool that simplifies interpretation of results, even for people who are not familiar with the data and/or methods used
+2. The use of arbitrary thresholds allows to make the distinction between 'no effect' (small interval covering reference) and 'uncertain effect' (large interval covering reference and one or both thresholds)
