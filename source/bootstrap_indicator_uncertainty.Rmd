@@ -89,7 +89,7 @@ plot(eveness_insect_data)
 
 > Visualisation of trend not correct.
 
-Let's calculate this metric from scratch.
+Let's calculate this metric from scratch in the next section.
 We select the data after 2010 to ensure calculations with enough data.
 
 ```{r}
@@ -108,7 +108,8 @@ insect_data_new %>%
     labs(x = "year", y = "number of observations")
 ```
 
-## Bootstrapping
+# Bootstrapping
+## Bootstrap statistics and intervals
 
 We perform bootstrapping for evenness (`boot::boot()`).
 Bootstrapping is a statistical technique used to estimate the distribution of a statistic by resampling with replacement from the original data.
@@ -148,7 +149,6 @@ $$
 
 8. **Bootstrap Confidence Interval**
     - Confidence intervals for the statistic of interest can be constructed using the bootstrap distribution of $\hat{\theta}^*$. Several methods are explained below.
-
 
 ```{r}
 # Bootstrapping
@@ -392,3 +392,5 @@ The benefits of this approach are twofold:
 
 1. A visual tool that simplifies interpretation of results, even for people who are not familiar with the data and/or methods used
 2. The use of arbitrary thresholds allows to make the distinction between 'no effect' (small interval covering reference) and 'uncertain effect' (large interval covering reference and one or both thresholds)
+
+
