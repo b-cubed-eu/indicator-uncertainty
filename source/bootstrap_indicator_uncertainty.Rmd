@@ -19,12 +19,12 @@ library(tidyverse) # Data wrangling and visualisation
 library(here)      # Relative paths
 
 # Source functions
-source(here("source", "R", "evenness_formula.R"))
-source(here("source", "R", "boot_statistic.R"))
-source(here("source", "R", "perform_bootstrap.R"))
-source(here("source", "R", "bootstrap_list_to_df.R"))
-source(here("source", "R", "get_bootstrap_ci.R"))
-source(here("source", "R", "utils.R"))
+source(here("source", "scripts", "evenness_formula.R"))
+source(here("source", "scripts", "boot_statistic.R"))
+source(here("source", "scripts", "perform_bootstrap.R"))
+source(here("source", "scripts", "bootstrap_list_to_df.R"))
+source(here("source", "scripts", "get_bootstrap_ci.R"))
+source(here("source", "scripts", "utils.R"))
 ```
 
 # Exploration of the b3gbi package
