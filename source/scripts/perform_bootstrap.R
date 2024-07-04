@@ -3,12 +3,14 @@ perform_bootstrap <- function(
     fun,
     samples = 1000,
     seed = 123) {
+  require("dplyr")
+
   withr::local_seed(seed)
 
   bootstrap_list <- data_cube_df %>%
     dplyr::summarize(num_occ = sum(.data$obs),
                      .by = c("year", "taxonKey")) %>%
-    dplyr::arrange(year) %>%
+    dplyr::arrange(.data$year) %>%
     tidyr::pivot_wider(names_from = "year",
                        values_from = "num_occ",
                        values_fill = 0) %>%

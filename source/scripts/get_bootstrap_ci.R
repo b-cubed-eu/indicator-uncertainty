@@ -1,4 +1,6 @@
 get_bootstrap_ci <- function(bootstrap_list, ...) {
+  require("dplyr")
+
   # Calculate nonparametric confidence intervals
   conf_ints <- lapply(bootstrap_list, boot::boot.ci, ...)
 
