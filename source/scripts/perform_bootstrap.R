@@ -1,3 +1,19 @@
+#' Perform bootstrapping per year for a calculated statistic
+#'
+#' This function generate `samples` bootstrap replicates of a statistic applied
+#' to a data cube per year.
+#'
+#' @param data_cube_df A dataframe containing data in biodiversity data cube
+#' format.
+#' @param fun A function which when applied to data returns the statistic(s) of
+#' interest.
+#' @param samples The number of bootstrap replicates. A single positive integer.
+#' @param seed The seed for random number generation to make results
+#' reproducible.
+#'
+#' @returns The returned value is a list of objects of class `"boot"` per year.
+#' See `boot::boot()`.
+
 perform_bootstrap <- function(
     data_cube_df,
     fun,

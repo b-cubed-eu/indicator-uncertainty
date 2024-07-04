@@ -1,4 +1,5 @@
-# Function to calculate Pielou's evenness
+#' Function to calculate Pielou's evenness
+
 evenness_formula <- function(x) {
   big_s <- length(x)
   n <- x
