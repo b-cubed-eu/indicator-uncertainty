@@ -246,7 +246,7 @@ z_value <- qnorm(1 - alpha / 2)
 
 # Calculated logit transormed normal interval
 bootstrap_insect_data_final <- bootstrap_insect_data_joined %>%
-  select(-"conf_name", -"ll", -"ul") %>%
+  select(-"int_type", -"ll", -"ul") %>%
   mutate(est_logit_boot = logit(est_boot),
          est_logit_original = logit(est_original),
          diff_logit = est_logit_boot - est_logit_original) %>%
@@ -256,7 +256,7 @@ bootstrap_insect_data_final <- bootstrap_insect_data_joined %>%
   ungroup() %>%
   rowwise() %>%
   mutate(
-    conf_name = "logit_normal",
+    int_type = "logit_normal",
     ll = inv_logit(est_logit_original - bias_logit_boot -
                      z_value * se_logit_boot),
     ul = inv_logit(est_logit_original - bias_logit_boot +
@@ -314,11 +314,11 @@ We visualise the confidence intervals.
 
 ```{r, fig.width = 10}
 bootstrap_insect_data_final %>%
-  distinct(year, est_original, se_boot, conf_name, ll, ul, conf_level) %>%
+  distinct(year, est_original, se_boot, int_type, ll, ul, conf_level) %>%
   ggplot(aes(x = year, y = est_original)) +
-    geom_errorbar(aes(ymin = ll, ymax = ul, colour = conf_name),
+    geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
                   position = position_dodge(0.8), linewidth = 1) +
-    geom_point(aes(group = conf_name), colour = "firebrick", size = 3,
+    geom_point(aes(group = int_type), colour = "firebrick", size = 3,
                position = position_dodge(0.8)) +
     labs(y = "evenness", colour = "Confidence interval") +
     geom_label(data = numbers_data, aes(y = 1.1, label = label_tot),
@@ -335,10 +335,10 @@ We compare the confidence intervals with the distribution of the bootstrap repli
 
 ```{r, fig.width = 10}
 bootstrap_insect_data_final %>%
-  filter(!conf_name %in% c("basic", "normal")) %>%
+  filter(!int_type %in% c("basic", "normal")) %>%
   ggplot(aes(x = year)) +
     geom_boxplot(aes(y = est_boot, group = year)) +
-    geom_errorbar(aes(ymin = ll, ymax = ul, colour = conf_name),
+    geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
                   position = position_dodge(0.8), linewidth = 1) +
     geom_point(aes(y = est_original), colour = "firebrick", size = 3) +
     geom_label(data = numbers_data, aes(y = 1.1, label = label_tot),
@@ -351,10 +351,10 @@ bootstrap_insect_data_final %>%
 
 ```{r, fig.width = 10}
 bootstrap_insect_data_final %>%
-  filter(!conf_name %in% c("basic", "normal")) %>%
+  filter(!int_type %in% c("basic", "normal")) %>%
   ggplot(aes(x = year)) +
     geom_violin(aes(y = est_boot, group = year)) +
-    geom_errorbar(aes(ymin = ll, ymax = ul, colour = conf_name),
+    geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
                   position = position_dodge(0.8), linewidth = 1) +
     geom_point(aes(y = est_original), colour = "firebrick", size = 3) +
     geom_label(data = numbers_data, aes(y = 1.1, label = label_tot),
