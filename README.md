@@ -33,7 +33,7 @@ Scripts to explore calculation, interpretation and visualisation of uncertainty 
 
 ```
 ├── source                         ├ R markdown files
-│   └── R                          ├ R scripts
+│   └── scripts                    ├ R scripts
 ├── data
 │   ├── raw                        ├ store raw data
 │   ├── intermediate               ├ store intermediate data
