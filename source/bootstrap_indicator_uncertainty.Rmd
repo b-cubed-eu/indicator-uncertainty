@@ -406,13 +406,13 @@ ggplot(ds, aes(x = effect, y = mean, ymin = lcl, ymax = ucl, link_sd = sd)) +
   stat_effect(threshold = 1)
 ```
 
-
 ## Comparing with a constant
 
 We select the summary statistics from the previous section.
 We only keep the BCa interval.
 
 ```{r}
+# Filter data for visualisation
 insect_eveness_df <- bootstrap_insect_data_final %>%
   filter(int_type == "bca") %>%
   distinct(year, est_original, int_type, ll, ul, conf_level)
@@ -425,16 +425,20 @@ Let's say we want to test whether the eveness of insects differs from 0.6.
 We use thresholds of 0.1 to distinguish between strong and moderate effects.
 
 ```{r}
-insect_eveness_df$effect <- classification(
-  lcl = insect_eveness_df$ll,
-  ucl = insect_eveness_df$ul,
+# Add clasification based on reference and thresholds
+insect_eveness_effects <- insect_eveness_df
+
+insect_eveness_effects$effect <- classification(
+  lcl = insect_eveness_effects$ll,
+  ucl = insect_eveness_effects$ul,
   threshold = 0.1,
   reference = 0.6)
 
-insect_eveness_df$effect_coarse <- coarse_classification(
-  insect_eveness_df$effect)
+insect_eveness_effects$effect_coarse <- coarse_classification(
+  insect_eveness_effects$effect)
 
-insect_eveness_effects <- insect_eveness_df %>%
+# Create ordered factors of effects
+insect_eveness_effects <- insect_eveness_effects %>%
   mutate(
     effect = case_when(
         effect == "++" ~ "strong increase",
@@ -549,3 +553,5 @@ insect_eveness_effects %>%
     scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year))) +
     theme_minimal()
 ```
+
+# Comparing with a statistic
