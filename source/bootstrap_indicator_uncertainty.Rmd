@@ -3,7 +3,12 @@ title: "Calculate biodiversity indicator uncertainty"
 subtitle: "Bootstrapping"
 author: "Ward Langeraert"
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  html_document:
+    code_folding: show
+    toc: true
+    toc_float: true
+    toc_collapsed: true
 editor_options: 
   chunk_output_type: console
 ---
@@ -12,7 +17,7 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # Load packages
 library(b3gbi)     # Biodiversity indicators for data cubes
 library(tidyverse) # Data wrangling and visualisation
@@ -267,39 +272,60 @@ bootstrap_insect_data_final <- bootstrap_insect_data_joined %>%
 
 ## Visualise confidence intervals
 
+```{r}
+numbers_data <- insect_data_new %>%
+  group_by(year) %>%
+  summarize(num_occ = sum(.data$obs),
+            num_spec = n_distinct(taxonKey),
+            .groups = "drop") %>%
+  mutate(label_occ = paste("n_occ", num_occ, sep = "="),
+         label_spec = paste("n_spec", num_spec, sep = "="),
+         label_tot = paste(label_occ, label_spec, sep = "\n"))
+```
+
 We visualise the distribution of the bootstrap replicates.
 The red dots are the the original sample estimates $\hat{\theta}$.
 
-```{r}
+```{r, fig.width = 10}
 bootstrap_insect_data_final %>%
   ggplot(aes(x = year)) +
-    geom_boxplot(aes(y = est_boot)) +
+    geom_boxplot(aes(y = est_boot, group = year)) +
     geom_point(aes(y = est_original), colour = "firebrick", size = 3) +
+    geom_label(data = numbers_data, aes(y = 1.1, label = label_tot),
+               size = 3, label.padding = unit(0.35, "lines")) +
     labs(y = "evenness") +
-    scale_y_continuous(limits = c(0, 1))
+    scale_y_continuous(limits = c(0, 1.1), breaks = seq(-10, 10, 0.25)) +
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data_final$year)))
 ```
 
-```{r}
+```{r, fig.width = 10}
 bootstrap_insect_data_final %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = est_boot)) +
+    geom_violin(aes(y = est_boot, group = year)) +
     geom_point(aes(y = est_original), colour = "firebrick", size = 3) +
+    geom_label(data = numbers_data, aes(y = 1.1, label = label_tot),
+               size = 3, label.padding = unit(0.35, "lines")) +
     labs(y = "evenness") +
-    scale_y_continuous(limits = c(0, 1))
+    scale_y_continuous(limits = c(0, 1.1), breaks = seq(-10, 10, 0.25)) +
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data_final$year)))
 ```
 
 We visualise the confidence intervals.
 
-```{r}
+```{r, fig.width = 10}
 bootstrap_insect_data_final %>%
   distinct(year, est_original, se_boot, conf_name, ll, ul, conf_level) %>%
-  ggplot(aes(x = year, y = est_original, group = conf_name)) +
+  ggplot(aes(x = year, y = est_original)) +
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = conf_name),
                   position = position_dodge(0.8), linewidth = 1) +
-    geom_point(colour = "firebrick", size = 3, position = position_dodge(0.8)) +
+    geom_point(aes(group = conf_name), colour = "firebrick", size = 3,
+               position = position_dodge(0.8)) +
     labs(y = "evenness", colour = "Confidence interval") +
-    scale_y_continuous(limits = c(NA, 1)) +
-    theme(legend.position = "bottom")
+    geom_label(data = numbers_data, aes(y = 1.1, label = label_tot),
+             size = 3, label.padding = unit(0.35, "lines")) +
+    theme(legend.position = "bottom") +
+    scale_y_continuous(limits = c(NA, 1.1), breaks = seq(-10, 10, 0.25)) +
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data_final$year)))
 ```
 
 The normal and basic intervals are not applicable here.
@@ -307,28 +333,34 @@ We leave them out for further visualisation.
 
 We compare the confidence intervals with the distribution of the bootstrap replicates.
 
-```{r}
+```{r, fig.width = 10}
 bootstrap_insect_data_final %>%
   filter(!conf_name %in% c("basic", "normal")) %>%
   ggplot(aes(x = year)) +
-    geom_boxplot(aes(y = est_boot)) +
+    geom_boxplot(aes(y = est_boot, group = year)) +
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = conf_name),
                   position = position_dodge(0.8), linewidth = 1) +
     geom_point(aes(y = est_original), colour = "firebrick", size = 3) +
+    geom_label(data = numbers_data, aes(y = 1.1, label = label_tot),
+               size = 3, label.padding = unit(0.35, "lines")) +
     labs(y = "evenness", colour = "Confidence interval") +
-    scale_y_continuous(limits = c(0, 1)) +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom") +
+    scale_y_continuous(limits = c(0, 1.1), breaks = seq(-10, 10, 0.25)) +
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data_final$year)))
 ```
 
-```{r}
+```{r, fig.width = 10}
 bootstrap_insect_data_final %>%
   filter(!conf_name %in% c("basic", "normal")) %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = est_boot)) +
+    geom_violin(aes(y = est_boot, group = year)) +
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = conf_name),
                   position = position_dodge(0.8), linewidth = 1) +
     geom_point(aes(y = est_original), colour = "firebrick", size = 3) +
+    geom_label(data = numbers_data, aes(y = 1.1, label = label_tot),
+               size = 3, label.padding = unit(0.35, "lines")) +
     labs(y = "evenness", colour = "Confidence interval") +
-    scale_y_continuous(limits = c(0, 1)) +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom") +
+    scale_y_continuous(limits = c(NA, 1.1), breaks = seq(-10, 10, 0.25)) +
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data_final$year)))
 ```
