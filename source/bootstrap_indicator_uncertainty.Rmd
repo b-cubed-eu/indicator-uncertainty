@@ -19,9 +19,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r, warning=FALSE, message=FALSE}
 # Load packages
-library(b3gbi)     # Biodiversity indicators for data cubes
-library(tidyverse) # Data wrangling and visualisation
-library(here)      # Relative paths
+library(b3gbi)       # Biodiversity indicators for data cubes
+library(tidyverse)   # Data wrangling and visualisation
+library(here)        # Relative paths
+library(effectclass) # Classification and visualisation of effects
 
 # Source functions
 source(here("source", "scripts", "evenness_formula.R"))
