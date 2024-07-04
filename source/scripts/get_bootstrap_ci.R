@@ -23,7 +23,7 @@ get_bootstrap_ci <- function(bootstrap_list, ...) {
       vec[length(vec)]
     })
 
-    out_list[[i]] <- data.frame(year = names(conf_ints),
+    out_list[[i]] <- data.frame(year = as.numeric(names(conf_ints)),
                                 conf_name = name,
                                 ll = ll,
                                 ul = ul)

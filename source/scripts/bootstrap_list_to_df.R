@@ -17,7 +17,8 @@ bootstrap_list_to_df <- function(bootstrap_list) {
     dplyr::full_join(bootstrap_summaries, by = dplyr::join_by("year")) %>%
     dplyr::arrange(sample, year) %>%
     dplyr::rowwise() %>%
-    dplyr::mutate(diff = .data$est_boot - .data$est_original) %>%
+    dplyr::mutate(diff = .data$est_boot - .data$est_original,
+                  year = as.numeric(year)) %>%
     dplyr::group_by(year) %>%
     dplyr::mutate(bias_boot = mean(.data$diff)) %>%
     dplyr::ungroup() %>%
