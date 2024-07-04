@@ -168,6 +168,8 @@ The default calculates all intervals.
 
 Davison, A.C. & Hinkley, D.V. (1997). *Bootstrap Methods and Their Application*, Chapter 5. Cambridge University Press.
 
+See also [this site](https://www.r-bloggers.com/2019/09/understanding-bootstrap-confidence-interval-output-from-the-r-boot-package/).
+
 **1. Normal approximation** (normal)
 
 Assuming the bootstrap distribution of the statistic is approximately normal.
@@ -201,8 +203,6 @@ $$
 $$
 
 where $\hat{\theta}^*_{(\alpha/2)}$ and $\hat{\theta}^*_{(1-\alpha/2)}$ are the $\alpha/2$ and $1-\alpha/2$ percentiles of the bootstrap distribution, respectively.
-
-> There is a slight difference!
 
 **5. Adjusted bootstrap percentile method (Bias-Corrected and Accelerated, BCa)** (bca)
 
@@ -392,5 +392,7 @@ The benefits of this approach are twofold:
 
 1. A visual tool that simplifies interpretation of results, even for people who are not familiar with the data and/or methods used
 2. The use of arbitrary thresholds allows to make the distinction between 'no effect' (small interval covering reference) and 'uncertain effect' (large interval covering reference and one or both thresholds)
+
+## Comparing with a constant
 
 
