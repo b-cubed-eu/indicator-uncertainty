@@ -1,3 +1,16 @@
+#' Convert list of `boot` objects to dataframe
+#'
+#' This function converts a list of objects of class `"boot"` per year into a
+#' dataframe containing all required summaries.
+#'
+#' @param bootstrap_list A list of objects of class `"boot"` per year.
+#'
+#' @returns The returned value is a dataframe containing the bootstrap sample
+#' index (`sample`), the year (`year`), the bootstrap estimate of the statistic
+#' (`est_boot`), the original sample estimate of the statistic (`est_original`),
+#' the standard deviation of the bootstrap replications (`se_boot`), and the
+#' bootstrap bias (`bias_boot`).
+
 bootstrap_list_to_df <- function(bootstrap_list) {
   require("dplyr")
 
