@@ -1,6 +1,5 @@
 ---
-title: "Calculate biodiversity indicator uncertainty"
-subtitle: "Bootstrapping"
+title: "Calculate biodiversity indicator uncertainty via bootstrapping"
 author: "Ward Langeraert"
 date: "`r Sys.Date()`"
 output:
@@ -90,7 +89,12 @@ head(eveness_insect_data)
 plot(eveness_insect_data)
 ```
 
-> Visualisation of trend not correct.
+## Conclusion
+
+The visualisation of uncertainty in trends is not correct because of two factors:
+
+1. Uncertainty is based on evenness values per year and is not based on the data itself
+2. The trend becomes negative although evenness is a value between 0 and 1
 
 Let's calculate this metric from scratch in the next section.
 We select the data after 2010 to ensure calculations with enough data.
@@ -565,7 +569,7 @@ bootstrap_diff_final %>%
 
 We classify the effects as we did before.
 We select the BCa interval.
-This time our reference is 0 (no change with 2011) and we choose an arbitrary threshold of 0.2.
+This time our reference is 0 (no change with 2011) and we choose an arbitrary threshold of 0.15.
 
 ```{r}
 # Filter data for visualisation
@@ -577,7 +581,7 @@ insect_eveness_diff_df <- bootstrap_diff_final %>%
 insect_eveness_diff_effects <- add_classification_as_factor(
   df = insect_eveness_diff_df,
   cl_columns = c("ll", "ul"),
-  threshold = 0.2,
+  threshold = 0.15,
   reference = 0,
   coarse = TRUE)
 
@@ -592,7 +596,7 @@ We visualise these effects.
 insect_eveness_diff_effects %>%
   ggplot(aes(x = year)) +
     geom_hline(yintercept = 0, linetype = "longdash", colour = "black") +
-    geom_hline(yintercept = c(-0.2, 0.2), linetype = "dotdash") +
+    geom_hline(yintercept = c(-0.15, 0.15), linetype = "dotdash") +
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = effect),
                   linewidth = 1.5, show.legend = TRUE) +
     geom_point(aes(y = est_original), colour = "black", size = 3.5) +
@@ -613,3 +617,88 @@ insect_eveness_diff_effects %>%
     scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year))) +
     theme_minimal()
 ```
+
+# Conclusion
+
+Let's compare trends in evenness with data from 2005 from the b3gbi package with what we developed above.
+
+```{r, class.source = "fold-hide"}
+insect_data_2005 <- process_cube_old(cube_name, tax_info, first_year = 2005)
+eveness_insect_data_2005 <- pielou_evenness_ts(insect_data_2005)
+plot(eveness_insect_data_2005)
+```
+
+```{r, class.source = "fold-hide", warning=FALSE, message=FALSE}
+insect_data_filtered <- insect_data$data %>%
+  filter(year >= 2005)
+
+# Bootstrapping
+insect_data_bootstrapped <- perform_bootstrap_ts(
+  data_cube_df = insect_data_filtered,
+  fun = evenness_formula,
+  samples = 1000,
+  ref_group = min(insect_data_filtered$year),
+  seed = 123)
+
+# Summarise in dataframe
+insect_data_bootstrapped_df <- bootstrap_list_to_df(insect_data_bootstrapped)
+
+# Calculate confidence intervals
+insect_data_ci <- get_bootstrap_ci(insect_data_bootstrapped,
+                                   type = "bca",
+                                   h = atanh,
+                                   hinv = tanh)
+
+# Join dataframes
+insect_data_boot_final <- insect_data_bootstrapped_df %>%
+  full_join(insect_data_ci,
+            by = join_by(year),
+            relationship = "many-to-many") %>%
+  distinct(year, est_original, int_type, ll, ul, conf_level)
+
+# Add classification based on reference and thresholds
+insect_eveness_effects_tot <- add_classification_as_factor(
+  df = insect_data_boot_final,
+  cl_columns = c("ll", "ul"),
+  threshold = 0.15,
+  reference = 0,
+  coarse = TRUE)
+
+# Visualise
+insect_eveness_effects_tot %>%
+  ggplot(aes(x = as.character(year))) +
+    geom_hline(yintercept = 0, linetype = "longdash", colour = "black") +
+    geom_hline(yintercept = c(-0.15, 0.15), linetype = "dotdash") +
+    geom_errorbar(aes(ymin = ll, ymax = ul, colour = effect),
+                  linewidth = 1.5, show.legend = TRUE) +
+    geom_point(aes(y = est_original), colour = "black", size = 3.5) +
+    scale_colour_manual(values =  c("darkgreen",
+                                    "chartreuse3",
+                                    "darkolivegreen1",
+                                    "gold",
+                                    "orange",
+                                    "firebrick1",
+                                    "darkred",
+                                    "gray80",
+                                    "gray30",
+                                    "grey55"),
+                        drop = FALSE) +
+    labs(y = "difference in evenness compared to 2005", x = "",
+         colour = "Classification") +
+    scale_y_continuous(limits = c(-1, 1), breaks = seq(-10, 10, 0.25)) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 60, vjust = 0.5, hjust = 1))
+```
+
+Although these methods require additional testing, the first results show that bootstrapping can be used to correctly visualise and interpret trends from indicators based on biodiversity data cubes.
+
+## What's next?
+
+- Test workflow on other datasets
+- Test workflow on other indicators
+  - Which transformations for count statistics, real numbers ...
+- How long does bootstrapping take for big datasets?
+- Error handling
+  - Bootstrapping and confidence interval calculations do not always work with few data
+- Uncertainty calculation and visualisation for spatial indicators
+- Incorporation of functions in b3gbi package (or separate package?)
