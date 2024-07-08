@@ -1,10 +1,10 @@
-#' Classify effects by comparing the confidence intervals with a reference and
-#' thresholds as factor variables
+#' Add effect classifications to a dataframe by comparing the confidence
+#' intervals with a reference and thresholds
 #'
-#' This function adds classified effects to a dataframe by comparing the
-#' confidence intervals with a reference and thresholds. A wrapper around
-#' `effectclass::classify()` and `coarse_classification()` that adds effect
-#' descriptions as factor variables to a dataframe.
+#' This function adds classified effects to a dataframe as ordered factor
+#' variables by comparing the confidence intervals with a reference and
+#' thresholds. A wrapper around `effectclass::classify()` and
+#' `effectclass::coarse_classification()`.
 #'
 #' @param df A dataframe containing summary data of confidence limits.
 #' @param cl_columns A vector of 2 column names in `df` indicating respectively
@@ -18,8 +18,11 @@
 #' classification to the dataframe.
 #' See `effectclass::coarse_classification()`.
 #'
-#' @returns The returned value is a list of objects of class `"boot"` per year.
-#' See `boot::boot()`.
+#' @returns The returned value is the original dataframe with added columns
+#' `effect_code` and `effect` containing respectively the effect symbols and
+#' descriptions as ordered factor variables. In case or `coarse = TRUE` (by
+#' default) also `effect_code_coarse` and `effect_coarse` containing the coarse
+#' classification effects.
 
 add_classification_as_factor <- function(
     df,
@@ -48,7 +51,7 @@ add_classification_as_factor <- function(
   # Create ordered factors of effects
   out_df <- classified_df %>%
     mutate(
-      effect_code = factor(effect_code,
+      effect_code = factor(data$effect_code,
                       levels = c(
                         "++",
                         "+",
@@ -73,7 +76,7 @@ add_classification_as_factor <- function(
         effect_code == "?-" ~ "potential decrease",
         effect_code == "?"  ~ "unknown"
       ),
-      effect = factor(effect,
+      effect = factor(data$effect,
                       levels = c(
                         "strong increase",
                         "increase",
@@ -91,7 +94,7 @@ add_classification_as_factor <- function(
     if (coarse) {
       out_df <- out_df %>%
         mutate(
-          effect_code_coarse = factor(effect_code_coarse,
+          effect_code_coarse = factor(data$effect_code_coarse,
                                levels = c(
                                  "+",
                                  "~",
@@ -104,7 +107,7 @@ add_classification_as_factor <- function(
             effect_code_coarse == "~" ~ "stable",
             effect_code_coarse == "?" ~ "unknown"
           ),
-          effect_coarse = factor(effect_coarse,
+          effect_coarse = factor(data$effect_coarse,
                                  levels = c(
                                    "increase",
                                    "stable",
