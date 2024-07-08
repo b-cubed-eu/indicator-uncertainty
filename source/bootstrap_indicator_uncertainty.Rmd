@@ -519,11 +519,31 @@ But this interval is only valid in case of symmetrical, unbiased bootstrap distr
 Therefore, we should also bootstrap over the difference such that we can calculate all intervals using the `boot:boot.ci()` function.
 
 ```{r}
+# Bootstrapping
 bootstrap_insect_data_diff <- perform_bootstrap_ts(
   data_cube_df = insect_data_new,
   fun = evenness_formula,
   samples = 1000,
   ref_group = 2011,
   seed = 123)
+
+# Summarise in dataframe
+bootstrap_insect_data_diff_full <- bootstrap_list_to_df(bootstrap_insect_data_diff)
+```
+
+The intervals can now be values between -1 and 1, so we need to use a different transformation.
+The inverse hyperbolic tangent function `atanh()` maps  numbers in the interval [-1, 1] to real numbers.
+The hyperbolic tangent function `tanh()` maps real numbers back to the interval [-1, 1].
+
+```{r}
+# Calculate confidence intervals
+ci_diff_df <- get_bootstrap_ci(bootstrap_insect_data_diff,
+                               type = "bca",
+                               h = atanh,
+                               hinv = tanh)
+
+# Join dataframes
+bootstrap_insect_data_diff_final <- bootstrap_insect_data_diff_full %>%
+  full_join(ci_diff_df, by = join_by(year), relationship = "many-to-many")
 ```
 
