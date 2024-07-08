@@ -14,7 +14,7 @@
 #' @returns The returned value is a list of objects of class `"boot"` per year.
 #' See `boot::boot()`.
 
-perform_bootstrap <- function(
+perform_bootstrap_ts <- function(
     data_cube_df,
     fun,
     samples = 1000,
