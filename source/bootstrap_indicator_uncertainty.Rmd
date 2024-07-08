@@ -28,6 +28,7 @@ library(knitr)       # Nice tables
 # Source functions
 source(here("source", "scripts", "evenness_formula.R"))
 source(here("source", "scripts", "boot_statistic.R"))
+source(here("source", "scripts", "boot_statistic_diff.R"))
 source(here("source", "scripts", "perform_bootstrap_ts.R"))
 source(here("source", "scripts", "bootstrap_list_to_df.R"))
 source(here("source", "scripts", "get_bootstrap_ci.R"))
@@ -518,6 +519,11 @@ But this interval is only valid in case of symmetrical, unbiased bootstrap distr
 Therefore, we should also bootstrap over the difference such that we can calculate all intervals using the `boot:boot.ci()` function.
 
 ```{r}
-bootstrap_insect_data$`2020` - bootstrap_insect_data$`2011`
+bootstrap_insect_data_diff <- perform_bootstrap_ts(
+  data_cube_df = insect_data_new,
+  fun = evenness_formula,
+  samples = 1000,
+  ref_group = 2011,
+  seed = 123)
 ```
 
