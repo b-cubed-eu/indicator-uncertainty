@@ -31,6 +31,7 @@ source(here("source", "scripts", "boot_statistic.R"))
 source(here("source", "scripts", "perform_bootstrap.R"))
 source(here("source", "scripts", "bootstrap_list_to_df.R"))
 source(here("source", "scripts", "get_bootstrap_ci.R"))
+source(here("source", "scripts", "add_classification_as_factor.R"))
 source(here("source", "scripts", "utils.R"))
 ```
 
@@ -426,60 +427,12 @@ We use thresholds of 0.1 to distinguish between strong and moderate effects.
 
 ```{r}
 # Add classification based on reference and thresholds
-insect_eveness_effects <- insect_eveness_df
-
-insect_eveness_effects$effect <- classification(
-  lcl = insect_eveness_effects$ll,
-  ucl = insect_eveness_effects$ul,
+insect_eveness_effects <- add_classification_as_factor(
+  df = insect_eveness_df,
+  cl_columns = c("ll", "ul"),
   threshold = 0.1,
-  reference = 0.6)
-
-insect_eveness_effects$effect_coarse <- coarse_classification(
-  insect_eveness_effects$effect)
-
-# Create ordered factors of effects
-insect_eveness_effects <- insect_eveness_effects %>%
-  mutate(
-    effect = case_when(
-        effect == "++" ~ "strong increase",
-        effect == "+" ~ "increase",
-        effect == "+~" ~ "moderate increase",
-        effect == "~" ~ "stable",
-        effect == "-" ~ "decrease",
-        effect == "-~" ~ "moderate decrease",
-        effect == "--" ~ "strong decrease",
-        effect == "?+" ~ "potential increase",
-        effect == "?-" ~ "potential decrease",
-        effect == "?" ~ "unknown"
-    ),
-    effect = factor(effect,
-      levels = c(
-        "strong increase",
-        "increase",
-        "moderate increase",
-        "stable",
-        "moderate decrease",
-        "decrease",
-        "strong decrease",
-        "potential increase",
-        "potential decrease",
-        "unknown"),
-      ordered = TRUE)
-  ) %>%
-  mutate(
-    effect_coarse = case_when(
-        effect_coarse == "+" ~ "increase",
-        effect_coarse == "-" ~ "decrease",
-        effect_coarse == "~" ~ "stable",
-        TRUE ~ "unknown",
-    ),
-    effect_coarse = factor(effect_coarse,
-      levels = c("increase",
-                 "stable",
-                 "decrease",
-                 "unknown"),
-      ordered = TRUE)
-  )
+  reference = 0.6,
+  coarse = TRUE)
 
 insect_eveness_effects %>%
   kable(digits = 3)
