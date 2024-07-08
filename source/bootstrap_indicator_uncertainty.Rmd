@@ -508,7 +508,7 @@ insect_eveness_effects %>%
     theme_minimal()
 ```
 
-# Comparing with a statistic
+## Comparing with a statistic
 
 Often, we do not want to compare with an arbitrary value.
 In case of timeseries, we often want to compare values of certain years with a reference year, e.g. the first year of the series.
