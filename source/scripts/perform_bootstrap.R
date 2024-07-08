@@ -20,6 +20,7 @@ perform_bootstrap <- function(
     samples = 1000,
     seed = 123) {
   require("dplyr")
+  require("rlang")
 
   withr::local_seed(seed)
 
