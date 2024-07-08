@@ -425,7 +425,7 @@ Let's say we want to test whether the eveness of insects differs from 0.6.
 We use thresholds of 0.1 to distinguish between strong and moderate effects.
 
 ```{r}
-# Add clasification based on reference and thresholds
+# Add classification based on reference and thresholds
 insect_eveness_effects <- insect_eveness_df
 
 insect_eveness_effects$effect <- classification(
