@@ -28,6 +28,7 @@ perform_bootstrap_ts <- function(
   withr::local_seed(seed)
 
   if (is.na(ref_group)) {
+    # Summarise data by year
     bootstrap_list <- data_cube_df %>%
       dplyr::summarize(num_occ = sum(.data$obs),
                        .by = c("year", "taxonKey")) %>%
@@ -37,12 +38,34 @@ perform_bootstrap_ts <- function(
                          values_fill = 0) %>%
       tibble::column_to_rownames("taxonKey") %>%
       as.list() %>%
+      # Perform bootstrapping
       purrr::map(~boot::boot(data = .,
                              statistic = boot_statistic,
                              R = samples,
                              fun = fun))
   } else {
+    # Summarise data by year
+    sum_data_list <- data_cube_df %>%
+      dplyr::summarize(num_occ = sum(.data$obs),
+                       .by = c("year", "taxonKey")) %>%
+      dplyr::arrange(.data$year) %>%
+      tidyr::pivot_wider(names_from = "year",
+                         values_from = "num_occ",
+                         values_fill = 0) %>%
+      tibble::column_to_rownames("taxonKey") %>%
+      as.list()
 
+    # Select reference data
+    ref_data <- sum_data_list[[as.character(ref_group)]]
+
+    # Perform bootstrapping
+    bootstrap_list <- sum_data_list[setdiff(names(sum_data_list),
+                                            as.character(ref_group))] %>%
+      purrr::map(~boot::boot(data = .,
+                             statistic = boot_statistic_diff,
+                             R = samples,
+                             fun = fun,
+                             ref_data = ref_data))
   }
 
   return(bootstrap_list)
