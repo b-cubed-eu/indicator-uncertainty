@@ -14,7 +14,7 @@
 #' @returns The returned value is an object of class `"boot"`. See
 #' `boot::boot()`.
 
-boot_statistic <- function(data, ref_data, indices, fun) {
+boot_statistic_diff <- function(data, ref_data, indices, fun) {
   stat <- fun(data[indices])
   ref_stat <- fun(ref_data[indices])
 
