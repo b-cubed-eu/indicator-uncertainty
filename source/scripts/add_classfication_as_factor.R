@@ -1,38 +1,47 @@
 #' Classify effects by comparing the confidence intervals with a reference and
 #' thresholds as factor variables
 #'
-#' This function classify effects by comparing the confidence intervals with a
-#' reference and thresholds. A wrapper around `effectclass::classify()` that
-#' adds effect descriptions as factor variables.
+#' This function adds classified effects to a dataframe by comparing the
+#' confidence intervals with a reference and thresholds. A wrapper around
+#' `effectclass::classify()` and `coarse_classification()` that adds effect
+#' descriptions as factor variables to a dataframe.
 #'
 #' @param df A dataframe containing summary data of confidence limits.
-#' @param ... Additional argument to be passed to the `effectclass::classify()`
-#' function.
+#' @param cl_columns A vector of 2 column names in `df` indicating respectively
+#' the lower and upper confidence limits.
+#' @param threshold A vector of either 1 or 2 thresholds. A single threshold
+#' will be transformed into `reference + c(-abs(threshold), abs(threshold))`.
+#' See `effectclass::classify()`.
+#' @param reference The null hypothesis. Defaults to 0.
+#' See `effectclass::classify()`.
+#' @param coarse Logical, defaults to `TRUE`. If `TRUE`, add a coarse
+#' classification to the dataframe.
+#' See `effectclass::coarse_classification()`.
 #'
 #' @returns The returned value is a list of objects of class `"boot"` per year.
 #' See `boot::boot()`.
 
 add_classification_as_factor <- function(
     df,
-    lcl_column,
-    ucl_column,
+    cl_columns,
     threshold,
     reference = 0,
     coarse = TRUE) {
   require("dplyr")
+  require("rlang")
 
   # Classify effects with effectclass
   classified_df <- df %>%
-    mutate(effect_code = classification(
-      !!sym(lcl_column),
-      !!sym(ucl_column),
+    mutate(effect_code = effectclass::classification(
+      !!sym(cl_columns[1]),
+      !!sym(cl_columns[2]),
       threshold = threshold,
       reference = reference)
     )
 
   # Add coarse classification if specified
   if (coarse) {
-    classified_df$effect_code_coarse <- coarse_classification(
+    classified_df$effect_code_coarse <- effectclass::coarse_classification(
       classified_df$effect_code)
   }
 
