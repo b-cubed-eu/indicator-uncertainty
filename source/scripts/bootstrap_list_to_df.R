@@ -13,6 +13,7 @@
 
 bootstrap_list_to_df <- function(bootstrap_list) {
   require("dplyr")
+  require("rlang")
 
   bootstrap_data_df <- sapply(bootstrap_list, function(df) df$t) %>%
     as.data.frame() %>%

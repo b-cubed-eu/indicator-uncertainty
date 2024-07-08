@@ -12,6 +12,9 @@ inv_logit <- function(l) {
 
 # Perform regression on a grouped dataframe and export summary statistics
 grouped_regression <- function(df, formula) {
+  require("dplyr")
+  require("rlang")
+
   summary(stats::lm(formula, data = df))$coefficients %>%
     data.frame() %>%
     tibble::rownames_to_column("param") %>%
