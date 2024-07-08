@@ -13,5 +13,56 @@
 #' See `boot::boot()`.
 
 add_classification_as_factor <- function(df, ...) {
+  df$effect <- classification(
+    lcl = df$ll,
+    ucl = df$ul,
+    threshold = 0.1,
+    reference = 0.6)
 
+  df$effect_coarse <- coarse_classification(
+    df$effect)
+
+  # Create ordered factors of effects
+  out_df <- df %>%
+    mutate(
+      effect = case_when(
+        effect == "++" ~ "strong increase",
+        effect == "+" ~ "increase",
+        effect == "+~" ~ "moderate increase",
+        effect == "~" ~ "stable",
+        effect == "-" ~ "decrease",
+        effect == "-~" ~ "moderate decrease",
+        effect == "--" ~ "strong decrease",
+        effect == "?+" ~ "potential increase",
+        effect == "?-" ~ "potential decrease",
+        effect == "?" ~ "unknown"
+      ),
+      effect = factor(effect,
+                      levels = c(
+                        "strong increase",
+                        "increase",
+                        "moderate increase",
+                        "stable",
+                        "moderate decrease",
+                        "decrease",
+                        "strong decrease",
+                        "potential increase",
+                        "potential decrease",
+                        "unknown"),
+                      ordered = TRUE)
+    ) %>%
+    mutate(
+      effect_coarse = case_when(
+        effect_coarse == "+" ~ "increase",
+        effect_coarse == "-" ~ "decrease",
+        effect_coarse == "~" ~ "stable",
+        TRUE ~ "unknown",
+      ),
+      effect_coarse = factor(effect_coarse,
+                             levels = c("increase",
+                                        "stable",
+                                        "decrease",
+                                        "unknown"),
+                             ordered = TRUE)
+    )
 }
