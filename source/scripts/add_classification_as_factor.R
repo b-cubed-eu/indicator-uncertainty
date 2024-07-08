@@ -51,7 +51,7 @@ add_classification_as_factor <- function(
   # Create ordered factors of effects
   out_df <- classified_df %>%
     mutate(
-      effect_code = factor(data$effect_code,
+      effect_code = factor(.data$effect_code,
                       levels = c(
                         "++",
                         "+",
@@ -76,7 +76,7 @@ add_classification_as_factor <- function(
         effect_code == "?-" ~ "potential decrease",
         effect_code == "?"  ~ "unknown"
       ),
-      effect = factor(data$effect,
+      effect = factor(.data$effect,
                       levels = c(
                         "strong increase",
                         "increase",
@@ -94,7 +94,7 @@ add_classification_as_factor <- function(
     if (coarse) {
       out_df <- out_df %>%
         mutate(
-          effect_code_coarse = factor(data$effect_code_coarse,
+          effect_code_coarse = factor(.data$effect_code_coarse,
                                levels = c(
                                  "+",
                                  "~",
@@ -107,7 +107,7 @@ add_classification_as_factor <- function(
             effect_code_coarse == "~" ~ "stable",
             effect_code_coarse == "?" ~ "unknown"
           ),
-          effect_coarse = factor(data$effect_coarse,
+          effect_coarse = factor(.data$effect_coarse,
                                  levels = c(
                                    "increase",
                                    "stable",
