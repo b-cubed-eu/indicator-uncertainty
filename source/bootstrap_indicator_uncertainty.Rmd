@@ -517,6 +517,7 @@ However, in case of our bootstrapping examples, we cannot use the variance direc
 For the normal interval, the standard error will become the square root of the sum of the bootstrap variances of two years we want to compare.
 But this interval is only valid in case of symmetrical, unbiased bootstrap distributions.
 Therefore, we should also bootstrap over the difference such that we can calculate all intervals using the `boot:boot.ci()` function.
+This can be done using the `ref_group` argument.
 
 ```{r}
 # Bootstrapping
@@ -531,7 +532,7 @@ bootstrap_insect_data_diff <- perform_bootstrap_ts(
 bootstrap_insect_data_diff_full <- bootstrap_list_to_df(bootstrap_insect_data_diff)
 ```
 
-The intervals can now be values between -1 and 1, so we need to use a different transformation.
+The intervals can now be values between -1 and 1, so we need to use a different transformation than before.
 The inverse hyperbolic tangent function `atanh()` maps  numbers in the interval [-1, 1] to real numbers.
 The hyperbolic tangent function `tanh()` maps real numbers back to the interval [-1, 1].
 
@@ -547,3 +548,50 @@ bootstrap_insect_data_diff_final <- bootstrap_insect_data_diff_full %>%
   full_join(ci_diff_df, by = join_by(year), relationship = "many-to-many")
 ```
 
+We classify the effects.
+This time our reference is 0 (no change with 2011) and we choose an arbitrary threshold of 0.2.
+
+```{r}
+# Filter data for visualisation
+insect_eveness_diff_df <- bootstrap_insect_data_diff_final %>%
+  distinct(year, est_original, int_type, ll, ul, conf_level)
+
+# Add classification based on reference and thresholds
+insect_eveness_diff_effects <- add_classification_as_factor(
+  df = insect_eveness_diff_df,
+  cl_columns = c("ll", "ul"),
+  threshold = 0.2,
+  reference = 0,
+  coarse = TRUE)
+
+insect_eveness_diff_effects %>%
+  kable(digits = 3)
+```
+
+We visualise these effects.
+
+```{r}
+# Visualise
+insect_eveness_diff_effects %>%
+  ggplot(aes(x = year)) +
+    geom_hline(yintercept = 0, linetype = "longdash", colour = "black") +
+    geom_hline(yintercept = c(-0.2, 0.2), linetype = "dotdash") +
+    geom_errorbar(aes(ymin = ll, ymax = ul, colour = effect),
+                  linewidth = 1.5, show.legend = TRUE) +
+    geom_point(aes(y = est_original), colour = "black", size = 3.5) +
+    scale_colour_manual(values =  c("darkgreen",
+                                    "chartreuse3",
+                                    "darkolivegreen1",
+                                    "gold",
+                                    "orange",
+                                    "firebrick1",
+                                    "darkred",
+                                    "gray80",
+                                    "gray30",
+                                    "grey55"),
+                        drop = FALSE) +
+    labs(y = "difference in evenness compared to 2011", colour = "Classification") +
+    scale_y_continuous(limits = c(-1, 1), breaks = seq(-10, 10, 0.25)) +
+    scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year))) +
+    theme_minimal()
+```
