@@ -29,6 +29,8 @@ European Union's Horizon Europe Research and Innovation Programme (ID No 1010595
 Scripts to explore calculation, interpretation and visualisation of uncertainty related to indicators based on biodiversity data cubes.
 <!-- description: end -->
 
+This code is developed in context of **T5.4** of the [B-Cubed project](https://b-cubed.eu/).
+
 ### Repo structure
 
 ```
