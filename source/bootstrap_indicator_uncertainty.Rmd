@@ -373,7 +373,7 @@ bootstrap_insect_data_final %>%
   ggplot(aes(x = bias_boot, y = ci_width, colour = int_type)) +
     geom_point() +
     geom_smooth(method = "lm", formula = "y ~ x") +
-    labs(x = "bootstrap standard error", y = "interval width",
+    labs(x = "bootstrap bias", y = "interval width",
          colour = "Confidence\ninterval")
 ```
 
