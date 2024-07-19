@@ -43,6 +43,9 @@
   "communities": [
     {
       "identifier": "b3"
+    },
+    {
+      "identifier": "inbo"
     }
   ]
 }

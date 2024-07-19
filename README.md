@@ -22,6 +22,7 @@ European Union's Horizon Europe Research and Innovation Programme (ID No 1010595
 **keywords**: uncertainty quantification; uncertainty visualisation; biodiversity indicators; data cubes
 
 <!-- community: b3 -->
+<!-- community: inbo -->
 
 ### Description
 
@@ -35,7 +36,7 @@ This code is developed in context of **T5.4** of the [B-Cubed project](https://b
 
 ```
 ├── source                         ├ R markdown files
-│   └── scripts                    ├ R scripts
+│   └── R                          ├ R scripts
 ├── data
 │   ├── raw                        ├ store raw data
 │   ├── intermediate               ├ store intermediate data
