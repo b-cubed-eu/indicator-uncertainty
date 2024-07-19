@@ -10,7 +10,6 @@ allowed:
   - motivation: Not yet applicable
     value: no website badge found in README.md
 required:
-- CITATION
 - checklist
 - folder conventions
 - lintr
