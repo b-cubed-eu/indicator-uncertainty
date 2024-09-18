@@ -34,7 +34,8 @@ perform_bootstrap_ts <- function(
     # Summarise data by temporal column
     bootstrap_list <- data_cube_df %>%
       dplyr::summarize(num_occ = sum(.data$obs),
-                       .by = all_of(c(temporal_col_name, "taxonKey"))) %>%
+                       .by = dplyr::all_of(c(temporal_col_name, "taxonKey"))
+                       ) %>%
       dplyr::arrange(.data[[temporal_col_name]]) %>%
       tidyr::pivot_wider(names_from = temporal_col_name,
                          values_from = "num_occ",
@@ -51,7 +52,8 @@ perform_bootstrap_ts <- function(
     # Summarise data by temporal column
     sum_data_list <- data_cube_df %>%
       dplyr::summarize(num_occ = sum(.data$obs),
-                       .by = all_of(c(temporal_col_name, "taxonKey"))) %>%
+                       .by = dplyr::all_of(c(temporal_col_name, "taxonKey"))
+                       ) %>%
       dplyr::arrange(.data[[temporal_col_name]]) %>%
       tidyr::pivot_wider(names_from = temporal_col_name,
                          values_from = "num_occ",
