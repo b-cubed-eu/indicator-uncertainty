@@ -101,11 +101,7 @@ We select the data after 2010 to ensure calculations with enough data.
 
 ```{r}
 insect_data_new <- insect_data$data %>%
-  group_by(year) %>%
-  mutate(n = sum(obs)) %>%
-  ungroup() %>%
-  filter(year > 2010) %>%
-  select(-n)
+  filter(year > 2010)
 
 insect_data_new %>%
   group_by(year) %>%

@@ -4,7 +4,7 @@
 #' to a data cube per time point (e.g., year, month ...).
 #'
 #' @param data_cube_df A dataframe containing data in biodiversity data cube
-#' format.
+#' format. See `b3gbi::process_cube()`.
 #' @param fun A function which when applied to data returns the statistic(s) of
 #' interest.
 #' @param samples The number of bootstrap replicates. A single positive integer.
