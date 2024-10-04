@@ -18,6 +18,14 @@ get_bootstrap_ci <- function(bootstrap_list, ...) {
   # Calculate nonparametric confidence intervals
   conf_ints <- lapply(bootstrap_list, boot::boot.ci, ...)
 
+  # Remove null values
+  conf_ints[sapply(conf_ints, is_null)] <- NULL
+
+  # Exit if there are no values
+  if (length(conf_ints) == 0) {
+    return(conf_ints)
+    }
+  
   # Get interval names
   indices_to_remove <- match(c("R", "t0", "call"), names(conf_ints[[1]]))
   interval_types <- names(conf_ints[[1]])[-indices_to_remove]
