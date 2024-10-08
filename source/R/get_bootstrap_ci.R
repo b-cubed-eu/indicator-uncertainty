@@ -6,7 +6,7 @@
 #' @param bootstrap_list A list of objects of class `"boot"` per year.
 #' @param ... Additional argument to be passed to the `boot::boot.ci()`
 #' function.
-#' #' @param temporal_list_name The temporal list names of `bootstrap_list`
+#' @param temporal_list_name The temporal list names of `bootstrap_list`
 #' (e.g., year, month ...) containing time point values. Default `year`.
 #'
 #' @returns The returned value is a dataframe containing the time point,
