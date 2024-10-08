@@ -24,7 +24,7 @@ get_bootstrap_ci <- function(bootstrap_list, ...) {
   # Exit if there are no values
   if (length(conf_ints) == 0) {
     return(conf_ints)
-    }
+  }
 
   # Get interval names
   indices_to_remove <- match(c("R", "t0", "call"), names(conf_ints[[1]]))
