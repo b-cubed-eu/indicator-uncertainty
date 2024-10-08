@@ -58,6 +58,9 @@ get_bootstrap_ci <- function(bootstrap_list, ..., temporal_list_name = "year") {
 
   # Create combined dataframe
   conf_df_out <- do.call(rbind.data.frame, out_list) %>%
+    tidyr::complete("time_point" = as.numeric(names(bootstrap_list)),
+                    .data$int_type) %>%
+    dplyr::arrange(.data$time_point, .data$int_type) %>%
     dplyr::mutate(conf_level = conf_level) %>%
     dplyr::rename({{ temporal_list_name }} := "time_point")
   rownames(conf_df_out) <- NULL
