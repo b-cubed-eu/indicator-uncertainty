@@ -37,7 +37,7 @@ perform_bootstrap_ts <- function(
                        .by = dplyr::all_of(c(temporal_col_name, "taxonKey"))
                        ) %>%
       dplyr::arrange(.data[[temporal_col_name]]) %>%
-      tidyr::pivot_wider(names_from = temporal_col_name,
+      tidyr::pivot_wider(names_from = dplyr::all_of(temporal_col_name),
                          values_from = "num_occ",
                          values_fill = 0) %>%
       tibble::column_to_rownames("taxonKey") %>%
@@ -55,7 +55,7 @@ perform_bootstrap_ts <- function(
                        .by = dplyr::all_of(c(temporal_col_name, "taxonKey"))
                        ) %>%
       dplyr::arrange(.data[[temporal_col_name]]) %>%
-      tidyr::pivot_wider(names_from = temporal_col_name,
+      tidyr::pivot_wider(names_from = dplyr::all_of(temporal_col_name),
                          values_from = "num_occ",
                          values_fill = 0) %>%
       tibble::column_to_rownames("taxonKey") %>%
