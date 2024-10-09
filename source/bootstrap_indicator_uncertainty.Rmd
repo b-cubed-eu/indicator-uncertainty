@@ -514,9 +514,11 @@ Often, we do not want to compare with an arbitrary value.
 In case of time series, we often want to compare values of certain years with a reference year, e.g. the first year of the series.
 For any two random variables:
 
+<!-- spell-check: ignore:start -->
 $$
 \text{Var}(X - Y) = \text{Var}(X) + \text{Var}(Y) - 2\text{Cov}(X, Y)
 $$
+<!-- spell-check: ignore:end -->
 
 However, in case of our bootstrapping examples, we cannot use the (co)variance directly to calculate most confidence intervals of the difference.
 Therefore, we should also bootstrap over the difference such that we can calculate all intervals using the `boot:boot.ci()` function.
