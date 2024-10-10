@@ -98,10 +98,12 @@ The visualisation of uncertainty in trends is not correct because of two factors
 
 Let's calculate this metric from scratch in the next section.
 We select the data after 2010 to ensure calculations with enough data.
+We exclude taxonKey 1341976 because of extreme outlying values.
 
 ```{r}
 insect_data_new <- insect_data$data %>%
-  filter(year > 2010)
+  filter(year > 2010,
+         taxonKey != 1341976)
 
 insect_data_new %>%
   group_by(year) %>%
