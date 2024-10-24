@@ -94,14 +94,16 @@ plot(eveness_insect_data)
 The visualisation of uncertainty in trends is not correct because of two factors:
 
 1. Uncertainty is based on evenness values per year and is not based on the data itself
-2. The trend becomes negative although evenness is a value between 0 and 1
+2. The predicted becomes negative although evenness is a value between 0 and 1
 
 Let's calculate this metric from scratch in the next section.
 We select the data after 2010 to ensure calculations with enough data.
+We exclude taxon key 1341976 because of extreme outlying values.
 
 ```{r}
 insect_data_new <- insect_data$data %>%
-  filter(year > 2010)
+  filter(year > 2010,
+         taxonKey != 1341976)
 
 insect_data_new %>%
   group_by(year) %>%
@@ -147,7 +149,7 @@ $$
     - This bias indicates how much the bootstrap estimate deviates from the original sample estimate. It is calculated as the difference between the average bootstrap estimate and the original estimate:
 
 $$
-\text{Bias}_{\text{boot}} = \frac{1}{B} \sum_{b=1}^B (\hat{\theta}^*_b - \hat{\theta})
+\text{Bias}_{\text{boot}} = \frac{1}{B} \sum_{b=1}^B (\hat{\theta}^*_b - \hat{\theta}) = \hat{\theta}_{\text{boot}} - \hat{\theta}
 $$
 
 8. **Bootstrap Confidence Interval**
@@ -512,10 +514,15 @@ insect_eveness_effects %>%
 
 Often, we do not want to compare with an arbitrary value.
 In case of time series, we often want to compare values of certain years with a reference year, e.g. the first year of the series.
-The variance of a difference between random variables is the sum of their variances.
-However, in case of our bootstrapping examples, we cannot use the variance directly to calculate most confidence intervals of the difference.
-For the normal interval, the standard error will become the square root of the sum of the bootstrap variances of two years we want to compare.
-But this interval is only valid in case of symmetrical, unbiased bootstrap distributions.
+For any two random variables:
+
+<!-- spell-check: ignore:start -->
+$$
+\text{Var}(X - Y) = \text{Var}(X) + \text{Var}(Y) - 2\text{Cov}(X, Y)
+$$
+<!-- spell-check: ignore:end -->
+
+However, in case of our bootstrapping examples, we cannot use the (co)variance directly to calculate most confidence intervals of the difference.
 Therefore, we should also bootstrap over the difference such that we can calculate all intervals using the `boot:boot.ci()` function.
 This can be done using the `ref_group` argument.
 
