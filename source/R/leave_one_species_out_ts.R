@@ -7,16 +7,10 @@
 #' format. See `b3gbi::process_cube()`.
 #' @param fun A function which when applied to data returns the statistic(s) of
 #' interest.
-#' @param samples The number of bootstrap replicates. A single positive integer.
-#' @param ref_group A string indicating the reference time point to compare the
-#' statistic. Default `NA`, no reference time point is used.
 #' @param temporal_col_name The temporal column name of `data_cube_df`
 #' (e.g., year, month ...) containing time point values. Default `year`.
-#' @param seed The seed for random number generation to make results
-#' reproducible.
 #'
-#' @returns The returned value is a list of objects of class `"boot"` per time
-#' point. See `boot::boot()`.
+#' @returns ...
 
 leave_one_species_out_ts <- function(
     data_cube_df,
