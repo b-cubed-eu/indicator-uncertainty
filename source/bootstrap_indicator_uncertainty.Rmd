@@ -428,8 +428,8 @@ ggplot(cv_results,
            colour = as.factor(species_left_out))) +
   geom_text(aes(label = as.factor(species_left_out))) +
   geom_point(aes(y = rmse*2.5), colour = "black", size = 3) +
-  geom_label(aes(y = rmse*2.5, label = "RMSE*2.5"), colour = "black", size = 3,
-            nudge_x = 0.05) +
+  geom_text(aes(y = rmse*2.5, label = "RMSE*2.5"), colour = "black", size = 3,
+            nudge_x = 0.4, nudge_y = 0.02) +
   labs(x = "Year", y = "Absolute difference") +
   theme(legend.position = "")
 ```
