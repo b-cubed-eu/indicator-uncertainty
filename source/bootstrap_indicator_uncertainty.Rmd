@@ -32,6 +32,7 @@ source(here("source", "R", "perform_bootstrap_ts.R"))
 source(here("source", "R", "bootstrap_list_to_df.R"))
 source(here("source", "R", "get_bootstrap_ci.R"))
 source(here("source", "R", "add_classification_as_factor.R"))
+source(here("source", "R", "leave_one_species_out_ts.R"))
 source(here("source", "R", "utils.R"))
 ```
 
@@ -409,7 +410,21 @@ insect_data_new %>%
 We can calculate a measure for each species of how much it influences the indicator.
 Like Leave-One-Out Cross-Validation (LOOCV), but where we leave out one species each time.
 
+```{r}
+data_cube_processed <- b3gbi::process_cube(
+  insect_data_new,
+  cols_occurrences = "obs",
+  cols_speciesKey = "taxonKey")
 
+test <- leave_one_species_out_ts(
+  data_cube_df = data_cube_processed,
+  fun = b3gbi::pielou_evenness_ts,
+  temporal_col_name = "year")
+```
+
+```{r}
+
+```
 
 # Interpretation and visualisation of uncertainty
 
