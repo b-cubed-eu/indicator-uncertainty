@@ -387,6 +387,30 @@ bootstrap_insect_data_final %>%
 There is some discussion on the use of [the percentile interval](https://stats.stackexchange.com/questions/355781/is-it-true-that-the-percentile-bootstrap-should-never-be-used).
 The BCa approach takes into account both bias and skewness and seems to be the best approach for this situation.
 
+# Influence of species on indicator value
+
+In the previous section, we compared different interval types.
+Yet, if we look at the bootstrap sample distribution and trends in interval width, we get strange results.
+For example, the normal interval width decreases with bootstrap standard error.
+Secondly, the shape and range of the bootstrap distribution for certain years is very large.
+
+This might be due to species having a much larger number of observations compared to others.
+During the resampling process of bootstrapping, they might be included or not, which results in large variability in the indicator value.
+
+```{r}
+insect_data_new %>%
+  summarise(n = sum(obs), .by = c("year", "taxonKey")) %>%
+  ggplot(aes(x = as.factor(year), y = n, colour = as.factor(taxonKey))) +
+    geom_text(aes(label = as.factor(taxonKey))) +
+    labs(x = "Year", y = "Number of observations") +
+    theme(legend.position = "")
+```
+
+We can calculate a measure for each species of how much it influences the indicator.
+Like Leave-One-Out Cross-Validation (LOOCV), but where we leave out one species each time.
+
+
+
 # Interpretation and visualisation of uncertainty
 
 Here we will follow the methods implemented by the [effectclass package](https://inbo.github.io/effectclass/).
