@@ -408,7 +408,7 @@ insect_data_new %>%
 ```
 
 We can calculate a measure for each species of how much it influences the indicator.
-Like Leave-One-Out Cross-Validation (LOOCV), but where we leave out one species each time.
+Like Leave-One-Out Cross-Validation, but where we leave out one species each time.
 
 ```{r}
 data_cube_processed <- b3gbi::process_cube(
@@ -427,8 +427,8 @@ ggplot(cv_results,
        aes(x = as.factor(year), y = abs_diff,
            colour = as.factor(species_left_out))) +
   geom_text(aes(label = as.factor(species_left_out))) +
-  geom_point(aes(y = rmse*2.5), colour = "black", size = 3) +
-  geom_text(aes(y = rmse*2.5, label = "RMSE*2.5"), colour = "black", size = 3,
+  geom_point(aes(y = rmse * 2.5), colour = "black", size = 3) +
+  geom_text(aes(y = rmse * 2.5, label = "RMSE*2.5"), colour = "black", size = 3,
             nudge_x = 0.4, nudge_y = 0.02) +
   labs(x = "Year", y = "Absolute difference") +
   theme(legend.position = "")

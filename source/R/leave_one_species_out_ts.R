@@ -41,7 +41,7 @@ leave_one_species_out_ts <- function(
       left_join(true_indicator, by = temporal_col_name) %>%
       mutate(
         error = .data$diversity_val - .data$loo_val,
-        sq_error = error^2,
+        sq_error = .data$error^2,
         abs_diff = abs(.data$error),
         rel_diff = .data$abs_diff / .data$loo_val,
         perc_diff = .data$rel_diff * 100
@@ -54,8 +54,8 @@ leave_one_species_out_ts <- function(
   out_df <- do.call(rbind.data.frame, results) %>%
     arrange(year, species_left_out) %>%
     mutate(
-      mse = mean(sq_error),
-      rmse = sqrt(mse),
+      mse = mean(.data$sq_error),
+      rmse = sqrt(.data$mse),
       .by = all_of(temporal_col_name)
     )
 
