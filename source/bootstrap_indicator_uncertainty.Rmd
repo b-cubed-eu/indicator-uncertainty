@@ -416,14 +416,22 @@ data_cube_processed <- b3gbi::process_cube(
   cols_occurrences = "obs",
   cols_speciesKey = "taxonKey")
 
-test <- leave_one_species_out_ts(
+cv_results <- leave_one_species_out_ts(
   data_cube_df = data_cube_processed,
   fun = b3gbi::pielou_evenness_ts,
   temporal_col_name = "year")
 ```
 
 ```{r}
-
+ggplot(cv_results,
+       aes(x = as.factor(year), y = abs_diff,
+           colour = as.factor(species_left_out))) +
+  geom_text(aes(label = as.factor(species_left_out))) +
+  geom_point(aes(y = rmse*2.5), colour = "black", size = 3) +
+  geom_label(aes(y = rmse*2.5, label = "RMSE*2.5"), colour = "black", size = 3,
+            nudge_x = 0.05) +
+  labs(x = "Year", y = "Absolute difference") +
+  theme(legend.position = "")
 ```
 
 # Interpretation and visualisation of uncertainty
