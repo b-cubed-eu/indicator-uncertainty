@@ -411,14 +411,9 @@ We can calculate a measure for each species of how much it influences the indica
 Like Leave-One-Out Cross-Validation, but where we leave out one species each time.
 
 ```{r}
-data_cube_processed <- b3gbi::process_cube(
-  insect_data_new,
-  cols_occurrences = "obs",
-  cols_speciesKey = "taxonKey")
-
 cv_results <- leave_one_species_out_ts(
-  data_cube_df = data_cube_processed,
-  fun = b3gbi::pielou_evenness_ts,
+  data_cube_df = insect_data_new,
+  fun = evenness_formula,
   temporal_col_name = "year")
 ```
 
