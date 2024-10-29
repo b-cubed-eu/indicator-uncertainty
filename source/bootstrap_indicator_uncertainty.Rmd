@@ -430,7 +430,7 @@ ggplot(cv_results_loo,
   theme(legend.position = "")
 ```
 
-Do we get similar values for the (R)SME if we use k-fold cross-validation?
+Do we get similar values for the (R)MSE if we use k-fold cross-validation?
 
 ```{r}
 cv_results_kfold <- leave_one_species_out_ts(
