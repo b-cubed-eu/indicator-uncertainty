@@ -19,25 +19,50 @@ leave_one_species_out_ts <- function(
   require("dplyr")
   require("rlang")
 
+  # Pivot data by temporal column
+  pivot_dataset <- data_cube_df %>%
+    dplyr::summarize(num_occ = sum(.data$obs),
+                     .by = dplyr::all_of(c(temporal_col_name, "taxonKey"))
+    ) %>%
+    dplyr::arrange(.data[[temporal_col_name]]) %>%
+    tidyr::pivot_wider(names_from = dplyr::all_of(temporal_col_name),
+                       values_from = "num_occ",
+                       values_fill = 0) %>%
+    tibble::column_to_rownames("taxonKey")
+
   # Calculate indicator based on all data
-  true_indicator <- fun(data_cube_df)$data
+  true_indicator_list <- pivot_dataset %>%
+    as.list() %>%
+    purrr::map(~fun(.))
 
-  # Get species list
-  species_list <- unique(data_cube_df$data$taxonKey)
+  # Create dataframe
+  true_indicator <- data.frame(diversity_val = unlist(true_indicator_list)) %>%
+    tibble::rownames_to_column(var = temporal_col_name) %>%
+    dplyr::mutate(!!temporal_col_name := as.numeric(.data[[temporal_col_name]]))
 
-  results <- lapply(species_list, function(species_left_out) {
-    df_subset  <- data_cube_df$data %>%
-      # Filter out the data for the species to leave out
-      filter(.data$taxonKey != species_left_out)
+  # Create cross validation datasets
+  cv_dataset <- modelr::crossv_loo(pivot_dataset, id = "id")
 
-    # Calculate the indicator for the remaining data
-    data_cube_df_subset <- data_cube_df
-    data_cube_df_subset$data <- df_subset
-    indicator_result <- fun(data_cube_df_subset)$data
+  # Get species left out
+  species_df <- data.frame(
+    id = seq_len(nrow(pivot_dataset)),
+    species_left_out = rownames(pivot_dataset)
+  )
+
+  # Perform function on training data
+  results <- lapply(cv_dataset$train, function(resample) {
+    indices <- as.integer(resample)
+    train_data <- resample$data[indices, ]
+
+    value_list <- lapply(as.list(train_data), fun)
+    indicator_result <- data.frame(loo_val = unlist(value_list)) %>%
+      tibble::rownames_to_column(var = temporal_col_name) %>%
+      dplyr::mutate(
+        !!temporal_col_name := as.numeric(.data[[temporal_col_name]])
+        )
 
     # Merge with the true indicator to enable comparison
     comparison_result <- indicator_result %>%
-      rename("loo_val" = "diversity_val") %>%
       left_join(true_indicator, by = temporal_col_name) %>%
       mutate(
         error = .data$diversity_val - .data$loo_val,
@@ -46,14 +71,17 @@ leave_one_species_out_ts <- function(
         rel_diff = .data$abs_diff / .data$loo_val,
         perc_diff = .data$rel_diff * 100
       )
-
-    # Return the result with the species left out
-    cbind(species_left_out, comparison_result)
   })
 
-  out_df <- do.call(rbind.data.frame, results) %>%
-    arrange(year, species_left_out) %>%
-    mutate(
+  # Summarise CV statistics in dataframe
+  out_df <- do.call(bind_rows, c(results, .id = "id")) %>%
+    dplyr::mutate(id = as.numeric(.data$id)) %>%
+    dplyr::full_join(species_df, by = join_by("id")) %>%
+    dplyr::select(-"id") %>%
+    dplyr::select(c(all_of(temporal_col_name), "species_left_out",
+                    dplyr::everything())) %>%
+    dplyr::arrange(.data[[temporal_col_name]]) %>%
+    dplyr::mutate(
       mse = mean(.data$sq_error),
       rmse = sqrt(.data$mse),
       .by = all_of(temporal_col_name)
