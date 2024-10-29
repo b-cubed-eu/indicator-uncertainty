@@ -435,7 +435,7 @@ bootstrap_insect_data_full2 <- bootstrap_list_to_df(bootstrap_insect_data2)
 
 # Calculate confidence intervals
 ci_df2 <- get_bootstrap_ci(bootstrap_insect_data2, h = logit, hinv = inv_logit,
-                           type = c("norm","basic", "perc", "bca"))
+                           type = c("norm", "basic", "perc", "bca"))
 
 # Join dataframes
 bootstrap_insect_data_final2 <- bootstrap_insect_data_full2 %>%
@@ -468,11 +468,13 @@ bootstrap_insect_data_final2 %>%
     labs(y = "evenness", colour = "Confidence interval") +
     theme(legend.position = "bottom") +
     scale_y_continuous(limits = c(NA, 1.1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data_final$year))) +
-  ggtitle("Without outliers")
+    scale_x_continuous(
+      breaks = sort(unique(bootstrap_insect_data_final2$year))
+    ) +
+    ggtitle("Without outliers")
 ```
 
-We see that the shape of the distributions is more symetric and unimodal, although we still see bimodal distributions in 2015 and 2018. The different types of intervals seem to be more in accordance than before.
+We see that the shape of the distributions is more symmetric and unimodal, although we still see bimodal distributions in 2015 and 2018. The different types of intervals seem to be more in accordance than before.
 
 We also see that interval width increases with bootstrap standard error as expected.
 
