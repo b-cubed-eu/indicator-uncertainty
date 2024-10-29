@@ -255,69 +255,10 @@ numbers_data <- insect_data_new %>%
          label_tot = paste(label_occ, label_spec, sep = "\n"))
 ```
 
-We visualise the distribution of the bootstrap replicates.
+We visualise the distribution of the bootstrap replicates and the confidence intervals.
 The red dots are the the original sample estimates $\hat{\theta}$.
 
-```{r, fig.width = 10}
-bootstrap_insect_data_final %>%
-  ggplot(aes(x = year)) +
-    geom_boxplot(aes(y = est_boot, group = year)) +
-    geom_point(aes(y = est_original), colour = "firebrick", size = 3) +
-    geom_label(data = numbers_data, aes(y = 1.1, label = label_tot),
-               size = 3, label.padding = unit(0.35, "lines")) +
-    labs(y = "evenness") +
-    scale_y_continuous(limits = c(0, 1.1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data_final$year)))
-```
-
-```{r, fig.width = 10}
-bootstrap_insect_data_final %>%
-  ggplot(aes(x = year)) +
-    geom_violin(aes(y = est_boot, group = year)) +
-    geom_point(aes(y = est_original), colour = "firebrick", size = 3) +
-    geom_label(data = numbers_data, aes(y = 1.1, label = label_tot),
-               size = 3, label.padding = unit(0.35, "lines")) +
-    labs(y = "evenness") +
-    scale_y_continuous(limits = c(0, 1.1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data_final$year)))
-```
-
-We visualise the confidence intervals.
-
-```{r, fig.width = 10}
-bootstrap_insect_data_final %>%
-  distinct(year, est_original, se_boot, int_type, ll, ul, conf_level) %>%
-  ggplot(aes(x = year, y = est_original)) +
-    geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
-                  position = position_dodge(0.8), linewidth = 1) +
-    geom_point(aes(group = int_type), colour = "firebrick", size = 3,
-               position = position_dodge(0.8)) +
-    labs(y = "evenness", colour = "Confidence interval") +
-    geom_label(data = numbers_data, aes(y = 1.1, label = label_tot),
-             size = 3, label.padding = unit(0.35, "lines")) +
-    theme(legend.position = "bottom") +
-    scale_y_continuous(limits = c(NA, 1.1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data_final$year)))
-```
-
-We compare the confidence intervals with the distribution of the bootstrap replicates.
-
-```{r, fig.width = 10}
-bootstrap_insect_data_final %>%
-  ggplot(aes(x = year)) +
-    geom_boxplot(aes(y = est_boot, group = year)) +
-    geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
-                  position = position_dodge(0.8), linewidth = 1) +
-    geom_point(aes(y = est_original), colour = "firebrick", size = 3) +
-    geom_label(data = numbers_data, aes(y = 1.1, label = label_tot),
-               size = 3, label.padding = unit(0.35, "lines")) +
-    labs(y = "evenness", colour = "Confidence interval") +
-    theme(legend.position = "bottom") +
-    scale_y_continuous(limits = c(0, 1.1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data_final$year)))
-```
-
-```{r, fig.width = 10}
+```{r, fig.width = 10, echo=FALSE}
 p <- bootstrap_insect_data_final %>%
   ggplot(aes(x = year)) +
     geom_violin(aes(y = est_boot, group = year)) +
@@ -340,7 +281,7 @@ The interval width of percent increases when the bootstrap standard error increa
 The interval width of basic decreases when the bootstrap standard error increases.
 We also see a decreasing trend for normal.
 
-```{r}
+```{r, echo=FALSE}
 bootstrap_insect_data_final %>%
   mutate(ci_width = ul - ll) %>%
   distinct(year, se_boot, int_type, ci_width) %>%
@@ -351,7 +292,7 @@ bootstrap_insect_data_final %>%
          colour = "Confidence\ninterval")
 ```
 
-```{r}
+```{r, echo=FALSE}
 bootstrap_insect_data_final %>%
   mutate(ci_width = ul - ll) %>%
   distinct(year, se_boot, int_type, ci_width) %>%
@@ -364,7 +305,7 @@ bootstrap_insect_data_final %>%
 
 We see the same when we look at bias.
 
-```{r}
+```{r, echo=FALSE}
 bootstrap_insect_data_final %>%
   mutate(ci_width = ul - ll) %>%
   distinct(year, bias_boot, int_type, ci_width) %>%
@@ -375,7 +316,7 @@ bootstrap_insect_data_final %>%
          colour = "Confidence\ninterval")
 ```
 
-```{r}
+```{r, echo=FALSE}
 bootstrap_insect_data_final %>%
   mutate(ci_width = ul - ll) %>%
   distinct(year, bias_boot, int_type, ci_width) %>%
@@ -399,7 +340,7 @@ Secondly, the shape and range of the bootstrap distribution for certain years is
 This might be due to species having a much larger number of observations compared to others.
 During the resampling process of bootstrapping, they might be included or not, which results in large variability in the indicator value.
 
-```{r}
+```{r, echo=FALSE}
 insect_data_new %>%
   summarise(n = sum(obs), .by = c("year", "taxonKey")) %>%
   ggplot(aes(x = as.factor(year), y = n, colour = as.factor(taxonKey))) +
@@ -419,7 +360,7 @@ cv_results_loo <- leave_one_species_out_ts(
   temporal_col_name = "year")
 ```
 
-```{r}
+```{r, echo=FALSE}
 ggplot(cv_results_loo,
        aes(x = as.factor(year), y = abs_diff,
            colour = as.factor(species_left_out))) +
@@ -444,7 +385,7 @@ cv_results_kfold <- leave_one_species_out_ts(
 
 They are very different.
 
-```{r}
+```{r, echo=FALSE}
 mean_cv_stats_loo <- cv_results_loo %>%
   mutate(
     mean_abs_diff = mean(abs_diff),
@@ -471,7 +412,7 @@ bind_rows(mean_cv_stats_loo, mean_cv_stats_kfold) %>%
 How do the bootstrap distribution and the intervals look like if we exclude all species with error larger than `2.5*RMSE`?
 This is of course not good practice in general but is performed here to explore the effect on the bootstrap distribution and the confidence intervals.
 
-```{r}
+```{r, echo=FALSE}
 extreme_species <- cv_results_loo %>%
   mutate(exclude = abs_diff > 2.5 * rmse) %>%
   filter(exclude) %>%
@@ -510,12 +451,12 @@ numbers_data2 <- insect_data_new2 %>%
          label_tot = paste(label_occ, label_spec, sep = "\n"))
 ```
 
-```{r}
+```{r, echo=FALSE}
 p +
   ggtitle("With outliers")
 ```
 
-```{r}
+```{r, echo=FALSE}
 bootstrap_insect_data_final2 %>%
   ggplot(aes(x = year)) +
     geom_violin(aes(y = est_boot, group = year)) +
@@ -535,7 +476,7 @@ We see that the shape of the distributions is more symetric and unimodal, althou
 
 We also see that interval width increases with bootstrap standard error as expected.
 
-```{r}
+```{r, echo=FALSE}
 bootstrap_insect_data_final2 %>%
   mutate(ci_width = ul - ll) %>%
   distinct(year, se_boot, int_type, ci_width) %>%
@@ -557,7 +498,7 @@ The benefits of this approach are twofold:
 1. A visual tool that simplifies interpretation of results, even for people who are not familiar with the data and/or methods used
 2. The use of arbitrary thresholds allows to make the distinction between 'no effect' (small interval covering reference) and 'uncertain effect' (large interval covering reference and one or both thresholds)
 
-```{r}
+```{r, echo=FALSE}
 ds <- data.frame(
   mean = c(0, 0.5, -0.5, 1, -1, 1.5, -1.5, 0.5, -0.5, 0),
   sd = c(1, 0.5, 0.5, 0.5, 0.5, 0.25, 0.25, 0.25, 0.25, 0.5)
