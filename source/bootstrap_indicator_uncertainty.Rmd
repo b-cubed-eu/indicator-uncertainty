@@ -268,8 +268,8 @@ p <- bootstrap_insect_data_final %>%
     geom_violin(aes(y = est_boot, group = year)) +
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
                   position = position_dodge(0.8), linewidth = 1) +
-    geom_point(data = estimate_df,
-               aes(y = value, shape = Legend), colour = "firebrick", size = 3) +
+    geom_point(data = estimate_df, aes(y = value, shape = Legend),
+               colour = "firebrick", size = 3) +
     geom_label(data = numbers_data, aes(y = 1.1, label = label_tot),
                size = 3, label.padding = unit(0.35, "lines")) +
     labs(y = "evenness", colour = "Confidence interval") +
@@ -454,6 +454,12 @@ numbers_data2 <- insect_data_new2 %>%
   mutate(label_occ = paste("n_occ", num_occ, sep = "="),
          label_spec = paste("n_spec", num_spec, sep = "="),
          label_tot = paste(label_occ, label_spec, sep = "\n"))
+
+estimate_df2 <- bootstrap_insect_data_final2 %>%
+  distinct(year, estimate = est_original, bias_boot) %>%
+  mutate(bias = estimate + bias_boot) %>%
+  pivot_longer(cols = c("estimate", "bias"),
+               names_to = "Legend", values_to = "value")
 ```
 
 ```{r, fig.width = 10, echo=FALSE}
@@ -467,7 +473,8 @@ bootstrap_insect_data_final2 %>%
     geom_violin(aes(y = est_boot, group = year)) +
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
                   position = position_dodge(0.8), linewidth = 1) +
-    geom_point(aes(y = est_original), colour = "firebrick", size = 3) +
+    geom_point(data = estimate_df2, aes(y = value, shape = Legend),
+               colour = "firebrick", size = 3) +
     geom_label(data = numbers_data2, aes(y = 1.1, label = label_tot),
                size = 3, label.padding = unit(0.35, "lines")) +
     labs(y = "evenness", colour = "Confidence interval") +
@@ -663,7 +670,7 @@ bootstrap_diff_final <- bootstrap_diff_full %>%
 
 We visualise the intervals.
 
-```{r}
+```{r, fig.width = 10, echo=FALSE}
 bootstrap_diff_final %>%
   ggplot(aes(x = year)) +
     geom_violin(aes(y = est_boot, group = year)) +
