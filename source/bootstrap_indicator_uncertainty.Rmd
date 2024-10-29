@@ -318,7 +318,7 @@ bootstrap_insect_data_final %>%
 ```
 
 ```{r, fig.width = 10}
-bootstrap_insect_data_final %>%
+p <- bootstrap_insect_data_final %>%
   ggplot(aes(x = year)) +
     geom_violin(aes(y = est_boot, group = year)) +
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
@@ -330,6 +330,7 @@ bootstrap_insect_data_final %>%
     theme(legend.position = "bottom") +
     scale_y_continuous(limits = c(NA, 1.1), breaks = seq(-10, 10, 0.25)) +
     scale_x_continuous(breaks = sort(unique(bootstrap_insect_data_final$year)))
+p
 ```
 
 There is quite some difference in interval width when values are small.
@@ -467,6 +468,86 @@ bind_rows(mean_cv_stats_loo, mean_cv_stats_kfold) %>%
   kable()
 ```
 
+How do the bootstrap distribution and the intervals look like if we exclude all species with error larger than `2.5*RMSE`?
+This is of course not good practice in general but is performed here to explore the effect on the bootstrap distribution and the confidence intervals.
+
+```{r}
+extreme_species <- cv_results_loo %>%
+  mutate(exclude = abs_diff > 2.5 * rmse) %>%
+  filter(exclude) %>%
+  distinct(species_left_out) %>%
+  pull()
+
+insect_data_new2 <- insect_data$data %>%
+  filter(year > 2010,
+         !taxonKey %in% extreme_species)
+
+# Bootstrapping
+bootstrap_insect_data2 <- perform_bootstrap_ts(
+  data_cube_df = insect_data_new2,
+  fun = evenness_formula,
+  samples = 1000,
+  seed = 123)
+
+# Summarise in dataframe
+bootstrap_insect_data_full2 <- bootstrap_list_to_df(bootstrap_insect_data2)
+
+# Calculate confidence intervals
+ci_df2 <- get_bootstrap_ci(bootstrap_insect_data2, h = logit, hinv = inv_logit,
+                           type = c("norm","basic", "perc", "bca"))
+
+# Join dataframes
+bootstrap_insect_data_final2 <- bootstrap_insect_data_full2 %>%
+  full_join(ci_df2, by = join_by(year), relationship = "many-to-many")
+
+numbers_data2 <- insect_data_new2 %>%
+  group_by(year) %>%
+  summarize(num_occ = sum(.data$obs),
+            num_spec = n_distinct(taxonKey),
+            .groups = "drop") %>%
+  mutate(label_occ = paste("n_occ", num_occ, sep = "="),
+         label_spec = paste("n_spec", num_spec, sep = "="),
+         label_tot = paste(label_occ, label_spec, sep = "\n"))
+```
+
+```{r}
+p +
+  ggtitle("With outliers")
+```
+
+```{r}
+bootstrap_insect_data_final2 %>%
+  ggplot(aes(x = year)) +
+    geom_violin(aes(y = est_boot, group = year)) +
+    geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
+                  position = position_dodge(0.8), linewidth = 1) +
+    geom_point(aes(y = est_original), colour = "firebrick", size = 3) +
+    geom_label(data = numbers_data2, aes(y = 1.1, label = label_tot),
+               size = 3, label.padding = unit(0.35, "lines")) +
+    labs(y = "evenness", colour = "Confidence interval") +
+    theme(legend.position = "bottom") +
+    scale_y_continuous(limits = c(NA, 1.1), breaks = seq(-10, 10, 0.25)) +
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data_final$year))) +
+  ggtitle("Without outliers")
+```
+
+We see that the shape of the distributions is more symetric and unimodal, although we still see bimodal distributions in 2015 and 2018. The different types of intervals seem to be more in accordance than before.
+
+We also see that interval width increases with bootstrap standard error as expected.
+
+```{r}
+bootstrap_insect_data_final2 %>%
+  mutate(ci_width = ul - ll) %>%
+  distinct(year, se_boot, int_type, ci_width) %>%
+  ggplot(aes(x = se_boot, y = ci_width, colour = int_type)) +
+    geom_point() +
+    geom_smooth(method = "lm", formula = "y ~ x") +
+    labs(x = "bootstrap standard error", y = "interval width",
+         colour = "Confidence\ninterval")
+```
+
+We can conclude that flagging species with extreme values is important and that it can have large consequences for indicator uncertainty calculation.
+
 # Interpretation and visualisation of uncertainty
 
 Here we will follow the methods implemented by the [effectclass package](https://inbo.github.io/effectclass/).
@@ -490,12 +571,12 @@ ggplot(ds, aes(x = effect, y = mean, ymin = lcl, ymax = ucl, link_sd = sd)) +
 
 ## Comparing with a constant
 
-We select the summary statistics from the previous section.
+We select the summary statistics from the previous section (without the outliers).
 We only keep the BCa interval.
 
 ```{r}
 # Filter data for visualisation
-insect_eveness_df <- bootstrap_insect_data_final %>%
+insect_eveness_df <- bootstrap_insect_data_final2 %>%
   filter(int_type == "bca") %>%
   distinct(year, est_original, int_type, ll, ul, conf_level)
 
@@ -503,7 +584,7 @@ insect_eveness_df %>%
   kable()
 ```
 
-Let's say we want to test whether the eveness of insects differs from 0.6.
+Let's say we want to test whether the eveness of insects differs from 0.7.
 We use thresholds of 0.1 to distinguish between strong and moderate effects.
 
 ```{r}
@@ -512,7 +593,7 @@ insect_eveness_effects <- add_classification_as_factor(
   df = insect_eveness_df,
   cl_columns = c("ll", "ul"),
   threshold = 0.1,
-  reference = 0.6,
+  reference = 0.7,
   coarse = TRUE)
 
 insect_eveness_effects %>%
@@ -525,7 +606,7 @@ Coarse classification:
 ```{r}
 insect_eveness_effects %>%
   ggplot(aes(x = year, y = est_original, ymin = ll, ymax = ul)) +
-    stat_effect(reference = 0.6, threshold = c(0.5, 0.7), detailed = FALSE) +
+    stat_effect(reference = 0.7, threshold = c(0.6, 0.8), detailed = FALSE) +
     labs(y = "evenness") +
     scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
     scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year)))
@@ -536,8 +617,8 @@ We can create this figure ourselves:
 ```{r}
 insect_eveness_effects %>%
   ggplot(aes(x = year)) +
-    geom_hline(yintercept = 0.6, linetype = "longdash", colour = "black") +
-    geom_hline(yintercept = c(0.5, 0.7), linetype = "dotdash") +
+    geom_hline(yintercept = 0.7, linetype = "longdash", colour = "black") +
+    geom_hline(yintercept = c(0.6, 0.8), linetype = "dotdash") +
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = effect_coarse),
                   linewidth = 1.5, show.legend = TRUE) +
     geom_point(aes(y = est_original), colour = "black", size = 3.5) +
@@ -557,7 +638,7 @@ Fine classification:
 ```{r}
 insect_eveness_effects %>%
   ggplot(aes(x = year, y = est_original, ymin = ll, ymax = ul)) +
-  stat_effect(threshold = c(0.5, 0.7), reference = 0.6) +
+  stat_effect(threshold = c(0.6, 0.8), reference = 0.7) +
   labs(y = "evenness") +
   scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
   scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year)))
@@ -566,8 +647,8 @@ insect_eveness_effects %>%
 ```{r}
 insect_eveness_effects %>%
   ggplot(aes(x = year)) +
-    geom_hline(yintercept = 0.6, linetype = "longdash", colour = "black") +
-    geom_hline(yintercept = c(0.5, 0.7), linetype = "dotdash") +
+    geom_hline(yintercept = 0.7, linetype = "longdash", colour = "black") +
+    geom_hline(yintercept = c(0.6, 0.8), linetype = "dotdash") +
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = effect),
                   linewidth = 1.5, show.legend = TRUE) +
     geom_point(aes(y = est_original), colour = "black", size = 3.5) +
@@ -607,7 +688,7 @@ This can be done using the `ref_group` argument.
 ```{r}
 # Bootstrapping
 bootstrap_insect_data_diff <- perform_bootstrap_ts(
-  data_cube_df = insect_data_new,
+  data_cube_df = insect_data_new2,
   fun = evenness_formula,
   samples = 1000,
   ref_group = 2011,
@@ -779,6 +860,7 @@ Although these methods require additional testing, the first results show that b
 - Test workflow on other indicators
   - Which transformations for count statistics, real numbers ...
 - How long does bootstrapping take for big datasets?
+- How long does cross-validation take for big datasets?
 - Error handling
   - Bootstrapping and confidence interval calculations do not always work with few data
 - Uncertainty calculation and visualisation for spatial indicators
