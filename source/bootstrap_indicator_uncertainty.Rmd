@@ -411,14 +411,15 @@ We can calculate a measure for each species of how much it influences the indica
 Like Leave-One-Out Cross-Validation, but where we leave out one species each time.
 
 ```{r}
-cv_results <- leave_one_species_out_ts(
+cv_results_loo <- leave_one_species_out_ts(
   data_cube_df = insect_data_new,
   fun = evenness_formula,
+  crossv_method = "loo",
   temporal_col_name = "year")
 ```
 
 ```{r}
-ggplot(cv_results,
+ggplot(cv_results_loo,
        aes(x = as.factor(year), y = abs_diff,
            colour = as.factor(species_left_out))) +
   geom_text(aes(label = as.factor(species_left_out))) +
@@ -427,6 +428,43 @@ ggplot(cv_results,
             nudge_x = 0.4, nudge_y = 0.02) +
   labs(x = "Year", y = "Absolute difference") +
   theme(legend.position = "")
+```
+
+Do we get similar values for the (R)SME if we use k-fold cross-validation?
+
+```{r}
+cv_results_kfold <- leave_one_species_out_ts(
+  data_cube_df = insect_data_new,
+  fun = evenness_formula,
+  crossv_method = "kfold",
+  k = 10,
+  temporal_col_name = "year")
+```
+
+They are very different.
+
+```{r}
+mean_cv_stats_loo <- cv_results_loo %>%
+  mutate(
+    mean_abs_diff = mean(abs_diff),
+    mean_perc_diff = mean(perc_diff),
+    .by = year
+  ) %>%
+  distinct(year, mean_abs_diff, mean_perc_diff, mse, rmse) %>%
+  mutate(crossv_method = "loo")
+
+mean_cv_stats_kfold <- cv_results_kfold %>%
+  mutate(
+    mean_abs_diff = mean(abs_diff),
+    mean_perc_diff = mean(perc_diff),
+    .by = year
+  ) %>%
+  distinct(year, mean_abs_diff, mean_perc_diff, mse, rmse) %>%
+  mutate(crossv_method = "kfold")
+
+bind_rows(mean_cv_stats_loo, mean_cv_stats_kfold) %>%
+  arrange(year) %>%
+  kable()
 ```
 
 # Interpretation and visualisation of uncertainty
