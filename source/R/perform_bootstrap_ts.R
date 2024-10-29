@@ -12,8 +12,10 @@
 #' statistic. Default `NA`, no reference time point is used.
 #' @param temporal_col_name The temporal column name of `data_cube_df`
 #' (e.g., year, month ...) containing time point values. Default `year`.
-#' @param seed The seed for random number generation to make results
-#' reproducible.
+#' @param seed A positive numeric value setting the seed for random number
+#' generation to ensure reproducibility. If `NA` (default), then `set.seed()`
+#' is not called at all. If not `NA`, then the random number generator state is
+#' reset (to the state before calling this function) upon exiting this function.
 #'
 #' @returns The returned value is a list of objects of class `"boot"` per time
 #' point. See `boot::boot()`.
@@ -24,11 +26,23 @@ perform_bootstrap_ts <- function(
     samples = 1000,
     ref_group = NA,
     temporal_col_name = "year",
-    seed = 123) {
+    seed = NA) {
   require("dplyr")
   require("rlang")
 
-  withr::local_seed(seed)
+  # Check if seed is NA or a number
+  stopifnot("`seed` must be a numeric vector of length 1 or NA." =
+              (is.numeric(seed) | is.na(seed)) &
+              length(seed) == 1)
+
+  # Set seed if provided
+  if (!is.na(seed)) {
+    if (exists(".Random.seed", envir = .GlobalEnv)) {
+      rng_state_old <- get(".Random.seed", envir = .GlobalEnv)
+      on.exit(assign(".Random.seed", rng_state_old, envir = .GlobalEnv))
+    }
+    set.seed(seed)
+  }
 
   if (is.na(ref_group)) {
     # Summarise data by temporal column
