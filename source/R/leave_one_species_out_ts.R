@@ -105,7 +105,7 @@ leave_one_species_out_ts <- function(
         )
 
     # Merge with the true indicator to enable comparison
-    comparison_result <- indicator_result %>%
+    indicator_result %>%
       left_join(true_indicator, by = temporal_col_name) %>%
       mutate(
         error = .data$diversity_val - .data$loo_val,
