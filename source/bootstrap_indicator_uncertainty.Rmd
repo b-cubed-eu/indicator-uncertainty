@@ -244,7 +244,10 @@ Its use is further explained in `?boot::boot.ci()`.
 
 ## Visualise confidence intervals
 
-```{r}
+We visualise the distribution of the bootstrap replicates and the confidence intervals.
+The red triangles are the the original sample estimates $\hat{\theta}$.
+
+```{r, fig.width = 10, echo=FALSE}
 numbers_data <- insect_data_new %>%
   group_by(year) %>%
   summarize(num_occ = sum(.data$obs),
@@ -253,18 +256,20 @@ numbers_data <- insect_data_new %>%
   mutate(label_occ = paste("n_occ", num_occ, sep = "="),
          label_spec = paste("n_spec", num_spec, sep = "="),
          label_tot = paste(label_occ, label_spec, sep = "\n"))
-```
 
-We visualise the distribution of the bootstrap replicates and the confidence intervals.
-The red dots are the the original sample estimates $\hat{\theta}$.
+estimate_df <- bootstrap_insect_data_final %>%
+  distinct(year, estimate = est_original, bias_boot) %>%
+  mutate(bias = estimate + bias_boot) %>%
+  pivot_longer(cols = c("estimate", "bias"),
+               names_to = "Legend", values_to = "value")
 
-```{r, fig.width = 10, echo=FALSE}
 p <- bootstrap_insect_data_final %>%
   ggplot(aes(x = year)) +
     geom_violin(aes(y = est_boot, group = year)) +
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
                   position = position_dodge(0.8), linewidth = 1) +
-    geom_point(aes(y = est_original), colour = "firebrick", size = 3) +
+    geom_point(data = estimate_df,
+               aes(y = value, shape = Legend), colour = "firebrick", size = 3) +
     geom_label(data = numbers_data, aes(y = 1.1, label = label_tot),
                size = 3, label.padding = unit(0.35, "lines")) +
     labs(y = "evenness", colour = "Confidence interval") +
@@ -451,12 +456,12 @@ numbers_data2 <- insect_data_new2 %>%
          label_tot = paste(label_occ, label_spec, sep = "\n"))
 ```
 
-```{r, echo=FALSE}
+```{r, fig.width = 10, echo=FALSE}
 p +
   ggtitle("With outliers")
 ```
 
-```{r, echo=FALSE}
+```{r, fig.width = 10, echo=FALSE}
 bootstrap_insect_data_final2 %>%
   ggplot(aes(x = year)) +
     geom_violin(aes(y = est_boot, group = year)) +
