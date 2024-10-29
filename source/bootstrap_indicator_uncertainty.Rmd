@@ -32,6 +32,7 @@ source(here("source", "R", "perform_bootstrap_ts.R"))
 source(here("source", "R", "bootstrap_list_to_df.R"))
 source(here("source", "R", "get_bootstrap_ci.R"))
 source(here("source", "R", "add_classification_as_factor.R"))
+source(here("source", "R", "leave_one_species_out_ts.R"))
 source(here("source", "R", "utils.R"))
 ```
 
@@ -98,12 +99,10 @@ The visualisation of uncertainty in trends is not correct because of two factors
 
 Let's calculate this metric from scratch in the next section.
 We select the data after 2010 to ensure calculations with enough data.
-We exclude taxon key 1341976 because of extreme outlying values.
 
 ```{r}
 insect_data_new <- insect_data$data %>%
-  filter(year > 2010,
-         taxonKey != 1341976)
+  filter(year > 2010)
 
 insect_data_new %>%
   group_by(year) %>%
@@ -388,6 +387,85 @@ bootstrap_insect_data_final %>%
 
 There is some discussion on the use of [the percentile interval](https://stats.stackexchange.com/questions/355781/is-it-true-that-the-percentile-bootstrap-should-never-be-used).
 The BCa approach takes into account both bias and skewness and seems to be the best approach for this situation.
+
+# Influence of species on indicator value
+
+In the previous section, we compared different interval types.
+Yet, if we look at the bootstrap sample distribution and trends in interval width, we get strange results.
+For example, the normal interval width decreases with bootstrap standard error.
+Secondly, the shape and range of the bootstrap distribution for certain years is very large.
+
+This might be due to species having a much larger number of observations compared to others.
+During the resampling process of bootstrapping, they might be included or not, which results in large variability in the indicator value.
+
+```{r}
+insect_data_new %>%
+  summarise(n = sum(obs), .by = c("year", "taxonKey")) %>%
+  ggplot(aes(x = as.factor(year), y = n, colour = as.factor(taxonKey))) +
+    geom_text(aes(label = as.factor(taxonKey))) +
+    labs(x = "Year", y = "Number of observations") +
+    theme(legend.position = "")
+```
+
+We can calculate a measure for each species of how much it influences the indicator.
+Like Leave-One-Out Cross-Validation, but where we leave out one species each time.
+
+```{r}
+cv_results_loo <- leave_one_species_out_ts(
+  data_cube_df = insect_data_new,
+  fun = evenness_formula,
+  crossv_method = "loo",
+  temporal_col_name = "year")
+```
+
+```{r}
+ggplot(cv_results_loo,
+       aes(x = as.factor(year), y = abs_diff,
+           colour = as.factor(species_left_out))) +
+  geom_text(aes(label = as.factor(species_left_out))) +
+  geom_point(aes(y = rmse * 2.5), colour = "black", size = 3) +
+  geom_text(aes(y = rmse * 2.5, label = "RMSE*2.5"), colour = "black", size = 3,
+            nudge_x = 0.4, nudge_y = 0.02) +
+  labs(x = "Year", y = "Absolute difference") +
+  theme(legend.position = "")
+```
+
+Do we get similar values for the (R)MSE if we use k-fold cross-validation?
+
+```{r}
+cv_results_kfold <- leave_one_species_out_ts(
+  data_cube_df = insect_data_new,
+  fun = evenness_formula,
+  crossv_method = "kfold",
+  k = 10,
+  temporal_col_name = "year")
+```
+
+They are very different.
+
+```{r}
+mean_cv_stats_loo <- cv_results_loo %>%
+  mutate(
+    mean_abs_diff = mean(abs_diff),
+    mean_perc_diff = mean(perc_diff),
+    .by = year
+  ) %>%
+  distinct(year, mean_abs_diff, mean_perc_diff, mse, rmse) %>%
+  mutate(crossv_method = "loo")
+
+mean_cv_stats_kfold <- cv_results_kfold %>%
+  mutate(
+    mean_abs_diff = mean(abs_diff),
+    mean_perc_diff = mean(perc_diff),
+    .by = year
+  ) %>%
+  distinct(year, mean_abs_diff, mean_perc_diff, mse, rmse) %>%
+  mutate(crossv_method = "kfold")
+
+bind_rows(mean_cv_stats_loo, mean_cv_stats_kfold) %>%
+  arrange(year) %>%
+  kable()
+```
 
 # Interpretation and visualisation of uncertainty
 
