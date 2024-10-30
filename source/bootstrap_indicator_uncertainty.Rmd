@@ -26,8 +26,6 @@ library(knitr)       # Nice tables
 
 # Source functions
 source(here("source", "R", "evenness_formula.R"))
-source(here("source", "R", "boot_statistic.R"))
-source(here("source", "R", "boot_statistic_diff.R"))
 source(here("source", "R", "perform_bootstrap_ts.R"))
 source(here("source", "R", "bootstrap_list_to_df.R"))
 source(here("source", "R", "get_bootstrap_ci.R"))
