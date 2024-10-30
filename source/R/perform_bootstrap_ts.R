@@ -45,23 +45,29 @@ perform_bootstrap_ts <- function(
   }
 
   if (is.na(ref_group)) {
+    boot_fun <- function(x) {
+      x %>%
+        dplyr::summarize(num_occ = sum(.data$obs),
+                         .by = dplyr::all_of(c(temporal_col_name, "taxonKey"))
+                         ) %>%
+        pull(num_occ) %>%
+        fun()
+    }
+
+    design <- data_cube_df %>%
+      expand(year, cellCode, taxonKey)
+
     # Summarise data by temporal column
     bootstrap_list <- data_cube_df %>%
-      dplyr::summarize(num_occ = sum(.data$obs),
-                       .by = dplyr::all_of(c(temporal_col_name, "taxonKey"))
-                       ) %>%
-      dplyr::arrange(.data[[temporal_col_name]]) %>%
-      tidyr::pivot_wider(names_from = dplyr::all_of(temporal_col_name),
-                         values_from = "num_occ",
-                         values_fill = 0) %>%
-      tibble::column_to_rownames("taxonKey") %>%
-      as.list() %>%
+      select(dplyr::all_of(c(temporal_col_name, "cellCode", "taxonKey", "obs"))) %>%
+      complete(design, fill = list(obs = 0)) %>%
+      split(design[[temporal_col_name]]) %>%
       # Perform bootstrapping
       purrr::map(~boot::boot(
         data = .,
         statistic = boot_statistic,
         R = samples,
-        fun = fun))
+        fun = boot_fun))
   } else {
     # Summarise data by temporal column
     sum_data_list <- data_cube_df %>%

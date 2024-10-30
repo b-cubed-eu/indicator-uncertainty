@@ -13,6 +13,6 @@
 #' `boot::boot()`.
 
 boot_statistic <- function(data, indices, fun) {
-  d <- data[indices]
+  d <- data[indices, ]
   return(fun(d))
 }
