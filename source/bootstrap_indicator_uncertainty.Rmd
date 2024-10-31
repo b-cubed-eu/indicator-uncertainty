@@ -380,7 +380,9 @@ We look at the relative error (RE).
 
 ```{r, fig.width = 10, echo=FALSE}
 # Define custom break points
-break_points <- c(10, seq(25, max(cv_results_loo$perc_diff, na.rm = TRUE) + 25, 25))
+break_points <- c(
+  10, seq(25, max(cv_results_loo$perc_diff, na.rm = TRUE) + 25, 25)
+  )
 
 # Apply custom breaks
 cv_results_loo <- cv_results_loo %>%
@@ -393,8 +395,12 @@ cv_results_loo <- cv_results_loo %>%
       include.lowest = TRUE))
 
 # Ensure all categories are in hline_data
-hline_data <- data.frame(perc_diff_category = levels(cv_results_loo$perc_diff_category)) %>%
-  mutate(yintercept = as.numeric(gsub("(^\\D*|,.*)", "", perc_diff_category)))
+hline_data <- data.frame(
+  perc_diff_category = levels(cv_results_loo$perc_diff_category)
+  ) %>%
+  mutate(
+    yintercept = as.numeric(gsub("(^\\D*|,.*)", "", perc_diff_category))
+  )
 
 # Plot with complete categories and horizontal lines
 cv_results_loo %>%
