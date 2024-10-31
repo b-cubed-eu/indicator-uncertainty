@@ -45,17 +45,11 @@ perform_bootstrap_ts <- function(
   }
 
   if (is.na(ref_group)) {
-    boot_fun <- function(x) {
-      x %>%
-        dplyr::summarize(num_occ = sum(.data$obs),
-                         .by = dplyr::all_of(c(temporal_col_name, "taxonKey"))
-                         ) %>%
-        pull(num_occ) %>%
-        fun()
+    # Define bootstrapping for a calculated statistic
+    boot_statistic <- function(data, indices, fun) {
+      d <- data[indices]
+      return(fun(d))
     }
-
-    design <- data_cube_df %>%
-      expand(year, cellCode, taxonKey)
 
     # Summarise data by temporal column
     bootstrap_list <- data_cube_df %>%
@@ -63,12 +57,22 @@ perform_bootstrap_ts <- function(
       complete(design, fill = list(obs = 0)) %>%
       split(design[[temporal_col_name]]) %>%
       # Perform bootstrapping
-      purrr::map(~boot::boot(
-        data = .,
-        statistic = boot_statistic,
-        R = samples,
-        fun = boot_fun))
+      lapply(function(x) {
+        boot::boot(
+          data = x,
+          statistic = boot_statistic,
+          R = samples,
+          fun = fun)
+      })
   } else {
+    # Define bootstrapping for a difference in a calculated statistic
+    boot_statistic_diff <- function(data, ref_data, indices, fun) {
+      stat <- fun(data[indices])
+      ref_stat <- fun(ref_data[indices])
+
+      return(stat - ref_stat)
+    }
+
     # Summarise data by temporal column
     sum_data_list <- data_cube_df %>%
       dplyr::summarize(num_occ = sum(.data$obs),
@@ -85,12 +89,14 @@ perform_bootstrap_ts <- function(
     bootstrap_list <- sum_data_list[
         setdiff(names(sum_data_list), as.character(ref_group))
       ] %>%
-      purrr::map(~boot::boot(
-        data = .,
-        statistic = boot_statistic_diff,
-        R = samples,
-        fun = fun,
-        ref_data = sum_data_list[[as.character(ref_group)]]))
+      lapply(function(x) {
+        boot::boot(
+          data = x,
+          statistic = boot_statistic_diff,
+          R = samples,
+          fun = fun,
+          ref_data = sum_data_list[[as.character(ref_group)]])
+      })
   }
 
   return(bootstrap_list)
