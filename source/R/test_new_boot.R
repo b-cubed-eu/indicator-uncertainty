@@ -46,7 +46,7 @@ boot_out <- lapply(boot_list, function(indices) {
 })
 
 boot_obj_2011 <- NULL
-boot_obj_2011$data <- insect_data_new$data
+boot_obj_2011$data <- insect_data_new
 boot_obj_2011$t0 <- b3gbi::pielou_evenness_ts(insect_data_new)$data %>%
   filter(year == 2011) %>%
   pull(diversity_val)
@@ -58,6 +58,7 @@ boot_obj_2011$t <- sapply(boot_out, function(df) {
   as.matrix()
 boot_obj_2011$R <- samples
 boot_obj_2011$seed <- seed
+boot_obj_2011$statistic <- b3gbi::pielou_evenness_ts
 boot_obj_2011$sim <- "ordinary"
 boot_obj_2011$stype <- "i"
 boot_obj_2011$strata <- rep(1, nrow(data))
