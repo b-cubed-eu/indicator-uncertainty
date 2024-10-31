@@ -1,3 +1,7 @@
+insect_data_new <- insect_data
+insect_data_new$data <- insect_data$data %>%
+  filter(year > 2010)
+
 # does not work
 boot_statistic <- function(data, indices, fun) {
   subset_cube <- data
@@ -40,5 +44,13 @@ boot_out <- lapply(boot_list, function(indices) {
   b3gbi::pielou_evenness_ts(insect_data_copy)$data
 })
 
-
-
+boot_obj_2011 <- NULL
+boot_obj_2011$data <- data
+boot_obj_2011$t0 <- b3gbi::pielou_evenness_ts(insect_data_new)$data %>%
+  filter(year == 2011) %>%
+  pull(diversity_val)
+boot_obj_2011$t <- sapply(boot_out, function(df) {
+  df %>%
+    filter(year == 2011) %>%
+    pull(diversity_val)
+})
