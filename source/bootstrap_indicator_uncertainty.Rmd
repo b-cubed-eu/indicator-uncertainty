@@ -20,6 +20,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # Load packages
 library(b3gbi)       # Biodiversity indicators for data cubes
 library(tidyverse)   # Data wrangling and visualisation
+library(ggrepel)     # Repel labels in ggplot
 library(here)        # Relative paths
 library(effectclass) # Classification and visualisation of effects
 library(knitr)       # Nice tables
@@ -375,6 +376,52 @@ ggplot(cv_results_loo,
   theme(legend.position = "")
 ```
 
+We look at the relative error (RE).
+
+```{r, fig.width = 10, echo=FALSE}
+# Define custom break points
+break_points <- c(
+  10, seq(25, max(cv_results_loo$perc_diff, na.rm = TRUE) + 25, 25)
+  )
+
+# Apply custom breaks
+cv_results_loo <- cv_results_loo %>%
+  filter(perc_diff >= 10) %>%
+  mutate(
+    perc_diff_category = cut(
+      perc_diff,
+      breaks = break_points,
+      right = TRUE,
+      include.lowest = TRUE))
+
+# Ensure all categories are in hline_data
+hline_data <- data.frame(
+  perc_diff_category = levels(cv_results_loo$perc_diff_category)
+  ) %>%
+  mutate(
+    yintercept = as.numeric(gsub("(^\\D*|,.*)", "", perc_diff_category))
+  )
+
+# Plot with complete categories and horizontal lines
+cv_results_loo %>%
+  ggplot(aes(x = as.factor(year), y = perc_diff)) +
+    geom_point(aes(color = perc_diff_category), size = 3, show.legend = TRUE) +
+    geom_text_repel(aes(label = as.factor(species_left_out)), size = 3) +
+    # Add horizontal lines per complete category
+    geom_hline(data = hline_data,
+               aes(yintercept = yintercept, color = perc_diff_category),
+               linetype = "dashed") +
+    labs(
+      colour = "Legend",
+      x = "Year",
+      y = "Relative Difference (%)") +
+    scale_y_continuous(
+      breaks = break_points,
+      labels = scales::percent_format(scale = 1)) +
+    scale_color_viridis_d(option = "C", drop = FALSE) +
+    theme_minimal()
+```
+
 Do we get similar values for the (R)MSE if we use k-fold cross-validation?
 
 ```{r}
@@ -412,16 +459,24 @@ bind_rows(mean_cv_stats_loo, mean_cv_stats_kfold) %>%
   kable()
 ```
 
-How do the bootstrap distribution and the intervals look like if we exclude all species with error larger than `2.5*RMSE`?
+How do the bootstrap distribution and the intervals look like if we exclude all species with error larger than `2.5*RMSE` or 10 % RE?
 This is of course not good practice in general but is performed here to explore the effect on the bootstrap distribution and the confidence intervals.
+
+```{r, fig.width = 10, echo=FALSE}
+p +
+  ggtitle("With outliers")
+```
 
 ```{r, echo=FALSE}
 extreme_species <- cv_results_loo %>%
-  mutate(exclude = abs_diff > 2.5 * rmse) %>%
-  filter(exclude) %>%
+  filter(abs_diff > 2.5 * rmse) %>%
   distinct(species_left_out) %>%
   pull()
+```
 
+Exclude species `r extreme_species`.
+
+```{r, fig.width = 10, echo=FALSE}
 insect_data_new2 <- insect_data$data %>%
   filter(year > 2010,
          !taxonKey %in% extreme_species)
@@ -458,14 +513,8 @@ estimate_df2 <- bootstrap_insect_data_final2 %>%
   mutate(bias = estimate + bias_boot) %>%
   pivot_longer(cols = c("estimate", "bias"),
                names_to = "Legend", values_to = "value")
-```
 
-```{r, fig.width = 10, echo=FALSE}
-p +
-  ggtitle("With outliers")
-```
-
-```{r, fig.width = 10, echo=FALSE}
+# Visualisation
 bootstrap_insect_data_final2 %>%
   ggplot(aes(x = year)) +
     geom_violin(aes(y = est_boot, group = year)) +
@@ -481,12 +530,78 @@ bootstrap_insect_data_final2 %>%
     scale_x_continuous(
       breaks = sort(unique(bootstrap_insect_data_final2$year))
     ) +
-    ggtitle("Without outliers")
+    ggtitle("Without outliers 2.5*RMSE")
 ```
 
-We see that the shape of the distributions is more symmetric and unimodal, although we still see bimodal distributions in 2015 and 2018. The different types of intervals seem to be more in accordance than before.
+```{r, echo=FALSE}
+extreme_species2 <- cv_results_loo %>%
+  filter(perc_diff >= 10) %>%
+  distinct(species_left_out) %>%
+  pull()
+```
 
-We also see that interval width increases with bootstrap standard error as expected.
+Exclude species `r extreme_species2`.
+
+```{r, fig.width = 10, echo=FALSE}
+insect_data_new3 <- insect_data$data %>%
+  filter(year > 2010,
+         !taxonKey %in% extreme_species2)
+
+# Bootstrapping
+bootstrap_insect_data3 <- perform_bootstrap_ts(
+  data_cube_df = insect_data_new3,
+  fun = evenness_formula,
+  samples = 1000,
+  seed = 123)
+
+# Summarise in dataframe
+bootstrap_insect_data_full3 <- bootstrap_list_to_df(bootstrap_insect_data3)
+
+# Calculate confidence intervals
+ci_df3 <- get_bootstrap_ci(bootstrap_insect_data3, h = logit, hinv = inv_logit,
+                           type = c("norm", "basic", "perc", "bca"))
+
+# Join dataframes
+bootstrap_insect_data_final3 <- bootstrap_insect_data_full3 %>%
+  full_join(ci_df3, by = join_by(year), relationship = "many-to-many")
+
+numbers_data3 <- insect_data_new3 %>%
+  group_by(year) %>%
+  summarize(num_occ = sum(.data$obs),
+            num_spec = n_distinct(taxonKey),
+            .groups = "drop") %>%
+  mutate(label_occ = paste("n_occ", num_occ, sep = "="),
+         label_spec = paste("n_spec", num_spec, sep = "="),
+         label_tot = paste(label_occ, label_spec, sep = "\n"))
+
+estimate_df3 <- bootstrap_insect_data_final3 %>%
+  distinct(year, estimate = est_original, bias_boot) %>%
+  mutate(bias = estimate + bias_boot) %>%
+  pivot_longer(cols = c("estimate", "bias"),
+               names_to = "Legend", values_to = "value")
+
+# Visualisation
+bootstrap_insect_data_final3 %>%
+  ggplot(aes(x = year)) +
+    geom_violin(aes(y = est_boot, group = year)) +
+    geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
+                  position = position_dodge(0.8), linewidth = 1) +
+    geom_point(data = estimate_df3, aes(y = value, shape = Legend),
+               colour = "firebrick", size = 3) +
+    geom_label(data = numbers_data3, aes(y = 1.1, label = label_tot),
+               size = 3, label.padding = unit(0.35, "lines")) +
+    labs(y = "evenness", colour = "Confidence interval") +
+    theme(legend.position = "bottom") +
+    scale_y_continuous(limits = c(NA, 1.1), breaks = seq(-10, 10, 0.25)) +
+    scale_x_continuous(
+      breaks = sort(unique(bootstrap_insect_data_final3$year))
+    ) +
+    ggtitle("Without outliers 10 % RE")
+```
+
+We see that the shape of the distributions is more symmetric and unimodal, although we still see bimodal distributions in 2015 and 2018 for RMSE and 2015 for RE. The different types of intervals seem to be more in accordance than before.
+
+We also see that interval width increases with bootstrap standard error as expected. E.g. for RMSE:
 
 ```{r, echo=FALSE}
 bootstrap_insect_data_final2 %>%
