@@ -73,3 +73,45 @@ bca.ci
 empinf: n <- nrow(data$data)
 usual.jack: n <- nrow(data$data)
 stat
+
+
+
+### this will work
+data_cube_df <- insect_data_new
+samples <- 10
+fun <- b3gbi::pielou_evenness_ts
+temporal_col_name <- "year"
+resample_df <- modelr::bootstrap(data_cube_df$data, samples, id = "id")
+
+bootstrap_resample <- function(x, fun) {
+  resample_obj <- x$strap[[1]]
+  indices <- as.integer(resample_obj)
+  data <- resample_obj$data[indices,]
+
+  cube_df_copy <- data_cube_df
+  cube_df_copy$data <- data
+
+  fun(cube_df_copy)$data %>%
+    mutate(sample = as.integer(x$id))
+}
+
+bootstrap_samples_list <- resample_df %>%
+  split(seq(nrow(resample_df))) %>%
+  purrr::map(bootstrap_resample, fun = b3gbi::pielou_evenness_ts,
+             .progress = TRUE)
+
+t0 <- fun(data_cube_df)$data
+
+bootstrap_samples_df <- bootstrap_samples_list %>%
+  bind_rows() %>%
+  select(sample, all_of(temporal_col_name), est_boot = diversity_val) %>%
+  left_join(t0, by = temporal_col_name) %>%
+  rename(est_original = diversity_val) %>%
+  dplyr::rowwise() %>%
+  dplyr::mutate(diff = .data$est_boot - .data$est_original) %>%
+  ungroup() %>%
+  mutate(se_boot = stats::sd(.data$est_boot),
+         bias_boot = mean(.data$diff),
+         .by = all_of(temporal_col_name)) %>%
+  select(-"diff")
+
