@@ -31,6 +31,7 @@ boot_out <- lapply(boot_list, function(resample) {
 # without modelr
 data <- insect_data_new$data
 samples <- 1000
+seed <- 123
 
 boot_list <- lapply(seq_len(samples), function(i) {
   sample.int(nrow(data), replace = TRUE)
@@ -45,12 +46,27 @@ boot_out <- lapply(boot_list, function(indices) {
 })
 
 boot_obj_2011 <- NULL
-boot_obj_2011$data <- data
+boot_obj_2011$data <- insect_data_new
 boot_obj_2011$t0 <- b3gbi::pielou_evenness_ts(insect_data_new)$data %>%
   filter(year == 2011) %>%
   pull(diversity_val)
 boot_obj_2011$t <- sapply(boot_out, function(df) {
-  df %>%
-    filter(year == 2011) %>%
-    pull(diversity_val)
-})
+    df %>%
+      filter(year == 2011) %>%
+      pull(diversity_val)
+  }) %>%
+  as.matrix()
+boot_obj_2011$R <- samples
+boot_obj_2011$seed <- seed
+boot_obj_2011$statistic <- b3gbi::pielou_evenness_ts
+boot_obj_2011$sim <- "ordinary"
+boot_obj_2011$stype <- "i"
+boot_obj_2011$strata <- rep(1, nrow(data))
+boot_obj_2011$weights <- 1 / rep(1, nrow(data))
+class(boot_obj_2011) <- "boot"
+
+boot::boot.ci(boot_obj_2011, type = "bca")
+
+
+usual.jack
+stat
