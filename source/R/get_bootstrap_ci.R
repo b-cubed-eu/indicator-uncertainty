@@ -3,9 +3,12 @@
 #' This function calculates confidence intervals for a list of objects of class
 #' `"boot"` per year into a dataframe containing all required summaries.
 #'
-#' @param bootstrap_list A list of objects of class `"boot"` per year.
-#' @param ... Additional argument to be passed to the `boot::boot.ci()`
-#' function.
+#' @param bootstrap_samples_df A dataframe containting the bootstrap samples.
+#' @param conf A scalar or vector containing the confidence level(s) of the
+#' required interval(s).
+#' @param type A vector of character strings representing the type of intervals
+#' required. The value should be any subset of the values c("perc", "bca") or
+#' simply "all" (default) which will compute both types of intervals.
 #' @param temporal_list_name The temporal list names of `bootstrap_list`
 #' (e.g., year, month ...) containing time point values. Default `year`.
 #'
