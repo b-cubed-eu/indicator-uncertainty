@@ -45,7 +45,7 @@ bootstrap_cube <- function(
     # Generate bootstrap replicates
     resample_df <- modelr::bootstrap(data_cube$data, samples, id = "id")
 
-
+    # Function for bootstrapping
     bootstrap_resample <- function(x, fun) {
       resample_obj <- x$strap[[1]]
       indices <- as.integer(resample_obj)
@@ -58,25 +58,28 @@ bootstrap_cube <- function(
         mutate(sample = as.integer(x$id))
     }
 
+    # Perform bootstrapping
     bootstrap_samples_list <- resample_df %>%
       split(seq(nrow(resample_df))) %>%
       purrr::map(bootstrap_resample, fun = b3gbi::pielou_evenness_ts,
                  .progress = TRUE)
 
+    # Calculate true statistic
     t0 <- fun(data_cube)$data
 
+    # Summarise in dataframe
     bootstrap_samples_df <- bootstrap_samples_list %>%
-      bind_rows() %>%
-      select(sample, all_of(temporal_col_name), est_boot = diversity_val) %>%
-      left_join(t0, by = temporal_col_name) %>%
-      rename(est_original = diversity_val) %>%
+      dplyr::bind_rows() %>%
+      dplyr::select(sample, dplyr::everything(), est_boot = diversity_val) %>%
+      dplyr::left_join(t0) %>%
+      dplyr::rename("est_original" = "diversity_val") %>%
       dplyr::rowwise() %>%
       dplyr::mutate(diff = .data$est_boot - .data$est_original) %>%
-      ungroup() %>%
-      mutate(se_boot = stats::sd(.data$est_boot),
-             bias_boot = mean(.data$diff),
-             .by = all_of(temporal_col_name)) %>%
-      select(-"diff")
+      dplyr::ungroup() %>%
+      dplyr::mutate(se_boot = stats::sd(.data$est_boot),
+                    bias_boot = mean(.data$diff),
+                    .by = all_of(temporal_col_name)) %>%
+      dplyr::select(-"diff")
   } else {
     # Define bootstrapping for a difference in a calculated statistic
     boot_statistic_diff <- function(data, ref_data, indices, fun) {
