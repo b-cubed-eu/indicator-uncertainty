@@ -28,6 +28,7 @@ library(knitr)       # Nice tables
 # Source functions
 source(here("source", "R", "evenness_formula.R"))
 source(here("source", "R", "perform_bootstrap_ts.R"))
+source(here("source", "R", "bootstrap_cube.R"))
 source(here("source", "R", "bootstrap_list_to_df.R"))
 source(here("source", "R", "get_bootstrap_ci.R"))
 source(here("source", "R", "add_classification_as_factor.R"))
@@ -103,7 +104,12 @@ We select the data after 2010 to ensure calculations with enough data.
 insect_data_new <- insect_data$data %>%
   filter(year > 2010)
 
-insect_data_new %>%
+insect_data_new <- process_cube(
+  insect_data_new,
+  cols_occurrences = "obs",
+  cols_speciesKey = "taxonKey")
+
+insect_data_new$data %>%
   group_by(year) %>%
   summarise(n_obs = sum(obs)) %>%
   ggplot() +
@@ -155,14 +161,11 @@ $$
 
 ```{r}
 # Bootstrapping
-bootstrap_insect_data <- perform_bootstrap_ts(
-  data_cube_df = insect_data_new,
-  fun = evenness_formula,
+bootstrap_insect_data <- bootstrap_cube(
+  data_cube = insect_data_new,
+  fun = b3gbi::pielou_evenness_ts,
   samples = 1000,
   seed = 123)
-
-# Summarise in dataframe
-bootstrap_insect_data_full <- bootstrap_list_to_df(bootstrap_insect_data)
 ```
 
 We get confidence intervals (`boot::boot.ci()`) and add it to the dataframe.
