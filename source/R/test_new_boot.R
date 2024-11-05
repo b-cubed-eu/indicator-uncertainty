@@ -77,18 +77,18 @@ stat
 
 
 ### this will work
-data_cube_df <- insect_data_new
+data_cube <- insect_data_new
 samples <- 10
 fun <- b3gbi::pielou_evenness_ts
 temporal_col_name <- "year"
-resample_df <- modelr::bootstrap(data_cube_df$data, samples, id = "id")
+resample_df <- modelr::bootstrap(data_cube$data, samples, id = "id")
 
 bootstrap_resample <- function(x, fun) {
   resample_obj <- x$strap[[1]]
   indices <- as.integer(resample_obj)
   data <- resample_obj$data[indices,]
 
-  cube_df_copy <- data_cube_df
+  cube_df_copy <- data_cube
   cube_df_copy$data <- data
 
   fun(cube_df_copy)$data %>%
