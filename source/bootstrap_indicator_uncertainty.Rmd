@@ -120,7 +120,7 @@ insect_data_new$data %>%
 # Bootstrapping
 ## Bootstrap statistics and intervals
 
-We perform bootstrapping for evenness (`boot::boot()`).
+We perform bootstrapping for evenness.
 Bootstrapping is a statistical technique used to estimate the distribution of a statistic by resampling with replacement from the original data.
 Below are the common notations used in bootstrapping:
 
@@ -159,6 +159,9 @@ $$
 8. **Bootstrap Confidence Interval**
     - Confidence intervals for the statistic of interest can be constructed using the bootstrap distribution of $\hat{\theta}^*$. Several methods are explained below.
 
+First we perform bootstrapping.
+We calculate `b3gbi::pielou_evenness_ts` on the insect data from after 2010.
+
 ```{r}
 # Bootstrapping
 bootstrap_insect_data <- bootstrap_cube(
@@ -166,6 +169,28 @@ bootstrap_insect_data <- bootstrap_cube(
   fun = b3gbi::pielou_evenness_ts,
   samples = 1000,
   seed = 123)
+```
+
+We visualise the distribution of the bootstrap replicates
+The red triangles are the the original sample estimates $\hat{\theta}$.
+
+```{r}
+estimate_df <- bootstrap_insect_data %>%
+  distinct(year, estimate = est_original, bias_boot) %>%
+  mutate(bias = estimate + bias_boot) %>%
+  pivot_longer(cols = c("estimate", "bias"),
+               names_to = "Legend", values_to = "value")
+
+p <- bootstrap_insect_data %>%
+  ggplot(aes(x = year)) +
+    geom_violin(aes(y = est_boot, group = year)) +
+    geom_point(data = estimate_df, aes(y = value, shape = Legend),
+               colour = "firebrick", size = 3) +
+    labs(y = "evenness",) +
+    theme(legend.position = "bottom") +
+    scale_y_continuous(limits = c(NA, 1.1), breaks = seq(-10, 10, 0.25)) +
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data$year)))
+p
 ```
 
 We get confidence intervals (`boot::boot.ci()`) and add it to the dataframe.
@@ -234,7 +259,7 @@ $$
 
 ```{r}
 # Calculate confidence intervals
-ci_df <- get_bootstrap_ci(bootstrap_insect_data, h = logit, hinv = inv_logit)
+ci_df <- get_bootstrap_ci(bootstrap_insect_data, type = "perc")
 
 # Join dataframes
 bootstrap_insect_data_final <- bootstrap_insect_data_full %>%
