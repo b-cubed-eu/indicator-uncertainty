@@ -26,13 +26,10 @@ library(effectclass) # Classification and visualisation of effects
 library(knitr)       # Nice tables
 
 # Source functions
-source(here("source", "R", "evenness_formula.R"))
 source(here("source", "R", "bootstrap_cube.R"))
-source(here("source", "R", "bootstrap_list_to_df.R"))
 source(here("source", "R", "get_bootstrap_ci.R"))
+source(here("source", "R", "leave_one_species_out_cv.R"))
 source(here("source", "R", "add_classification_as_factor.R"))
-source(here("source", "R", "leave_one_species_out_ts.R"))
-source(here("source", "R", "utils.R"))
 ```
 
 # Exploration of the b3gbi package
@@ -308,16 +305,12 @@ The BCa approach takes into account both bias and skewness and seems to be the b
 
 # Influence of species on indicator value
 
-In the previous section, we compared different interval types.
-Yet, if we look at the bootstrap sample distribution and trends in interval width, we get strange results.
-For example, the normal interval width decreases with bootstrap standard error.
-Secondly, the shape and range of the bootstrap distribution for certain years is very large.
-
+In the previous section, we looked at the bootstrap sample distribution. For some years, the bootstrap distribution has very long tails.
 This might be due to species having a much larger number of observations compared to others.
 During the resampling process of bootstrapping, they might be included or not, which results in large variability in the indicator value.
 
 ```{r, echo=FALSE}
-insect_data_new %>%
+insect_data_new$data %>%
   summarise(n = sum(obs), .by = c("year", "taxonKey")) %>%
   ggplot(aes(x = as.factor(year), y = n, colour = as.factor(taxonKey))) +
     geom_text(aes(label = as.factor(taxonKey))) +
@@ -329,11 +322,11 @@ We can calculate a measure for each species of how much it influences the indica
 Like Leave-One-Out Cross-Validation, but where we leave out one species each time.
 
 ```{r}
-cv_results_loo <- leave_one_species_out_ts(
-  data_cube_df = insect_data_new,
-  fun = evenness_formula,
-  crossv_method = "loo",
-  temporal_col_name = "year")
+cv_results_loo <- leave_one_species_out_cv(
+  data_cube = insect_data_new,
+  fun = b3gbi::pielou_evenness_ts,
+  grouping_var = "year",
+  crossv_method = "loo")
 ```
 
 ```{r, echo=FALSE}
