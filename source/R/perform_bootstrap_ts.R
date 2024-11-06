@@ -53,9 +53,15 @@ perform_bootstrap_ts <- function(
 
     # Summarise data by temporal column
     bootstrap_list <- data_cube_df %>%
-      select(dplyr::all_of(c(temporal_col_name, "cellCode", "taxonKey", "obs"))) %>%
-      complete(design, fill = list(obs = 0)) %>%
-      split(design[[temporal_col_name]]) %>%
+      dplyr::summarize(num_occ = sum(.data$obs),
+                       .by = dplyr::all_of(c(temporal_col_name, "taxonKey"))
+      ) %>%
+      dplyr::arrange(.data[[temporal_col_name]]) %>%
+      tidyr::pivot_wider(names_from = dplyr::all_of(temporal_col_name),
+                         values_from = "num_occ",
+                         values_fill = 0) %>%
+      tibble::column_to_rownames("taxonKey") %>%
+      as.list() %>%
       # Perform bootstrapping
       lapply(function(x) {
         boot::boot(
@@ -77,7 +83,7 @@ perform_bootstrap_ts <- function(
     sum_data_list <- data_cube_df %>%
       dplyr::summarize(num_occ = sum(.data$obs),
                        .by = dplyr::all_of(c(temporal_col_name, "taxonKey"))
-                       ) %>%
+      ) %>%
       dplyr::arrange(.data[[temporal_col_name]]) %>%
       tidyr::pivot_wider(names_from = dplyr::all_of(temporal_col_name),
                          values_from = "num_occ",
@@ -87,8 +93,8 @@ perform_bootstrap_ts <- function(
 
     # Perform bootstrapping
     bootstrap_list <- sum_data_list[
-        setdiff(names(sum_data_list), as.character(ref_group))
-      ] %>%
+      setdiff(names(sum_data_list), as.character(ref_group))
+    ] %>%
       lapply(function(x) {
         boot::boot(
           data = x,
