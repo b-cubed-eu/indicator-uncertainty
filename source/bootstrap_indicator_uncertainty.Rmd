@@ -20,7 +20,6 @@ knitr::opts_chunk$set(echo = TRUE)
 # Load packages
 library(b3gbi)       # Biodiversity indicators for data cubes
 library(tidyverse)   # Data wrangling and visualisation
-library(ggrepel)     # Repel labels in ggplot
 library(here)        # Relative paths
 library(effectclass) # Classification and visualisation of effects
 library(knitr)       # Nice tables
@@ -648,7 +647,7 @@ We calculate the percentile interval.
 
 ```{r}
 # Calculate confidence intervals
-ci_diff_df <-  get_bootstrap_ci(
+ci_diff_df <- get_bootstrap_ci(
   bootstrap_samples_df = bootstrap_insect_data_diff,
   grouping_var = "year",
   type = "perc",
@@ -684,7 +683,7 @@ This time our reference is 0 (no change with 2011) and we choose an arbitrary th
 
 ```{r}
 # Select data for visualisation
-summary_diff_df <- ci_df %>%
+summary_diff_df <- ci_diff_df %>%
   select(year, est_original, ll, ul, conf_level, int_type)
 
 # Add classification based on reference and thresholds
@@ -739,36 +738,32 @@ plot(eveness_insect_data_2005)
 ```
 
 ```{r, class.source = "fold-hide", warning=FALSE, message=FALSE}
-insect_data_filtered <- insect_data$data %>%
-  filter(year >= 2005)
-
 # Bootstrapping
-insect_data_bootstrapped <- perform_bootstrap_ts(
-  data_cube_df = insect_data_filtered,
-  fun = evenness_formula,
-  samples = 1000,
-  ref_group = min(insect_data_filtered$year),
-  seed = 123)
-
-# Summarise in dataframe
-insect_data_bootstrapped_df <- bootstrap_list_to_df(insect_data_bootstrapped)
+insect_data_bootstrapped_path <- file.path(
+  cache_path, "insect_data_bootstrapped.Rds")
+if (file.exists(insect_data_bootstrapped_path)) {
+  insect_data_bootstrapped <- readRDS(insect_data_bootstrapped_path)
+} else {
+  insect_data_bootstrapped <- bootstrap_cube(
+    data_cube = insect_data_2005,
+    fun = b3gbi::pielou_evenness_ts,
+    grouping_var = "year",
+    samples = 1000,
+    seed = 123)
+  saveRDS(insect_data_bootstrapped, insect_data_bootstrapped_path)
+}
 
 # Calculate confidence intervals
-insect_data_ci <- get_bootstrap_ci(insect_data_bootstrapped,
-                                   type = "bca",
-                                   h = atanh,
-                                   hinv = tanh)
-
-# Join dataframes
-insect_data_boot_final <- insect_data_bootstrapped_df %>%
-  full_join(insect_data_ci,
-            by = join_by(year),
-            relationship = "many-to-many") %>%
-  distinct(year, est_original, int_type, ll, ul, conf_level)
+insect_data_ci <- get_bootstrap_ci(
+  bootstrap_samples_df = bootstrap_insect_data,
+  grouping_var = "year",
+  type = "perc",
+  conf = 0.95,
+  aggregate = TRUE)
 
 # Add classification based on reference and thresholds
 insect_eveness_effects_tot <- add_classification_as_factor(
-  df = insect_data_boot_final,
+  df = insect_data_ci,
   cl_columns = c("ll", "ul"),
   threshold = 0.15,
   reference = 0,
@@ -806,10 +801,8 @@ Although these methods require additional testing, the first results show that b
 
 - Test workflow on other datasets
 - Test workflow on other indicators
-  - Which transformations for count statistics, real numbers ...
 - How long does bootstrapping take for big datasets?
 - How long does cross-validation take for big datasets?
 - Error handling
   - Bootstrapping and confidence interval calculations do not always work with few data
-- Uncertainty calculation and visualisation for spatial indicators
-- Incorporation of functions in b3gbi package (or separate package?)
+- ...
