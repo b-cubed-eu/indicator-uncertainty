@@ -29,6 +29,7 @@ source(here("source", "R", "bootstrap_cube.R"))
 source(here("source", "R", "get_bootstrap_ci.R"))
 source(here("source", "R", "cross_validate_species.R"))
 source(here("source", "R", "add_classification_as_factor.R"))
+source(here("source", "R", "utils.R"))
 
 # Cache folder
 cache_path <- here("data", "cache")
@@ -620,7 +621,7 @@ This can be done using the `ref_group` argument.
 bootstrap_insect_data_path2 <- file.path(
   cache_path, "bootstrap_insect_data_diff.Rds")
 if (file.exists(bootstrap_insect_data_path2)) {
-  bootstrap_insect_data <- readRDS(bootstrap_insect_data_path2)
+  bootstrap_insect_data_diff <- readRDS(bootstrap_insect_data_path2)
 } else {
   bootstrap_insect_data_diff <- bootstrap_cube(
     data_cube = insect_data_new,
