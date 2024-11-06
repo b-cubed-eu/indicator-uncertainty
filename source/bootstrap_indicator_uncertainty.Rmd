@@ -448,19 +448,19 @@ bind_rows(mean_cv_stats_loo, mean_cv_stats_kfold) %>%
   kable()
 ```
 
-How do the bootstrap distribution and the intervals look like if we exclude all species with error larger than `2.5*RMSE` or 10 % RE?
-This is of course not good practice in general but is performed here to explore the effect on the bootstrap distribution and the confidence intervals.
+How do the bootstrap distribution and the intervals look like if we exclude all species with error larger than 10 % RE in any year?
+This is of course not good practice in general, but is performed here to explore the effect on the bootstrap distribution and the confidence intervals.
 
-```{r, fig.width = 10, echo=FALSE}
-p +
-  ggtitle("With outliers")
+```{r}
+extreme_species <- cv_results_loo %>%
+  filter(perc_diff > 10) %>%
+  pull(species_left_out)
 ```
 
-```{r, echo=FALSE}
-extreme_species <- cv_results_loo %>%
-  filter(abs_diff > 2.5 * rmse) %>%
-  distinct(species_left_out) %>%
-  pull()
+
+```{r, fig.width = 10, echo=FALSE, warning=FALSE}
+p +
+  ggtitle("With outliers")
 ```
 
 Exclude species `r extreme_species`.
@@ -470,139 +470,52 @@ insect_data_new2 <- insect_data$data %>%
   filter(year > 2010,
          !taxonKey %in% extreme_species)
 
+insect_data_new2 <- process_cube(
+  insect_data_new2,
+  cols_occurrences = "obs",
+  cols_speciesKey = "taxonKey")
+
 # Bootstrapping
-bootstrap_insect_data2 <- perform_bootstrap_ts(
-  data_cube_df = insect_data_new2,
-  fun = evenness_formula,
+bootstrap_insect_data2 <- bootstrap_cube(
+  data_cube = insect_data_new2,
+  fun = b3gbi::pielou_evenness_ts,
+  grouping_var = "year",
   samples = 1000,
   seed = 123)
 
-# Summarise in dataframe
-bootstrap_insect_data_full2 <- bootstrap_list_to_df(bootstrap_insect_data2)
-
 # Calculate confidence intervals
-ci_df2 <- get_bootstrap_ci(bootstrap_insect_data2, h = logit, hinv = inv_logit,
-                           type = c("norm", "basic", "perc", "bca"))
-
-# Join dataframes
-bootstrap_insect_data_final2 <- bootstrap_insect_data_full2 %>%
-  full_join(ci_df2, by = join_by(year), relationship = "many-to-many")
-
-numbers_data2 <- insect_data_new2 %>%
-  group_by(year) %>%
-  summarize(num_occ = sum(.data$obs),
-            num_spec = n_distinct(taxonKey),
-            .groups = "drop") %>%
-  mutate(label_occ = paste("n_occ", num_occ, sep = "="),
-         label_spec = paste("n_spec", num_spec, sep = "="),
-         label_tot = paste(label_occ, label_spec, sep = "\n"))
-
-estimate_df2 <- bootstrap_insect_data_final2 %>%
-  distinct(year, estimate = est_original, bias_boot) %>%
-  mutate(bias = estimate + bias_boot) %>%
-  pivot_longer(cols = c("estimate", "bias"),
-               names_to = "Legend", values_to = "value")
+ci_df2 <- get_bootstrap_ci(
+  bootstrap_samples_df = bootstrap_insect_data2,
+  grouping_var = "year",
+  type = "perc",
+  conf = 0.95,
+  aggregate = TRUE)
 
 # Visualisation
-bootstrap_insect_data_final2 %>%
+bias_df2 <- bootstrap_insect_data2 %>%
+  distinct(year, estimate = est_original, `bootstrap estimate` = est_boot)
+
+estimate_df2 <- bias_df2 %>%
+  pivot_longer(cols = c("estimate", "bootstrap estimate"),
+               names_to = "Legend", values_to = "value") %>%
+  mutate(Legend = factor(Legend, levels = c("estimate", "bootstrap estimate"),
+                         ordered = TRUE))
+
+bootstrap_insect_data2 %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = est_boot, group = year)) +
-    geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
-                  position = position_dodge(0.8), linewidth = 1) +
+    geom_violin(aes(y = rep_boot, group = year)) +
     geom_point(data = estimate_df2, aes(y = value, shape = Legend),
-               colour = "firebrick", size = 3) +
-    geom_label(data = numbers_data2, aes(y = 1.1, label = label_tot),
-               size = 3, label.padding = unit(0.35, "lines")) +
-    labs(y = "evenness", colour = "Confidence interval") +
+               colour = "firebrick", size = 3, alpha = 0.5) +
+    geom_errorbar(data = ci_df2, aes(ymin = ll, ymax = ul), linewidth = 1, width = 0.4,
+                  colour = "cornflowerblue") +
+    labs(y = "evenness",) +
     theme(legend.position = "bottom") +
-    scale_y_continuous(limits = c(NA, 1.1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(
-      breaks = sort(unique(bootstrap_insect_data_final2$year))
-    ) +
-    ggtitle("Without outliers 2.5*RMSE")
-```
-
-```{r, echo=FALSE}
-extreme_species2 <- cv_results_loo %>%
-  filter(perc_diff >= 10) %>%
-  distinct(species_left_out) %>%
-  pull()
-```
-
-Exclude species `r extreme_species2`.
-
-```{r, fig.width = 10, echo=FALSE}
-insect_data_new3 <- insect_data$data %>%
-  filter(year > 2010,
-         !taxonKey %in% extreme_species2)
-
-# Bootstrapping
-bootstrap_insect_data3 <- perform_bootstrap_ts(
-  data_cube_df = insect_data_new3,
-  fun = evenness_formula,
-  samples = 1000,
-  seed = 123)
-
-# Summarise in dataframe
-bootstrap_insect_data_full3 <- bootstrap_list_to_df(bootstrap_insect_data3)
-
-# Calculate confidence intervals
-ci_df3 <- get_bootstrap_ci(bootstrap_insect_data3, h = logit, hinv = inv_logit,
-                           type = c("norm", "basic", "perc", "bca"))
-
-# Join dataframes
-bootstrap_insect_data_final3 <- bootstrap_insect_data_full3 %>%
-  full_join(ci_df3, by = join_by(year), relationship = "many-to-many")
-
-numbers_data3 <- insect_data_new3 %>%
-  group_by(year) %>%
-  summarize(num_occ = sum(.data$obs),
-            num_spec = n_distinct(taxonKey),
-            .groups = "drop") %>%
-  mutate(label_occ = paste("n_occ", num_occ, sep = "="),
-         label_spec = paste("n_spec", num_spec, sep = "="),
-         label_tot = paste(label_occ, label_spec, sep = "\n"))
-
-estimate_df3 <- bootstrap_insect_data_final3 %>%
-  distinct(year, estimate = est_original, bias_boot) %>%
-  mutate(bias = estimate + bias_boot) %>%
-  pivot_longer(cols = c("estimate", "bias"),
-               names_to = "Legend", values_to = "value")
-
-# Visualisation
-bootstrap_insect_data_final3 %>%
-  ggplot(aes(x = year)) +
-    geom_violin(aes(y = est_boot, group = year)) +
-    geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
-                  position = position_dodge(0.8), linewidth = 1) +
-    geom_point(data = estimate_df3, aes(y = value, shape = Legend),
-               colour = "firebrick", size = 3) +
-    geom_label(data = numbers_data3, aes(y = 1.1, label = label_tot),
-               size = 3, label.padding = unit(0.35, "lines")) +
-    labs(y = "evenness", colour = "Confidence interval") +
-    theme(legend.position = "bottom") +
-    scale_y_continuous(limits = c(NA, 1.1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(
-      breaks = sort(unique(bootstrap_insect_data_final3$year))
-    ) +
+    scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data2$year))) +
     ggtitle("Without outliers 10 % RE")
 ```
 
-We see that the shape of the distributions is more symmetric and unimodal, although we still see bimodal distributions in 2015 and 2018 for RMSE and 2015 for RE. The different types of intervals seem to be more in accordance than before.
-
-We also see that interval width increases with bootstrap standard error as expected. E.g. for RMSE:
-
-```{r, echo=FALSE}
-bootstrap_insect_data_final2 %>%
-  mutate(ci_width = ul - ll) %>%
-  distinct(year, se_boot, int_type, ci_width) %>%
-  ggplot(aes(x = se_boot, y = ci_width, colour = int_type)) +
-    geom_point() +
-    geom_smooth(method = "lm", formula = "y ~ x") +
-    labs(x = "bootstrap standard error", y = "interval width",
-         colour = "Confidence\ninterval")
-```
-
+We see that the eveness increases as expected without outliers.
 We can conclude that flagging species with extreme values is important and that it can have large consequences for indicator uncertainty calculation.
 
 # Interpretation and visualisation of uncertainty
