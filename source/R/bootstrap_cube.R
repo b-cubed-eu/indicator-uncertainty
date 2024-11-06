@@ -63,8 +63,7 @@ bootstrap_cube <- function(
     # Perform bootstrapping
     bootstrap_samples_list <- resample_df %>%
       split(seq(nrow(resample_df))) %>%
-      purrr::map(bootstrap_resample, fun = b3gbi::pielou_evenness_ts,
-                 .progress = TRUE)
+      purrr::map(bootstrap_resample, fun = fun, .progress = TRUE)
 
     # Calculate true statistic
     t0 <- fun(data_cube)$data
@@ -83,6 +82,7 @@ bootstrap_cube <- function(
                     bias_boot = mean(.data$diff),
                     .by = all_of(grouping_var)) %>%
       dplyr::select(-"diff") %>%
+      dplyr::arrange(.data[[grouping_var]]) %>%
       dplyr::select("sample", all_of(grouping_var), "est_original",
                     dplyr::everything())
   } else {
