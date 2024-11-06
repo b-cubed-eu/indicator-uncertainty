@@ -28,7 +28,7 @@ library(knitr)       # Nice tables
 # Source functions
 source(here("source", "R", "bootstrap_cube.R"))
 source(here("source", "R", "get_bootstrap_ci.R"))
-source(here("source", "R", "leave_one_species_out_cv.R"))
+source(here("source", "R", "cross_validate_species.R"))
 source(here("source", "R", "add_classification_as_factor.R"))
 ```
 
@@ -369,7 +369,7 @@ $$
 
 
 ```{r}
-cv_results_loo <- leave_one_species_out_cv(
+cv_results_loo <- cross_validate_species(
   data_cube = insect_data_new,
   fun = b3gbi::pielou_evenness_ts,
   grouping_var = "year",
@@ -414,7 +414,7 @@ cv_results_loo %>%
 Do we get similar values for the summary statistics if we use k-fold cross-validation?
 
 ```{r}
-cv_results_kfold <- leave_one_species_out_cv(
+cv_results_kfold <- cross_validate_species(
   data_cube = insect_data_new,
   fun = b3gbi::pielou_evenness_ts,
   grouping_var = "year",
@@ -448,76 +448,6 @@ bind_rows(mean_cv_stats_loo, mean_cv_stats_kfold) %>%
   kable()
 ```
 
-How do the bootstrap distribution and the intervals look like if we exclude all species with error larger than 10 % RE in any year?
-This is of course not good practice in general, but is performed here to explore the effect on the bootstrap distribution and the confidence intervals.
-
-```{r}
-extreme_species <- cv_results_loo %>%
-  filter(perc_diff > 10) %>%
-  pull(species_left_out)
-```
-
-
-```{r, fig.width = 10, echo=FALSE, warning=FALSE}
-p +
-  ggtitle("With outliers")
-```
-
-Exclude species `r extreme_species`.
-
-```{r, fig.width = 10, echo=FALSE}
-insect_data_new2 <- insect_data$data %>%
-  filter(year > 2010,
-         !taxonKey %in% extreme_species)
-
-insect_data_new2 <- process_cube(
-  insect_data_new2,
-  cols_occurrences = "obs",
-  cols_speciesKey = "taxonKey")
-
-# Bootstrapping
-bootstrap_insect_data2 <- bootstrap_cube(
-  data_cube = insect_data_new2,
-  fun = b3gbi::pielou_evenness_ts,
-  grouping_var = "year",
-  samples = 1000,
-  seed = 123)
-
-# Calculate confidence intervals
-ci_df2 <- get_bootstrap_ci(
-  bootstrap_samples_df = bootstrap_insect_data2,
-  grouping_var = "year",
-  type = "perc",
-  conf = 0.95,
-  aggregate = TRUE)
-
-# Visualisation
-bias_df2 <- bootstrap_insect_data2 %>%
-  distinct(year, estimate = est_original, `bootstrap estimate` = est_boot)
-
-estimate_df2 <- bias_df2 %>%
-  pivot_longer(cols = c("estimate", "bootstrap estimate"),
-               names_to = "Legend", values_to = "value") %>%
-  mutate(Legend = factor(Legend, levels = c("estimate", "bootstrap estimate"),
-                         ordered = TRUE))
-
-bootstrap_insect_data2 %>%
-  ggplot(aes(x = year)) +
-    geom_violin(aes(y = rep_boot, group = year)) +
-    geom_point(data = estimate_df2, aes(y = value, shape = Legend),
-               colour = "firebrick", size = 3, alpha = 0.5) +
-    geom_errorbar(data = ci_df2, aes(ymin = ll, ymax = ul), linewidth = 1, width = 0.4,
-                  colour = "cornflowerblue") +
-    labs(y = "evenness",) +
-    theme(legend.position = "bottom") +
-    scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data2$year))) +
-    ggtitle("Without outliers 10 % RE")
-```
-
-We see that the eveness increases as expected without outliers.
-We can conclude that flagging species with extreme values is important and that it can have large consequences for indicator uncertainty calculation.
-
 # Interpretation and visualisation of uncertainty
 
 Here we will follow the methods implemented by the [effectclass package](https://inbo.github.io/effectclass/).
@@ -541,16 +471,13 @@ ggplot(ds, aes(x = effect, y = mean, ymin = lcl, ymax = ucl, link_sd = sd)) +
 
 ## Comparing with a constant
 
-We select the summary statistics from the previous section (without the outliers).
-We only keep the BCa interval.
+We select the summary statistics.
 
 ```{r}
-# Filter data for visualisation
-insect_eveness_df <- bootstrap_insect_data_final2 %>%
-  filter(int_type == "bca") %>%
-  distinct(year, est_original, int_type, ll, ul, conf_level)
+summary_df <- ci_df %>%
+  select(year, est_original, ll, ul, conf_level, int_type)
 
-insect_eveness_df %>%
+summary_df %>%
   kable()
 ```
 
@@ -560,10 +487,10 @@ We use thresholds of 0.1 to distinguish between strong and moderate effects.
 ```{r}
 # Add classification based on reference and thresholds
 insect_eveness_effects <- add_classification_as_factor(
-  df = insect_eveness_df,
+  df = summary_df,
   cl_columns = c("ll", "ul"),
   threshold = 0.1,
-  reference = 0.7,
+  reference = 0.4,
   coarse = TRUE)
 
 insect_eveness_effects %>%
@@ -576,7 +503,7 @@ Coarse classification:
 ```{r}
 insect_eveness_effects %>%
   ggplot(aes(x = year, y = est_original, ymin = ll, ymax = ul)) +
-    stat_effect(reference = 0.7, threshold = c(0.6, 0.8), detailed = FALSE) +
+    stat_effect(reference = 0.4, threshold = c(0.3, 0.5), detailed = FALSE) +
     labs(y = "evenness") +
     scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
     scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year)))
@@ -587,8 +514,8 @@ We can create this figure ourselves:
 ```{r}
 insect_eveness_effects %>%
   ggplot(aes(x = year)) +
-    geom_hline(yintercept = 0.7, linetype = "longdash", colour = "black") +
-    geom_hline(yintercept = c(0.6, 0.8), linetype = "dotdash") +
+    geom_hline(yintercept = 0.4, linetype = "longdash", colour = "black") +
+    geom_hline(yintercept = c(0.3, 0.5), linetype = "dotdash") +
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = effect_coarse),
                   linewidth = 1.5, show.legend = TRUE) +
     geom_point(aes(y = est_original), colour = "black", size = 3.5) +
@@ -608,7 +535,7 @@ Fine classification:
 ```{r}
 insect_eveness_effects %>%
   ggplot(aes(x = year, y = est_original, ymin = ll, ymax = ul)) +
-  stat_effect(threshold = c(0.6, 0.8), reference = 0.7) +
+  stat_effect(threshold = c(0.3, 0.5), reference = 0.4) +
   labs(y = "evenness") +
   scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
   scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year)))
@@ -617,8 +544,8 @@ insect_eveness_effects %>%
 ```{r}
 insect_eveness_effects %>%
   ggplot(aes(x = year)) +
-    geom_hline(yintercept = 0.7, linetype = "longdash", colour = "black") +
-    geom_hline(yintercept = c(0.6, 0.8), linetype = "dotdash") +
+    geom_hline(yintercept = 0.4, linetype = "longdash", colour = "black") +
+    geom_hline(yintercept = c(0.3, 0.5), linetype = "dotdash") +
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = effect),
                   linewidth = 1.5, show.legend = TRUE) +
     geom_point(aes(y = est_original), colour = "black", size = 3.5) +
@@ -657,9 +584,10 @@ This can be done using the `ref_group` argument.
 
 ```{r}
 # Bootstrapping
-bootstrap_insect_data_diff <- perform_bootstrap_ts(
-  data_cube_df = insect_data_new2,
-  fun = evenness_formula,
+bootstrap_insect_data_diff <- bootstrap_cube(
+  data_cube = insect_data_new,
+  fun = b3gbi::pielou_evenness_ts,
+  grouping_var = "year",
   samples = 1000,
   ref_group = 2011,
   seed = 123)

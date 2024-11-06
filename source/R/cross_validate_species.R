@@ -30,7 +30,7 @@
 #' - Error metrics summarised by `grouping_var`: mean relative difference
 #' (`mre`), mean squared error (`mse`) and root mean squared error (`rmse`).
 
-leave_one_species_out_cv <- function(
+cross_validate_species <- function(
     data_cube,
     fun,
     grouping_var,
