@@ -77,10 +77,11 @@ bootstrap_cube <- function(
       dplyr::rowwise() %>%
       dplyr::mutate(diff = .data$rep_boot - .data$est_original) %>%
       dplyr::ungroup() %>%
-      dplyr::mutate(est_boot = mean(.data$rep_boot),
-                    se_boot = stats::sd(.data$rep_boot),
-                    bias_boot = mean(.data$diff),
-                    .by = all_of(grouping_var)) %>%
+      dplyr::mutate(
+        est_boot = mean(.data$rep_boot),
+        se_boot = stats::sd(.data$rep_boot),
+        bias_boot = mean(.data$diff),
+        .by = all_of(grouping_var)) %>%
       dplyr::select(-"diff") %>%
       dplyr::arrange(.data[[grouping_var]]) %>%
       dplyr::select("sample", all_of(grouping_var), "est_original",
