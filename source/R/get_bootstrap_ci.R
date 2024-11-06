@@ -34,6 +34,27 @@ get_bootstrap_ci <- function(
          call. = FALSE)
   })
 
+  alpha <- (1 - conf) / 2
+
+  if (type == "perc") {
+    conf_df <- bootstrap_samples_df %>%
+      mutate(
+        int_type = type,
+        ll = stats::quantile(.data$rep_boot, probs = alpha),
+        ul = stats::quantile(.data$rep_boot, probs = 1 - alpha),
+        conf_level = conf,
+        .by = all_of(grouping_var))
+  } else {
+    stop("bca not implemented yet")
+  }
+
+  if (aggregate) {
+    conf_df_out <- conf_df %>%
+      select(-c("sample", "rep_boot")) %>%
+      distinct()
+  } else {
+    conf_df_out <- conf_df
+  }
 
   return(conf_df_out)
 }

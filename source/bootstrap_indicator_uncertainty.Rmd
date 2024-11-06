@@ -27,7 +27,6 @@ library(knitr)       # Nice tables
 
 # Source functions
 source(here("source", "R", "evenness_formula.R"))
-source(here("source", "R", "perform_bootstrap_ts.R"))
 source(here("source", "R", "bootstrap_cube.R"))
 source(here("source", "R", "bootstrap_list_to_df.R"))
 source(here("source", "R", "get_bootstrap_ci.R"))
@@ -167,65 +166,45 @@ We calculate `b3gbi::pielou_evenness_ts` on the insect data from after 2010.
 bootstrap_insect_data <- bootstrap_cube(
   data_cube = insect_data_new,
   fun = b3gbi::pielou_evenness_ts,
+  grouping_var = "year",
   samples = 1000,
   seed = 123)
 ```
 
 We visualise the distribution of the bootstrap replicates
-The red triangles are the the original sample estimates $\hat{\theta}$.
+The bootstrap bias is the difference between the estimate and the bootstrap estimate.
 
-```{r}
-estimate_df <- bootstrap_insect_data %>%
-  distinct(year, estimate = est_original, bias_boot) %>%
-  mutate(bias = estimate + bias_boot) %>%
-  pivot_longer(cols = c("estimate", "bias"),
-               names_to = "Legend", values_to = "value")
+```{r, warning=FALSE}
+bias_df <- bootstrap_insect_data %>%
+  distinct(year, estimate = est_original, `bootstrap estimate` = est_boot)
 
-p <- bootstrap_insect_data %>%
+estimate_df <- bias_df %>%
+  pivot_longer(cols = c("estimate", "bootstrap estimate"),
+               names_to = "Legend", values_to = "value") %>%
+  mutate(Legend = factor(Legend, levels = c("estimate", "bootstrap estimate"),
+                         ordered = TRUE))
+
+bootstrap_insect_data %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = est_boot, group = year)) +
+    geom_violin(aes(y = rep_boot, group = year)) +
+    geom_segment(data = bias_df,
+                 aes(xend = year, y = estimate, yend = `bootstrap estimate`),
+                 colour = "cornflowerblue", linewidth = 1) +
     geom_point(data = estimate_df, aes(y = value, shape = Legend),
                colour = "firebrick", size = 3) +
     labs(y = "evenness",) +
     theme(legend.position = "bottom") +
-    scale_y_continuous(limits = c(NA, 1.1), breaks = seq(-10, 10, 0.25)) +
+    scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
     scale_x_continuous(breaks = sort(unique(bootstrap_insect_data$year)))
-p
 ```
 
-We get confidence intervals (`boot::boot.ci()`) and add it to the dataframe.
-There are five types of intervals that can be calculated.
-The default calculates all intervals.
+We provide two types of intervals that can be calculated.
 
 Davison, A.C. & Hinkley, D.V. (1997). *Bootstrap Methods and Their Application*, Chapter 5. Cambridge University Press.
 
 See also [this site](https://www.r-bloggers.com/2019/09/understanding-bootstrap-confidence-interval-output-from-the-r-boot-package/).
 
-**1. Normal approximation** (normal)
-
-Assuming the bootstrap distribution of the statistic is approximately normal.
-
-$$
-\left[ \hat{\theta} - \text{Bias}_{\text{boot}} - \text{SE}_{\text{boot}} \times z_{1-\alpha/2}, \hat{\theta} - \text{Bias}_{\text{boot}} + \text{SE}_{\text{boot}} \times z_{1-\alpha/2} \right]
-$$
-
-where $z_{1-\alpha/2}$ is the $1-\alpha/2$ quantile of the standard normal distribution for $\alpha$ confidence level.
-
-**2. Basic bootstrap method** (basic)
-
-Centering the interval around the original estimate $\hat{\theta}$.
-
-$$
-\left[ 2\hat{\theta} - \hat{\theta}^*_{(1-\alpha/2)}, 2\hat{\theta} - \hat{\theta}^*_{(\alpha/2)} \right]
-$$
-
-where $\hat{\theta}^*_{(\alpha/2)}$ and $\hat{\theta}^*_{(1-\alpha/2)}$ are the $\alpha/2$ and $1-\alpha/2$ percentiles of the bootstrap distribution, respectively.
-
-**3. Studentized bootstrap method** (studentized)
-
-Similar as **1**, but $z_{1-\alpha/2}$ estimated based on the bootstrap distribution.
-
-**4. Bootstrap percentile method** (percent)
+**1. Bootstrap percentile method** (percent)
 
 Using the percentiles of the bootstrap distribution.
 
@@ -235,7 +214,7 @@ $$
 
 where $\hat{\theta}^*_{(\alpha/2)}$ and $\hat{\theta}^*_{(1-\alpha/2)}$ are the $\alpha/2$ and $1-\alpha/2$ percentiles of the bootstrap distribution, respectively.
 
-**5. Adjusted bootstrap percentile method (Bias-Corrected and Accelerated, BCa)** (bca)
+**2. Adjusted bootstrap percentile method (Bias-Corrected and Accelerated, BCa)** (bca)
 
 Adjusting for bias and skewness in the bootstrap distribution.
 
@@ -245,76 +224,41 @@ $$
 
 where $\alpha_1$ and $\alpha_2$ are adjusted percentiles taking into account the bias and acceleration (adjust for skewness).
 
-Because evenness is a value between 0 and 1, we calculate the intervals under the logit transformation.
-The intervals are calculated on the scale of $h(t)$
-
-$$
-h(t) = \text{logit}(t) = \text{log}\left(\frac{t}{1 - t}\right)
-$$
-Afterwards, the inverse function $h_{\text{inv}}(l)$ applied to the resulting intervals.
-
-$$
-h_{\text{inv}}(l) = \text{inv_logit}(l) = \frac{e^l}{1 + e^l}
-$$
+We calculate the percentile intervals.
 
 ```{r}
 # Calculate confidence intervals
-ci_df <- get_bootstrap_ci(bootstrap_insect_data, type = "perc")
-
-# Join dataframes
-bootstrap_insect_data_final <- bootstrap_insect_data_full %>%
-  full_join(ci_df, by = join_by(year), relationship = "many-to-many")
+ci_df <- get_bootstrap_ci(
+  bootstrap_samples_df = bootstrap_insect_data,
+  grouping_var = "year",
+  type = "perc",
+  conf = 0.95,
+  aggregate = TRUE)
 ```
-
-Calculation of studentized intervals failed.
-Its use is further explained in `?boot::boot.ci()`.
 
 ## Visualise confidence intervals
 
 We visualise the distribution of the bootstrap replicates and the confidence intervals.
-The red triangles are the the original sample estimates $\hat{\theta}$.
 
-```{r, fig.width = 10, echo=FALSE}
-numbers_data <- insect_data_new %>%
-  group_by(year) %>%
-  summarize(num_occ = sum(.data$obs),
-            num_spec = n_distinct(taxonKey),
-            .groups = "drop") %>%
-  mutate(label_occ = paste("n_occ", num_occ, sep = "="),
-         label_spec = paste("n_spec", num_spec, sep = "="),
-         label_tot = paste(label_occ, label_spec, sep = "\n"))
-
-estimate_df <- bootstrap_insect_data_final %>%
-  distinct(year, estimate = est_original, bias_boot) %>%
-  mutate(bias = estimate + bias_boot) %>%
-  pivot_longer(cols = c("estimate", "bias"),
-               names_to = "Legend", values_to = "value")
-
-p <- bootstrap_insect_data_final %>%
+```{r}
+p <- bootstrap_insect_data %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = est_boot, group = year)) +
-    geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
-                  position = position_dodge(0.8), linewidth = 1) +
+    geom_violin(aes(y = rep_boot, group = year)) +
     geom_point(data = estimate_df, aes(y = value, shape = Legend),
-               colour = "firebrick", size = 3) +
-    geom_label(data = numbers_data, aes(y = 1.1, label = label_tot),
-               size = 3, label.padding = unit(0.35, "lines")) +
-    labs(y = "evenness", colour = "Confidence interval") +
+               colour = "firebrick", size = 3, alpha = 0.5) +
+    geom_errorbar(data = ci_df, aes(ymin = ll, ymax = ul), linewidth = 1, width = 0.4,
+                  colour = "cornflowerblue") +
+    labs(y = "evenness",) +
     theme(legend.position = "bottom") +
-    scale_y_continuous(limits = c(NA, 1.1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data_final$year)))
+    scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data$year)))
 p
 ```
 
-There is quite some difference in interval width when values are small.
-Then, the basic and normal intervals are much smaller than bca and percent.
-
-The interval width of percent increases when the bootstrap standard error increases.
-The interval width of basic decreases when the bootstrap standard error increases.
-We also see a decreasing trend for normal.
+The interval width of percent increases when the bootstrap standard error increases as expected.
 
 ```{r, echo=FALSE}
-bootstrap_insect_data_final %>%
+ci_df %>%
   mutate(ci_width = ul - ll) %>%
   distinct(year, se_boot, int_type, ci_width) %>%
   ggplot(aes(x = se_boot, y = ci_width, colour = int_type)) +
@@ -325,7 +269,7 @@ bootstrap_insect_data_final %>%
 ```
 
 ```{r, echo=FALSE}
-bootstrap_insect_data_final %>%
+ci_df %>%
   mutate(ci_width = ul - ll) %>%
   distinct(year, se_boot, int_type, ci_width) %>%
   group_by(int_type) %>%
@@ -335,10 +279,10 @@ bootstrap_insect_data_final %>%
   kable()
 ```
 
-We see the same when we look at bias.
+We see no clear relation to bias.
 
 ```{r, echo=FALSE}
-bootstrap_insect_data_final %>%
+ci_df %>%
   mutate(ci_width = ul - ll) %>%
   distinct(year, bias_boot, int_type, ci_width) %>%
   ggplot(aes(x = bias_boot, y = ci_width, colour = int_type)) +
@@ -349,7 +293,7 @@ bootstrap_insect_data_final %>%
 ```
 
 ```{r, echo=FALSE}
-bootstrap_insect_data_final %>%
+ci_df %>%
   mutate(ci_width = ul - ll) %>%
   distinct(year, bias_boot, int_type, ci_width) %>%
   group_by(int_type) %>%
@@ -360,7 +304,7 @@ bootstrap_insect_data_final %>%
 ```
 
 There is some discussion on the use of [the percentile interval](https://stats.stackexchange.com/questions/355781/is-it-true-that-the-percentile-bootstrap-should-never-be-used).
-The BCa approach takes into account both bias and skewness and seems to be the best approach for this situation.
+The BCa approach takes into account both bias and skewness and seems to be the best method for the complete range of estimates from all possible indicator functions.
 
 # Influence of species on indicator value
 
