@@ -935,3 +935,5 @@ Although these methods require additional testing, the first results show that b
 - Incorporation of functions in b3gbi package (or separate package?)
 
 > Bootstrapping should happen on cube level
+> Transformation is not a good idea, eveness can be 0 or 1
+> ...
