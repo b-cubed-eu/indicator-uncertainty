@@ -1,5 +1,5 @@
 ---
-title: "Calculate biodiversity indicator uncertainty via bootstrapping"
+title: "Calculate biodiversity indicator uncertainty via bootstrapping on the complete cube"
 author: "Ward Langeraert"
 date: "`r Sys.Date()`"
 output:
@@ -35,9 +35,15 @@ cache_path <- here("data", "cache")
 dir.create(cache_path)
 ```
 
+# Introduction
+
+We developed functions for bootstrapping in `bootstrap_indicator_uncertainty_old.Rmd`.
+However, these were not correctly implemented and not scalable for all indicator functions.
+In this document, we revise the bootstrapping functions and require input as a `"processed_cube"` object as created by `b3gbi::process_cube()` and functions should be able to process these objects.
+
 # Exploration of the b3gbi package
 
-We install b3gbi package version 0.2.1.
+We install b3gbi package version 0.2.2.
 We load a dataset from the package.
 How does the cube look like?
 
@@ -100,13 +106,7 @@ Let's calculate this metric from scratch in the next section.
 We select the data after 2010 to ensure calculations with enough data.
 
 ```{r}
-insect_data_new <- insect_data$data %>%
-  filter(year > 2010)
-
-insect_data_new <- process_cube(
-  insect_data_new,
-  cols_occurrences = "obs",
-  cols_speciesKey = "taxonKey")
+insect_data_new <- process_cube_old(cube_name, tax_info, first_year = 2011)
 
 insect_data_new$data %>%
   group_by(year) %>%
@@ -749,13 +749,14 @@ if (file.exists(insect_data_bootstrapped_path)) {
     fun = b3gbi::pielou_evenness_ts,
     grouping_var = "year",
     samples = 1000,
+    ref_group = 2005,
     seed = 123)
   saveRDS(insect_data_bootstrapped, insect_data_bootstrapped_path)
 }
 
 # Calculate confidence intervals
 insect_data_ci <- get_bootstrap_ci(
-  bootstrap_samples_df = bootstrap_insect_data,
+  bootstrap_samples_df = insect_data_bootstrapped,
   grouping_var = "year",
   type = "perc",
   conf = 0.95,
@@ -805,4 +806,3 @@ Although these methods require additional testing, the first results show that b
 - How long does cross-validation take for big datasets?
 - Error handling
   - Bootstrapping and confidence interval calculations do not always work with few data
-- ...
