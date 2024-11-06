@@ -64,10 +64,19 @@ bootstrap_cube <- function(
     split(seq(nrow(resample_df))) %>%
     purrr::map(bootstrap_resample, fun = fun, .progress = TRUE)
 
-  # Calculate true statistic
-  t0 <- fun(data_cube)$data
-
   if (!is.na(ref_group)) {
+    # Calculate true statistic
+    t0_full <- fun(data_cube)$data
+
+    ref_val <- t0_full %>%
+      filter(.data[[grouping_var]] == !!ref_group) %>%
+      pull(diversity_val)
+
+    t0 <- t0_full %>%
+      filter(.data[[grouping_var]] != !!ref_group) %>%
+      mutate(diversity_val = diversity_val - ref_val)
+
+    # Get bootstrap samples as a list
     bootstrap_samples_list <- lapply(bootstrap_samples_list_raw, function(df) {
       ref_val <- df %>%
         filter(.data[[grouping_var]] == !!ref_group) %>%
@@ -78,6 +87,10 @@ bootstrap_cube <- function(
         mutate(diversity_val = diversity_val - ref_val)
     })
   } else {
+    # Calculate true statistic
+    t0 <- fun(data_cube)$data
+
+    # Get bootstrap samples as a list
     bootstrap_samples_list <- bootstrap_samples_list_raw
   }
 
