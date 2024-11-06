@@ -6,6 +6,8 @@
 
 # Investigate indicator uncertainty
 
+<!-- spell-check: ignore:start -->
+
 [Langeraert, Ward![ORCID logo](https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png)](https://orcid.org/0000-0002-5900-8109)[^aut][^cre][^INBO]
 [Dove, Shawn![ORCID logo](https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png)](https://orcid.org/0000-0001-9465-5638)[^aut][^JLU]
 [Van Daele, Toon![ORCID logo](https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png)](https://orcid.org/0000-0002-1362-853X)[^aut][^INBO]
@@ -18,6 +20,8 @@ European Union's Horizon Europe Research and Innovation Programme (ID No 1010595
 [^cre]: contact person
 [^INBO]: Research Institute for Nature and Forest (INBO), Herman Teirlinckgebouw, Havenlaan 88 PO Box 73, B-1000 Brussels, Belgium
 [^JLU]: Justus-Liebig-Universitaet Giessen (JLU), Ludwigstrasse 23, 35390 Giessen, Germany
+
+<!-- spell-check: ignore:end -->
 
 **keywords**: uncertainty quantification; uncertainty visualisation; biodiversity indicators; data cubes
 

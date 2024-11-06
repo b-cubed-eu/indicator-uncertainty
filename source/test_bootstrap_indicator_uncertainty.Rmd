@@ -78,7 +78,7 @@ plot(map_obs_rich_insects,
 
 ## Calculate an index over time
 
-Let's calculate Pietlou's eveness over time using b3gbi.
+Let's calculate Pielou's evenness over time using b3gbi.
 
 ```{r}
 eveness_insect_data <- pielou_evenness_ts(insect_data)
@@ -225,13 +225,18 @@ h(t) = \text{logit}(t) = \text{log}\left(\frac{t}{1 - t}\right)
 $$
 Afterwards, the inverse function $h_{\text{inv}}(l)$ applied to the resulting intervals.
 
+<!-- spell-check: ignore:start -->
 $$
 h_{\text{inv}}(l) = \text{inv_logit}(l) = \frac{e^l}{1 + e^l}
 $$
+<!-- spell-check: ignore:end -->
 
 ```{r}
 # Calculate confidence intervals
-ci_df <- get_bootstrap_ci_old(bootstrap_insect_data, h = logit, hinv = inv_logit)
+ci_df <- get_bootstrap_ci_old(
+  bootstrap_insect_data,
+  h = logit,
+  hinv = inv_logit)
 
 # Join dataframes
 bootstrap_insect_data_final <- bootstrap_insect_data_full %>%
@@ -492,8 +497,11 @@ bootstrap_insect_data2 <- perform_bootstrap_ts(
 bootstrap_insect_data_full2 <- bootstrap_list_to_df(bootstrap_insect_data2)
 
 # Calculate confidence intervals
-ci_df2 <- get_bootstrap_ci_old(bootstrap_insect_data2, h = logit, hinv = inv_logit,
-                           type = c("norm", "basic", "perc", "bca"))
+ci_df2 <- get_bootstrap_ci_old(
+  bootstrap_insect_data2,
+  h = logit,
+  hinv = inv_logit,
+  type = c("norm", "basic", "perc", "bca"))
 
 # Join dataframes
 bootstrap_insect_data_final2 <- bootstrap_insect_data_full2 %>%
@@ -558,8 +566,11 @@ bootstrap_insect_data3 <- perform_bootstrap_ts(
 bootstrap_insect_data_full3 <- bootstrap_list_to_df(bootstrap_insect_data3)
 
 # Calculate confidence intervals
-ci_df3 <- get_bootstrap_ci_old(bootstrap_insect_data3, h = logit, hinv = inv_logit,
-                           type = c("norm", "basic", "perc", "bca"))
+ci_df3 <- get_bootstrap_ci_old(
+  bootstrap_insect_data3,
+  h = logit,
+  hinv = inv_logit,
+  type = c("norm", "basic", "perc", "bca"))
 
 # Join dataframes
 bootstrap_insect_data_final3 <- bootstrap_insect_data_full3 %>%
@@ -652,7 +663,7 @@ insect_eveness_df %>%
   kable()
 ```
 
-Let's say we want to test whether the eveness of insects differs from 0.7.
+Let's say we want to test whether the evenness of insects differs from 0.7.
 We use thresholds of 0.1 to distinguish between strong and moderate effects.
 
 ```{r}
@@ -935,5 +946,5 @@ Although these methods require additional testing, the first results show that b
 - Incorporation of functions in b3gbi package (or separate package?)
 
 > Bootstrapping should happen on cube level
-> Transformation is not a good idea, eveness can be 0 or 1
+> Transformation is not a good idea, evenness can be 0 or 1
 > ...

@@ -85,7 +85,7 @@ plot(map_obs_rich_insects,
 
 ## Calculate an index over time
 
-Let's calculate Pietlou's eveness over time using b3gbi.
+Let's calculate Pielou's eveness over time using b3gbi.
 
 ```{r}
 eveness_insect_data <- pielou_evenness_ts(insect_data)
@@ -363,16 +363,19 @@ $$
 6. **Relative Error**: $\text{Rel. Error}_{s_j}$
    - The absolute error, normalised by the true estimate $\hat{\theta}$ and a small error term $\epsilon = 10^{-8}$ to avoid division by zero.
 
+<!-- spell-check: ignore:start -->
 $$
 \text{Rel. Error}_{s_j} = \frac{| \hat{\theta}_{-s_j} - \hat{\theta}|}{\hat{\theta} +\epsilon}
 $$
-
+<!-- spell-check: ignore:end -->
 7. **Summary Measures**:
    - The **Mean Relative Error (MRE)** is the average of the relative errors over all species:
 
+<!-- spell-check: ignore:start -->
 $$
 \text{MRE} = \frac{1}{s} \sum_{j=1}^s \text{Rel. Error}_{s_j}
 $$
+<!-- spell-check: ignore:end -->
 
    - The **Mean Squared Error (MSE)** is the average of the squared errors:
 
@@ -515,7 +518,7 @@ summary_df %>%
   kable()
 ```
 
-Let's say we want to test whether the eveness of insects differs from 0.7.
+Let's say we want to test whether the evenness of insects differs from 0.7.
 We use thresholds of 0.1 to distinguish between strong and moderate effects.
 
 ```{r}
