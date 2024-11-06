@@ -43,83 +43,62 @@ bootstrap_cube <- function(
     set.seed(seed)
   }
 
-  if (is.na(ref_group)) {
-    # Generate bootstrap replicates
-    resample_df <- modelr::bootstrap(data_cube$data, samples, id = "id")
+  # Generate bootstrap replicates
+  resample_df <- modelr::bootstrap(data_cube$data, samples, id = "id")
 
-    # Function for bootstrapping
-    bootstrap_resample <- function(x, fun) {
-      resample_obj <- x$strap[[1]]
-      indices <- as.integer(resample_obj)
-      data <- resample_obj$data[indices,]
+  # Function for bootstrapping
+  bootstrap_resample <- function(x, fun) {
+    resample_obj <- x$strap[[1]]
+    indices <- as.integer(resample_obj)
+    data <- resample_obj$data[indices,]
 
-      data_cube_copy <- data_cube
-      data_cube_copy$data <- data
+    data_cube_copy <- data_cube
+    data_cube_copy$data <- data
 
-      fun(data_cube_copy)$data %>%
-        mutate(sample = as.integer(x$id))
-    }
-
-    # Perform bootstrapping
-    bootstrap_samples_list <- resample_df %>%
-      split(seq(nrow(resample_df))) %>%
-      purrr::map(bootstrap_resample, fun = fun, .progress = TRUE)
-
-    # Calculate true statistic
-    t0 <- fun(data_cube)$data
-
-    # Summarise in dataframe
-    bootstrap_samples_df <- bootstrap_samples_list %>%
-      dplyr::bind_rows() %>%
-      dplyr::rename("rep_boot" = "diversity_val") %>%
-      dplyr::left_join(t0, by = grouping_var) %>%
-      dplyr::rename("est_original" = "diversity_val") %>%
-      dplyr::rowwise() %>%
-      dplyr::mutate(diff = .data$rep_boot - .data$est_original) %>%
-      dplyr::ungroup() %>%
-      dplyr::mutate(
-        est_boot = mean(.data$rep_boot),
-        se_boot = stats::sd(.data$rep_boot),
-        bias_boot = mean(.data$diff),
-        .by = all_of(grouping_var)) %>%
-      dplyr::select(-"diff") %>%
-      dplyr::arrange(.data[[grouping_var]]) %>%
-      dplyr::select("sample", all_of(grouping_var), "est_original",
-                    dplyr::everything())
-  } else {
-    # Define bootstrapping for a difference in a calculated statistic
-    boot_statistic_diff <- function(data, ref_data, indices, fun) {
-      stat <- fun(data[indices])
-      ref_stat <- fun(ref_data[indices])
-
-      return(stat - ref_stat)
-    }
-
-    # Summarise data by temporal column
-    sum_data_list <- data_cube_df %>%
-      dplyr::summarize(num_occ = sum(.data$obs),
-                       .by = dplyr::all_of(c(temporal_col_name, "taxonKey"))
-                       ) %>%
-      dplyr::arrange(.data[[temporal_col_name]]) %>%
-      tidyr::pivot_wider(names_from = dplyr::all_of(temporal_col_name),
-                         values_from = "num_occ",
-                         values_fill = 0) %>%
-      tibble::column_to_rownames("taxonKey") %>%
-      as.list()
-
-    # Perform bootstrapping
-    bootstrap_list <- sum_data_list[
-        setdiff(names(sum_data_list), as.character(ref_group))
-      ] %>%
-      lapply(function(x) {
-        boot::boot(
-          data = x,
-          statistic = boot_statistic_diff,
-          R = samples,
-          fun = fun,
-          ref_data = sum_data_list[[as.character(ref_group)]])
-      })
+    fun(data_cube_copy)$data %>%
+      mutate(sample = as.integer(x$id))
   }
+
+  # Perform bootstrapping
+  bootstrap_samples_list_raw <- resample_df %>%
+    split(seq(nrow(resample_df))) %>%
+    purrr::map(bootstrap_resample, fun = fun, .progress = TRUE)
+
+  # Calculate true statistic
+  t0 <- fun(data_cube)$data
+
+  if (!is.na(ref_group)) {
+    bootstrap_samples_list <- lapply(bootstrap_samples_list_raw, function(df) {
+      ref_val <- df %>%
+        filter(.data[[grouping_var]] == !!ref_group) %>%
+        pull(diversity_val)
+
+      df %>%
+        filter(.data[[grouping_var]] != !!ref_group) %>%
+        mutate(diversity_val = diversity_val - ref_val)
+    })
+  } else {
+    bootstrap_samples_list <- bootstrap_samples_list_raw
+  }
+
+  # Summarise in dataframe
+  bootstrap_samples_df <- bootstrap_samples_list %>%
+    dplyr::bind_rows() %>%
+    dplyr::rename("rep_boot" = "diversity_val") %>%
+    dplyr::left_join(t0, by = grouping_var) %>%
+    dplyr::rename("est_original" = "diversity_val") %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(diff = .data$rep_boot - .data$est_original) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(
+      est_boot = mean(.data$rep_boot),
+      se_boot = stats::sd(.data$rep_boot),
+      bias_boot = mean(.data$diff),
+      .by = all_of(grouping_var)) %>%
+    dplyr::select(-"diff") %>%
+    dplyr::arrange(.data[[grouping_var]]) %>%
+    dplyr::select("sample", all_of(grouping_var), "est_original",
+                  dplyr::everything())
 
   return(bootstrap_samples_df)
 }
