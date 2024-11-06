@@ -30,6 +30,10 @@ source(here("source", "R", "bootstrap_cube.R"))
 source(here("source", "R", "get_bootstrap_ci.R"))
 source(here("source", "R", "cross_validate_species.R"))
 source(here("source", "R", "add_classification_as_factor.R"))
+
+# Cache folder
+cache_path <- here("data", "cache")
+dir.create(cache_path)
 ```
 
 # Exploration of the b3gbi package
@@ -158,8 +162,23 @@ $$
 First we perform bootstrapping.
 We calculate `b3gbi::pielou_evenness_ts` on the insect data from after 2010.
 
-```{r}
+```{r, echo=FALSE}
 # Bootstrapping
+bootstrap_insect_data_path <- file.path(cache_path, "bootstrap_insect_data.Rds")
+if (file.exists(bootstrap_insect_data_path)) {
+  bootstrap_insect_data <- readRDS(bootstrap_insect_data_path)
+} else {
+  bootstrap_insect_data <- bootstrap_cube(
+    data_cube = insect_data_new,
+    fun = b3gbi::pielou_evenness_ts,
+    grouping_var = "year",
+    samples = 1000,
+    seed = 123)
+  saveRDS(bootstrap_insect_data, bootstrap_insect_data_path)
+}
+```
+
+```{r, eval=FALSE}
 bootstrap_insect_data <- bootstrap_cube(
   data_cube = insect_data_new,
   fun = b3gbi::pielou_evenness_ts,
@@ -579,11 +598,28 @@ $$
 <!-- spell-check: ignore:end -->
 
 However, in case of our bootstrapping examples, we cannot use the (co)variance directly to calculate most confidence intervals of the difference.
-Therefore, we should also bootstrap over the difference such that we can calculate all intervals using the `boot:boot.ci()` function.
+Therefore, we should also bootstrap over the difference such that we can calculate all intervals.
 This can be done using the `ref_group` argument.
 
-```{r}
+```{r, echo=FALSE}
 # Bootstrapping
+bootstrap_insect_data_path2 <- file.path(
+  cache_path, "bootstrap_insect_data_diff.Rds")
+if (file.exists(bootstrap_insect_data_path2)) {
+  bootstrap_insect_data <- readRDS(bootstrap_insect_data_path2)
+} else {
+  bootstrap_insect_data_diff <- bootstrap_cube(
+    data_cube = insect_data_new,
+    fun = b3gbi::pielou_evenness_ts,
+    grouping_var = "year",
+    samples = 1000,
+    ref_group = 2011,
+    seed = 123)
+  saveRDS(bootstrap_insect_data_diff, bootstrap_insect_data_path2)
+}
+```
+
+```{r, eval=FALSE}
 bootstrap_insect_data_diff <- bootstrap_cube(
   data_cube = insect_data_new,
   fun = b3gbi::pielou_evenness_ts,
@@ -591,55 +627,54 @@ bootstrap_insect_data_diff <- bootstrap_cube(
   samples = 1000,
   ref_group = 2011,
   seed = 123)
-
-# Summarise in dataframe
-bootstrap_diff_full <- bootstrap_list_to_df(bootstrap_insect_data_diff)
 ```
 
-The intervals can now be values between -1 and 1, so we need to use a different transformation than before.
-The inverse hyperbolic tangent function `atanh()` maps  numbers in the interval [-1, 1] to real numbers.
-The hyperbolic tangent function `tanh()` maps real numbers back to the interval [-1, 1].
+We calculate the percentile interval.
 
 ```{r}
 # Calculate confidence intervals
-ci_diff_df <- get_bootstrap_ci(bootstrap_insect_data_diff,
-                               h = atanh,
-                               hinv = tanh)
-
-# Join dataframes
-bootstrap_diff_final <- bootstrap_diff_full %>%
-  full_join(ci_diff_df, by = join_by(year), relationship = "many-to-many")
+ci_diff_df <-  get_bootstrap_ci(
+  bootstrap_samples_df = bootstrap_insect_data_diff,
+  grouping_var = "year",
+  type = "perc",
+  conf = 0.95,
+  aggregate = TRUE)
 ```
 
 We visualise the intervals.
 
 ```{r, fig.width = 10, echo=FALSE}
-bootstrap_diff_final %>%
+estimate_diff_df <- bootstrap_insect_data_diff %>%
+  distinct(year, estimate = est_original, `bootstrap estimate` = est_boot) %>%
+  pivot_longer(cols = c("estimate", "bootstrap estimate"),
+               names_to = "Legend", values_to = "value") %>%
+  mutate(Legend = factor(Legend, levels = c("estimate", "bootstrap estimate"),
+                         ordered = TRUE))
+
+bootstrap_insect_data_diff %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = est_boot, group = year)) +
-    geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
-                  position = position_dodge(0.8), linewidth = 1) +
-    geom_point(aes(y = est_original), colour = "firebrick", size = 3) +
-    labs(y = "difference in evenness compared to 2011",
-         colour = "Confidence interval") +
+    geom_violin(aes(y = rep_boot, group = year)) +
+    geom_point(data = estimate_diff_df, aes(y = value, shape = Legend),
+               colour = "firebrick", size = 3, alpha = 0.5) +
+    geom_errorbar(data = ci_diff_df, aes(ymin = ll, ymax = ul),
+                  linewidth = 1, width = 0.4, colour = "cornflowerblue") +
+    labs(y = "evenness",) +
     theme(legend.position = "bottom") +
-    scale_y_continuous(limits = c(-1, 1), breaks = seq(-1, 1, 0.25)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_diff_final$year)))
+    scale_y_continuous(limits = c(-1, 1), breaks = seq(-10, 10, 0.25)) +
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data_diff$year)))
 ```
 
 We classify the effects as we did before.
-We select the BCa interval.
 This time our reference is 0 (no change with 2011) and we choose an arbitrary threshold of 0.15.
 
 ```{r}
-# Filter data for visualisation
-insect_eveness_diff_df <- bootstrap_diff_final %>%
-  filter(int_type == "bca") %>%
-  distinct(year, est_original, int_type, ll, ul, conf_level)
+# Select data for visualisation
+summary_diff_df <- ci_df %>%
+  select(year, est_original, ll, ul, conf_level, int_type)
 
 # Add classification based on reference and thresholds
 insect_eveness_diff_effects <- add_classification_as_factor(
-  df = insect_eveness_diff_df,
+  df = summary_diff_df,
   cl_columns = c("ll", "ul"),
   threshold = 0.15,
   reference = 0,
