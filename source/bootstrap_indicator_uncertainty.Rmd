@@ -127,7 +127,7 @@ Below are the common notations used in bootstrapping:
     - A sample of size $n$ drawn with replacement from the original sample $\mathbf{X}$. Each $X_i^*$ is drawn independently from $\mathbf{X}$.
 
 3. **Statistic of Interest**: $\theta$
-    - The parameter or statistic being estimated, such as the mean $\bar{X}$, variance $\sigma^2$, or median.
+    - The parameter or statistic being estimated, such as the mean $\bar{X}$, variance $\sigma^2$, or median.  Let $\hat{\theta}$ denote the estimated value of $\theta$ calculated on the complete dataset $\mathbf{X}$.
 
 4. **Bootstrap Replication**: $\hat{\theta}^*_b$
     - The value of the statistic of interest calculated from the $b$-th bootstrap sample $\mathbf{X}^*_b$. For example, if $\theta$ is the sample mean, $\hat{\theta}^*_b = \bar{X}^*_b$.
@@ -319,7 +319,54 @@ insect_data_new$data %>%
 ```
 
 We can calculate a measure for each species of how much it influences the indicator.
-Like Leave-One-Out Cross-Validation, but where we leave out one species each time.
+Like leave-one-out cross-validation, but where we leave out one species each time.
+Below are the notations used in leave-one-species-out cross-validation:
+
+1. **Original Sample Data**: $\mathbf{X} = \{X_{11}, X_{12}, X_{13}, \ldots, X_{sn}\}$
+    - The initial set of observed data points, where there are $s$ different species and $n$ total samples across all species.
+
+2. **Cross-Validation (CV) Sample**: $\mathbf{X}_{-s_j}$
+    - The full dataset $\mathbf{X}$ excluding all samples belonging to species $j$. This subset is used for training the model when evaluating the performance for species $j$.
+
+3. **Statistic of Interest**: $\theta$
+    - The parameter or statistic being estimated, such as the mean $\bar{X}$, variance $\sigma^2$, or median. Let $\hat{\theta}$ denote the estimated value of $\theta$ calculated on the complete dataset $\mathbf{X}$.
+
+4. **CV Estimate for species** $\mathbf{j}$: $\hat{\theta}_{-s_j}$
+    - The value of the statistic of interest calculated from $\mathbf{X}_{-s_j}$, which excludes species $j$.
+    
+5. **Error**: $\text{Error}_{s_j}$
+   - The difference between the statistic estimated without species $j$ ($\hat{\theta}_{-s_j}$) and the statistic calculated on the complete dataset ($\hat{\theta}$).
+
+$$
+\text{Error}_{s_j} = \hat{\theta}_{-s_j} - \hat{\theta}
+$$
+
+6. **Relative Error**: $\text{Rel. Error}_{s_j}$
+   - The absolute error, normalised by the true estimate $\hat{\theta}$ and a small error term $\epsilon = 10^{-8}$ to avoid division by zero.
+
+$$
+\text{Rel. Error}_{s_j} = \frac{| \hat{\theta}_{-s_j} - \hat{\theta}|}{\hat{\theta} +\epsilon}
+$$
+
+7. **Summary Measures**:
+   - The **Mean Relative Error (MRE)** is the average of the relative errors over all species:
+
+$$
+\text{MRE} = \frac{1}{s} \sum_{j=1}^s \text{Rel. Error}_{s_j}
+$$
+
+   - The **Mean Squared Error (MSE)** is the average of the squared errors:
+
+$$
+\text{MSE} = \frac{1}{s} \sum_{j=1}^s (\text{Error}_{s_j})^2
+$$
+
+   - The **Root Mean Squared Error (RMSE)** is the square root of the MSE:
+
+$$
+\text{RMSE} = \sqrt{\text{MSE}}
+$$
+
 
 ```{r}
 cv_results_loo <- leave_one_species_out_cv(
@@ -359,43 +406,20 @@ cv_results_loo <- cv_results_loo %>%
       right = TRUE,
       include.lowest = TRUE))
 
-# Ensure all categories are in hline_data
-hline_data <- data.frame(
-  perc_diff_category = levels(cv_results_loo$perc_diff_category)
-  ) %>%
-  mutate(
-    yintercept = as.numeric(gsub("(^\\D*|,.*)", "", perc_diff_category))
-  )
-
-# Plot with complete categories and horizontal lines
 cv_results_loo %>%
-  ggplot(aes(x = as.factor(year), y = perc_diff)) +
-    geom_point(aes(color = perc_diff_category), size = 3, show.legend = TRUE) +
-    geom_text_repel(aes(label = as.factor(species_left_out)), size = 3) +
-    # Add horizontal lines per complete category
-    geom_hline(data = hline_data,
-               aes(yintercept = yintercept, color = perc_diff_category),
-               linetype = "dashed") +
-    labs(
-      colour = "Legend",
-      x = "Year",
-      y = "Relative Difference (%)") +
-    scale_y_continuous(
-      breaks = break_points,
-      labels = scales::percent_format(scale = 1)) +
-    scale_color_viridis_d(option = "C", drop = FALSE) +
-    theme_minimal()
+  count(year, perc_diff_category, name = "n_spec") %>%
+  kable()
 ```
 
-Do we get similar values for the (R)MSE if we use k-fold cross-validation?
+Do we get similar values for the summary statistics if we use k-fold cross-validation?
 
 ```{r}
-cv_results_kfold <- leave_one_species_out_ts(
-  data_cube_df = insect_data_new,
-  fun = evenness_formula,
+cv_results_kfold <- leave_one_species_out_cv(
+  data_cube = insect_data_new,
+  fun = b3gbi::pielou_evenness_ts,
+  grouping_var = "year",
   crossv_method = "kfold",
-  k = 10,
-  temporal_col_name = "year")
+  k = 10)
 ```
 
 They are very different.
