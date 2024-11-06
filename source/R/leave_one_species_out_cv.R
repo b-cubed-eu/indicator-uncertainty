@@ -39,8 +39,8 @@ leave_one_species_out_cv <- function(
   require("dplyr")
   require("rlang")
 
-  # Function for bootstrapping
-  bootstrap_cv <- function(x, fun) {
+  # Define cross-validation function
+  cross_validate_f <- function(x, fun) {
     data_cube_copy <- data_cube
     data_cube_copy$data <- x
 
@@ -71,26 +71,37 @@ leave_one_species_out_cv <- function(
       species_left_out = taxon_list
     )
   } else {
-    # Create cross validation datasets
-    cv_dataset <- modelr::crossv_kfold(pivot_dataset, id = "id_cv", k = k)
+    # Species partitioning
+    taxon_list <- data_cube$data %>%
+      distinct(taxonKey) %>%
+      modelr::crossv_kfold(id = "id_cv", k = k)
 
     # Get species left out
-    species_left_out_list <- lapply(lapply(cv_dataset$test, as.integer),
+    species_left_out_list <- lapply(lapply(taxon_list$test, as.integer),
       function(indices) {
-        rownames(pivot_dataset)[indices]
+        df <- data_cube$data %>%
+          distinct(taxonKey)
+
+        df[indices, ] %>%
+          pull(taxonKey)
       }
     )
     names(species_left_out_list) <- NULL
 
     species_df <- tibble(
-      id_cv = as.numeric(cv_dataset$id_cv),
+      id_cv = as.numeric(taxon_list$id_cv),
       species_left_out = species_left_out_list
     )
+
+    # Create cross validation datasets
+    cv_datasets <- lapply(species_left_out_list, function(taxa) {
+      data_cube$data[!data_cube$data$taxonKey %in% taxa, ]
+    })
   }
 
   # Perform function on training data
   results <- cv_datasets %>%
-    purrr::map(bootstrap_cv, fun = fun, .progress = TRUE)
+    purrr::map(cross_validate_f, fun = fun, .progress = TRUE)
 
   # Summarise CV statistics in dataframe
   out_df <- results %>%
