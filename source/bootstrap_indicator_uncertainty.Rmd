@@ -178,7 +178,7 @@ if (file.exists(bootstrap_insect_data_path)) {
 }
 ```
 
-```{r, eval=FALSE}
+```r
 bootstrap_insect_data <- bootstrap_cube(
   data_cube = insect_data_new,
   fun = b3gbi::pielou_evenness_ts,
@@ -386,8 +386,23 @@ $$
 \text{RMSE} = \sqrt{\text{MSE}}
 $$
 
+```{r, echo=FALSE}
+# Bootstrapping
+cv_results_loo_path <- file.path(
+  cache_path, "cv_results_loo.Rds")
+if (file.exists(cv_results_loo_path)) {
+  cv_results_loo <- readRDS(cv_results_loo_path)
+} else {
+  cv_results_loo <- cross_validate_species(
+    data_cube = insect_data_new,
+    fun = b3gbi::pielou_evenness_ts,
+    grouping_var = "year",
+    crossv_method = "loo")
+  saveRDS(cv_results_loo, cv_results_loo_path)
+}
+```
 
-```{r}
+```r
 cv_results_loo <- cross_validate_species(
   data_cube = insect_data_new,
   fun = b3gbi::pielou_evenness_ts,
@@ -619,7 +634,7 @@ if (file.exists(bootstrap_insect_data_path2)) {
 }
 ```
 
-```{r, eval=FALSE}
+```r
 bootstrap_insect_data_diff <- bootstrap_cube(
   data_cube = insect_data_new,
   fun = b3gbi::pielou_evenness_ts,
