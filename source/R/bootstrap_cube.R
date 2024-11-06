@@ -61,7 +61,7 @@ bootstrap_cube <- function(
 
   # Perform bootstrapping
   bootstrap_samples_list_raw <- resample_df %>%
-    split(seq(nrow(resample_df))) %>%
+    split(seq_len(nrow(resample_df))) %>%
     purrr::map(bootstrap_resample, fun = fun, .progress = TRUE)
 
   if (!is.na(ref_group)) {

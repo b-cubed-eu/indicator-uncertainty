@@ -73,17 +73,17 @@ cross_validate_species <- function(
   } else {
     # Species partitioning
     taxon_list <- data_cube$data %>%
-      distinct(taxonKey) %>%
+      distinct(.data$taxonKey) %>%
       modelr::crossv_kfold(id = "id_cv", k = k)
 
     # Get species left out
     species_left_out_list <- lapply(lapply(taxon_list$test, as.integer),
       function(indices) {
         df <- data_cube$data %>%
-          distinct(taxonKey)
+          distinct(.data$taxonKey)
 
         df[indices, ] %>%
-          pull(taxonKey)
+          pull(.data$taxonKey)
       }
     )
     names(species_left_out_list) <- NULL

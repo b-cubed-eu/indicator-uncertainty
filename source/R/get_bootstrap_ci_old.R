@@ -14,7 +14,10 @@
 #' interval (`ll`), the upper limit of the confidence interval (`ul`), and the
 #' confidence level of the intervals (`conf_level`).
 
-get_bootstrap_ci_old <- function(bootstrap_list, ..., temporal_list_name = "year") {
+get_bootstrap_ci_old <- function(
+    bootstrap_list,
+    ...,
+    temporal_list_name = "year") {
   require("dplyr")
   require("rlang")
 

@@ -3,11 +3,11 @@
 #' This function calculates confidence intervals for a list of objects of class
 #' `"boot"` per year into a dataframe containing all required summaries.
 #'
-#' @param bootstrap_samples_df A dataframe containting the bootstrap samples.
+#' @param bootstrap_samples_df A dataframe containing the bootstrap samples.
 #' @param grouping_var ...
 #' @param type A vector of character strings representing the type of intervals
-#' required. The value should be any subset of the values c("perc", "bca") or
-#' simply "all" (default) which will compute both types of intervals.
+#' required. The value should be any subset of the values `c("perc", "bca")` or
+#' simply `"all"` (default) which will compute both types of intervals.
 #' @param conf A scalar or vector containing the confidence level(s) of the
 #' required interval(s). Default 0.95.
 #' @param aggregate ...
