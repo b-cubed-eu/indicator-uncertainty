@@ -50,7 +50,7 @@ bootstrap_cube <- function(
   bootstrap_resample <- function(x, fun) {
     resample_obj <- x$strap[[1]]
     indices <- as.integer(resample_obj)
-    data <- resample_obj$data[indices,]
+    data <- resample_obj$data[indices, ]
 
     data_cube_copy <- data_cube
     data_cube_copy$data <- data
@@ -70,21 +70,21 @@ bootstrap_cube <- function(
 
     ref_val <- t0_full %>%
       filter(.data[[grouping_var]] == !!ref_group) %>%
-      pull(diversity_val)
+      pull(.data$diversity_val)
 
     t0 <- t0_full %>%
       filter(.data[[grouping_var]] != !!ref_group) %>%
-      mutate(diversity_val = diversity_val - ref_val)
+      mutate(diversity_val = .data$diversity_val - ref_val)
 
     # Get bootstrap samples as a list
     bootstrap_samples_list <- lapply(bootstrap_samples_list_raw, function(df) {
       ref_val <- df %>%
         filter(.data[[grouping_var]] == !!ref_group) %>%
-        pull(diversity_val)
+        pull(.data$diversity_val)
 
       df %>%
         filter(.data[[grouping_var]] != !!ref_group) %>%
-        mutate(diversity_val = diversity_val - ref_val)
+        mutate(diversity_val = .data$diversity_val - ref_val)
     })
   } else {
     # Calculate true statistic

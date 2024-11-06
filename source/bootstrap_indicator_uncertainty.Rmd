@@ -207,7 +207,7 @@ bootstrap_insect_data %>%
                  colour = "cornflowerblue", linewidth = 1) +
     geom_point(data = estimate_df, aes(y = value, shape = Legend),
                colour = "firebrick", size = 3) +
-    labs(y = "evenness",) +
+    labs(y = "evenness") +
     theme(legend.position = "bottom") +
     scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
     scale_x_continuous(breaks = sort(unique(bootstrap_insect_data$year)))
@@ -261,9 +261,9 @@ p <- bootstrap_insect_data %>%
     geom_violin(aes(y = rep_boot, group = year)) +
     geom_point(data = estimate_df, aes(y = value, shape = Legend),
                colour = "firebrick", size = 3, alpha = 0.5) +
-    geom_errorbar(data = ci_df, aes(ymin = ll, ymax = ul), linewidth = 1, width = 0.4,
-                  colour = "cornflowerblue") +
-    labs(y = "evenness",) +
+    geom_errorbar(data = ci_df, aes(ymin = ll, ymax = ul), linewidth = 1,
+                  width = 0.4, colour = "cornflowerblue") +
+    labs(y = "evenness") +
     theme(legend.position = "bottom") +
     scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
     scale_x_continuous(breaks = sort(unique(bootstrap_insect_data$year)))
@@ -672,7 +672,7 @@ bootstrap_insect_data_diff %>%
                colour = "firebrick", size = 3, alpha = 0.5) +
     geom_errorbar(data = ci_diff_df, aes(ymin = ll, ymax = ul),
                   linewidth = 1, width = 0.4, colour = "cornflowerblue") +
-    labs(y = "evenness",) +
+    labs(y = "evenness") +
     theme(legend.position = "bottom") +
     scale_y_continuous(limits = c(-1, 1), breaks = seq(-10, 10, 0.25)) +
     scale_x_continuous(breaks = sort(unique(bootstrap_insect_data_diff$year)))
