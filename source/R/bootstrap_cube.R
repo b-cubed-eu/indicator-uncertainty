@@ -7,6 +7,7 @@
 #' See `b3gbi::process_cube()`.
 #' @param fun A function which when applied to `data` returns the statistic(s)
 #' of interest.
+#' @param grouping_var ...
 #' @param samples The number of bootstrap replicates. A single positive integer.
 #' @param ref_group A string indicating the reference time point to compare the
 #' statistic. Default `NA`, no reference time point is used.
@@ -21,6 +22,7 @@
 bootstrap_cube <- function(
     data_cube,
     fun,
+    grouping_var,
     samples = 1000,
     ref_group = NA,
     seed = NA) {
@@ -70,16 +72,19 @@ bootstrap_cube <- function(
     # Summarise in dataframe
     bootstrap_samples_df <- bootstrap_samples_list %>%
       dplyr::bind_rows() %>%
-      dplyr::select(sample, dplyr::everything(), est_boot = diversity_val) %>%
-      dplyr::left_join(t0) %>%
+      dplyr::rename("rep_boot" = "diversity_val") %>%
+      dplyr::left_join(t0, by = grouping_var) %>%
       dplyr::rename("est_original" = "diversity_val") %>%
       dplyr::rowwise() %>%
-      dplyr::mutate(diff = .data$est_boot - .data$est_original) %>%
+      dplyr::mutate(diff = .data$rep_boot - .data$est_original) %>%
       dplyr::ungroup() %>%
-      dplyr::mutate(se_boot = stats::sd(.data$est_boot),
+      dplyr::mutate(est_boot = mean(.data$rep_boot),
+                    se_boot = stats::sd(.data$rep_boot),
                     bias_boot = mean(.data$diff),
-                    .by = all_of(temporal_col_name)) %>%
-      dplyr::select(-"diff")
+                    .by = all_of(grouping_var)) %>%
+      dplyr::select(-"diff") %>%
+      dplyr::select("sample", all_of(grouping_var), "est_original",
+                    dplyr::everything())
   } else {
     # Define bootstrapping for a difference in a calculated statistic
     boot_statistic_diff <- function(data, ref_data, indices, fun) {
