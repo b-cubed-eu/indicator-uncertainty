@@ -173,7 +173,7 @@ Davison, A.C. & Hinkley, D.V. (1997). *Bootstrap Methods and Their Application*,
 
 See also [this site](https://www.r-bloggers.com/2019/09/understanding-bootstrap-confidence-interval-output-from-the-r-boot-package/).
 
-**1. Normal approximation** (normal)
+**1. Normal approximation**
 
 Assuming the bootstrap distribution of the statistic is approximately normal.
 
@@ -183,7 +183,7 @@ $$
 
 where $z_{1-\alpha/2}$ is the $1-\alpha/2$ quantile of the standard normal distribution for $\alpha$ confidence level.
 
-**2. Basic bootstrap method** (basic)
+**2. Basic bootstrap method**
 
 Centering the interval around the original estimate $\hat{\theta}$.
 
@@ -193,11 +193,11 @@ $$
 
 where $\hat{\theta}^*_{(\alpha/2)}$ and $\hat{\theta}^*_{(1-\alpha/2)}$ are the $\alpha/2$ and $1-\alpha/2$ percentiles of the bootstrap distribution, respectively.
 
-**3. Studentized bootstrap method** (studentized)
+**3. Studentized bootstrap method**
 
 Similar as **1**, but $z_{1-\alpha/2}$ estimated based on the bootstrap distribution.
 
-**4. Bootstrap percentile method** (percent)
+**4. Bootstrap percentile method**
 
 Using the percentiles of the bootstrap distribution.
 
@@ -207,7 +207,7 @@ $$
 
 where $\hat{\theta}^*_{(\alpha/2)}$ and $\hat{\theta}^*_{(1-\alpha/2)}$ are the $\alpha/2$ and $1-\alpha/2$ percentiles of the bootstrap distribution, respectively.
 
-**5. Adjusted bootstrap percentile method (Bias-Corrected and Accelerated, BCa)** (bca)
+**5. Adjusted bootstrap percentile method (Bias-Corrected and Accelerated, BCa)**
 
 Adjusting for bias and skewness in the bootstrap distribution.
 
@@ -284,7 +284,7 @@ p
 ```
 
 There is quite some difference in interval width when values are small.
-Then, the basic and normal intervals are much smaller than bca and percent.
+Then, the basic and normal intervals are much smaller than BCa and percentile.
 
 The interval width of percent increases when the bootstrap standard error increases.
 The interval width of basic decreases when the bootstrap standard error increases.

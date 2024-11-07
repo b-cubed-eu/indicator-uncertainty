@@ -68,8 +68,6 @@ insect_data <- process_cube_old(cube_name, tax_info)
 insect_data
 ```
 
-> Where did the info on min. coordinate uncertainty in meters go?
-
 ```{r}
 # Calculate diversity metric
 map_obs_rich_insects <- obs_richness_map(insect_data)
@@ -101,7 +99,7 @@ plot(eveness_insect_data)
 The visualisation of uncertainty in trends is not correct because of two factors:
 
 1. Uncertainty is based on evenness values per year and is not based on the data itself
-2. The predicted becomes negative although evenness is a value between 0 and 1
+2. The predicted eveness becomes negative although evenness is a value between 0 and 1
 
 Let's calculate this metric from scratch in the next section.
 We select the data after 2010 to ensure calculations with enough data.
@@ -218,9 +216,11 @@ We provide two types of intervals that can be calculated.
 
 Davison, A.C. & Hinkley, D.V. (1997). *Bootstrap Methods and Their Application*, Chapter 5. Cambridge University Press.
 
-See also [this site](https://www.r-bloggers.com/2019/09/understanding-bootstrap-confidence-interval-output-from-the-r-boot-package/).
+DiCiccio, T. J., & Efron, B. (1996). Bootstrap confidence intervals. Statistical science, 11(3), 189-228. https://doi.org/10.1214/ss/1032280214
 
-**1. Bootstrap percentile method** (percent)
+See also [this blog post](https://www.r-bloggers.com/2019/09/understanding-bootstrap-confidence-interval-output-from-the-r-boot-package/) and [this post](https://www.datacamp.com/tutorial/bootstrap-r?dc_referrer=https%3A%2F%2Fduckduckgo.com%2F).
+
+**1. Bootstrap percentile method**
 
 Using the percentiles of the bootstrap distribution.
 
@@ -230,7 +230,7 @@ $$
 
 where $\hat{\theta}^*_{(\alpha/2)}$ and $\hat{\theta}^*_{(1-\alpha/2)}$ are the $\alpha/2$ and $1-\alpha/2$ percentiles of the bootstrap distribution, respectively.
 
-**2. Adjusted bootstrap percentile method (Bias-Corrected and Accelerated, BCa)** (bca)
+**2. Adjusted bootstrap percentile method (Bias-Corrected and Accelerated, BCa)**
 
 Adjusting for bias and skewness in the bootstrap distribution.
 
@@ -240,9 +240,13 @@ $$
 
 where $\alpha_1$ and $\alpha_2$ are adjusted percentiles taking into account the bias and acceleration (adjust for skewness).
 
+> Figure out how this is calculated. See e.g. [this site](https://blogs.sas.com/content/iml/2017/07/12/bootstrap-bca-interval.html#:~:text=BCa%20interval%3A%20The%20main%20ideas&text=The%20BCa%20interval%20requires%20that,skewness%20of%20the%20bootstrap%20distribution)
+
 We calculate the percentile intervals.
 
-```{r}
+> Later also implement BCa and compare the intervals
+
+```{r, message=FALSE}
 # Calculate confidence intervals
 ci_df <- get_bootstrap_ci(
   bootstrap_samples_df = bootstrap_insect_data,
@@ -368,23 +372,19 @@ $$
 \text{Rel. Error}_{s_j} = \frac{| \hat{\theta}_{-s_j} - \hat{\theta}|}{\hat{\theta} +\epsilon}
 $$
 <!-- spell-check: ignore:end -->
+
 7. **Summary Measures**:
    - The **Mean Relative Error (MRE)** is the average of the relative errors over all species:
-
 <!-- spell-check: ignore:start -->
 $$
 \text{MRE} = \frac{1}{s} \sum_{j=1}^s \text{Rel. Error}_{s_j}
 $$
 <!-- spell-check: ignore:end -->
-
    - The **Mean Squared Error (MSE)** is the average of the squared errors:
-
 $$
 \text{MSE} = \frac{1}{s} \sum_{j=1}^s (\text{Error}_{s_j})^2
 $$
-
    - The **Root Mean Squared Error (RMSE)** is the square root of the MSE:
-
 $$
 \text{RMSE} = \sqrt{\text{MSE}}
 $$
@@ -444,13 +444,13 @@ cv_results_loo <- cv_results_loo %>%
       include.lowest = TRUE))
 
 cv_results_loo %>%
-  count(year, perc_diff_category, name = "n_spec") %>%
+  count(year, perc_diff_category, name = "n_species") %>%
   kable()
 ```
 
 Do we get similar values for the summary statistics if we use k-fold cross-validation?
 
-```{r}
+```{r, message=FALSE}
 cv_results_kfold <- cross_validate_species(
   data_cube = insect_data_new,
   fun = b3gbi::pielou_evenness_ts,
@@ -513,7 +513,9 @@ We select the summary statistics.
 ```{r}
 summary_df <- ci_df %>%
   select(year, est_original, ll, ul, conf_level, int_type)
+```
 
+```{r, echo=FALSE}
 summary_df %>%
   kable()
 ```
@@ -529,7 +531,9 @@ insect_eveness_effects <- add_classification_as_factor(
   threshold = 0.1,
   reference = 0.4,
   coarse = TRUE)
+```
 
+```{r, echo=FALSE}
 insect_eveness_effects %>%
   kable(digits = 3)
 ```
@@ -697,14 +701,16 @@ insect_eveness_diff_effects <- add_classification_as_factor(
   threshold = 0.15,
   reference = 0,
   coarse = TRUE)
+```
 
+```{r, echo=FALSE}
 insect_eveness_diff_effects %>%
   kable(digits = 3)
 ```
 
 We visualise these effects.
 
-```{r}
+```{r, fig.width = 10, echo=FALSE}
 # Visualise
 insect_eveness_diff_effects %>%
   ggplot(aes(x = year)) +
