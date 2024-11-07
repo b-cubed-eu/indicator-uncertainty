@@ -100,15 +100,11 @@ bootstrap_cube <- function(
     dplyr::rename("rep_boot" = "diversity_val") %>%
     dplyr::left_join(t0, by = grouping_var) %>%
     dplyr::rename("est_original" = "diversity_val") %>%
-    dplyr::rowwise() %>%
-    dplyr::mutate(diff = .data$rep_boot - .data$est_original) %>%
-    dplyr::ungroup() %>%
     dplyr::mutate(
       est_boot = mean(.data$rep_boot),
       se_boot = stats::sd(.data$rep_boot),
-      bias_boot = mean(.data$diff),
       .by = all_of(grouping_var)) %>%
-    dplyr::select(-"diff") %>%
+    dplyr::mutate(bias_boot = .data$est_boot - .data$est_original) %>%
     dplyr::arrange(.data[[grouping_var]]) %>%
     dplyr::select("sample", all_of(grouping_var), "est_original",
                   dplyr::everything())
