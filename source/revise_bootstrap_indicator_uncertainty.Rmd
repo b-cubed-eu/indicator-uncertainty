@@ -160,7 +160,7 @@ $$
 First we perform bootstrapping.
 We calculate `b3gbi::pielou_evenness_ts` on the insect data from after 2010.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, message=FALSE}
 # Bootstrapping
 bootstrap_insect_data_path <- file.path(cache_path, "bootstrap_insect_data.Rds")
 if (file.exists(bootstrap_insect_data_path)) {
@@ -389,7 +389,7 @@ $$
 \text{RMSE} = \sqrt{\text{MSE}}
 $$
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, message=FALSE}
 # Bootstrapping
 cv_results_loo_path <- file.path(
   cache_path, "cv_results_loo.Rds")
@@ -623,7 +623,7 @@ However, in case of our bootstrapping examples, we cannot use the (co)variance d
 Therefore, we should also bootstrap over the difference such that we can calculate all intervals.
 This can be done using the `ref_group` argument.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, message=FALSE}
 # Bootstrapping
 bootstrap_insect_data_path2 <- file.path(
   cache_path, "bootstrap_insect_data_diff.Rds")
