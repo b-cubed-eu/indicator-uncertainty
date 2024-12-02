@@ -4,7 +4,8 @@
 #' to a data cube.
 #'
 #' @param data_cube A data cube object (class 'processed_cube', see
-#' `b3gbi::process_cube()`) or a dataframe.
+#' `b3gbi::process_cube()`) or a dataframe (from $data slot of
+#' 'processed_cube').
 #' @param fun A function which when applied to `data` returns the statistic(s)
 #' of interest.
 #' @param grouping_var ...
