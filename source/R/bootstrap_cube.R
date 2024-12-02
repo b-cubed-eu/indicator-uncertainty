@@ -3,8 +3,9 @@
 #' This function generate `samples` bootstrap replicates of a statistic applied
 #' to a data cube.
 #'
-#' @param data_cube A data cube object (class 'processed_cube').
-#' See `b3gbi::process_cube()`.
+#' @param data_cube A data cube object (class 'processed_cube', see
+#' `b3gbi::process_cube()`) or a dataframe (from $data slot of
+#' 'processed_cube').
 #' @param fun A function which when applied to `data` returns the statistic(s)
 #' of interest.
 #' @param grouping_var ...
@@ -43,20 +44,35 @@ bootstrap_cube <- function(
     set.seed(seed)
   }
 
-  # Generate bootstrap replicates
-  resample_df <- modelr::bootstrap(data_cube$data, samples, id = "id")
+  if (inherits(data_cube, "processed_cube")) {
+    # Generate bootstrap replicates
+    resample_df <- modelr::bootstrap(data_cube$data, samples, id = "id")
 
-  # Function for bootstrapping
-  bootstrap_resample <- function(x, fun) {
-    resample_obj <- x$strap[[1]]
-    indices <- as.integer(resample_obj)
-    data <- resample_obj$data[indices, ]
+    # Function for bootstrapping
+    bootstrap_resample <- function(x, fun) {
+      resample_obj <- x$strap[[1]]
+      indices <- as.integer(resample_obj)
+      data <- resample_obj$data[indices, ]
 
-    data_cube_copy <- data_cube
-    data_cube_copy$data <- data
+      data_cube_copy <- data_cube
+      data_cube_copy$data <- data
 
-    fun(data_cube_copy)$data %>%
-      mutate(sample = as.integer(x$id))
+      fun(data_cube_copy)$data %>%
+        mutate(sample = as.integer(x$id))
+    }
+  } else {
+    # Generate bootstrap replicates
+    resample_df <- modelr::bootstrap(data_cube, samples, id = "id")
+
+    # Function for bootstrapping
+    bootstrap_resample <- function(x, fun) {
+      resample_obj <- x$strap[[1]]
+      indices <- as.integer(resample_obj)
+      data <- resample_obj$data[indices, ]
+
+      fun(data) %>%
+        mutate(sample = as.integer(x$id))
+    }
   }
 
   # Perform bootstrapping
@@ -66,7 +82,11 @@ bootstrap_cube <- function(
 
   if (!is.na(ref_group)) {
     # Calculate true statistic
-    t0_full <- fun(data_cube)$data
+    if (inherits(data_cube, "processed_cube")) {
+      t0_full <- fun(data_cube)$data
+    } else {
+      t0_full <- fun(data_cube)
+    }
 
     ref_val <- t0_full %>%
       filter(.data[[grouping_var]] == !!ref_group) %>%
@@ -88,7 +108,11 @@ bootstrap_cube <- function(
     })
   } else {
     # Calculate true statistic
-    t0 <- fun(data_cube)$data
+    if (inherits(data_cube, "processed_cube")) {
+      t0 <- fun(data_cube)$data
+    } else {
+      t0 <- fun(data_cube)
+    }
 
     # Get bootstrap samples as a list
     bootstrap_samples_list <- bootstrap_samples_list_raw
