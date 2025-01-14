@@ -26,7 +26,7 @@ get_bootstrap_ci <- function(
   require("dplyr")
   require("rlang")
 
-  # Check if crossv_method is loo or kfold
+  # Check if type is perc or bca
   type <- tryCatch({
     match.arg(type, c("perc", "bca"))
   }, error = function(e) {
