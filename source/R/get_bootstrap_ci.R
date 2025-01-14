@@ -6,8 +6,9 @@
 #' @param bootstrap_samples_df A dataframe containing the bootstrap samples.
 #' @param grouping_var ...
 #' @param type A vector of character strings representing the type of intervals
-#' required. The value should be any subset of the values `c("perc", "bca")` or
-#' simply `"all"` (default) which will compute both types of intervals.
+#' required. The value should be any subset of the values
+#' `c("perc", "bca", "norm", "basic")` or simply `"all"` (default) which will
+#' compute all types of intervals.
 #' @param conf A scalar or vector containing the confidence level(s) of the
 #' required interval(s). Default 0.95.
 #' @param aggregate ...
@@ -26,11 +27,11 @@ get_bootstrap_ci <- function(
   require("dplyr")
   require("rlang")
 
-  # Check if type is perc or bca
+  # Check if type is correct
   type <- tryCatch({
-    match.arg(type, c("perc", "bca"))
+    match.arg(type, c("perc", "bca", "norm", "basic", "all"))
   }, error = function(e) {
-    stop("`type` must be one of 'perc', 'bca'.",
+    stop("`type` must be one of 'perc', 'bca', 'norm', 'basic'.",
          call. = FALSE)
   })
 
@@ -44,8 +45,29 @@ get_bootstrap_ci <- function(
         ul = stats::quantile(.data$rep_boot, probs = 1 - alpha),
         conf_level = conf,
         .by = all_of(grouping_var))
-  } else {
+  } else if (type == "bca") {
     stop("bca not implemented yet")
+  } else if (type == "norm") {
+    conf_df <- bootstrap_samples_df %>%
+      mutate(
+        int_type = type,
+        ll = .data$est_original + qnorm(alpha) * .data$se_boot,
+        ul = .data$est_original + qnorm(1 - alpha) * .data$se_boot,
+        conf_level = conf,
+        .by = all_of(grouping_var))
+  } else if (type == "basic") {
+    conf_df <- bootstrap_samples_df %>%
+      mutate(
+        int_type = type,
+        lower_quantile = stats::quantile(.data$rep_boot, probs = alpha),
+        upper_quantile = stats::quantile(.data$rep_boot, probs = 1 - alpha),
+        ll = 2 * .data$est_original - upper_quantile,
+        ul = 2 * .data$est_original - lower_quantile,
+        conf_level = conf,
+        .by = all_of(grouping_var)) %>%
+      select(-ends_with("quantile"))
+  } else {
+    stop("'all' not implemented yet")
   }
 
   if (aggregate) {
