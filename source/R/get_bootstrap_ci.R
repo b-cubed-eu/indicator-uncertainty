@@ -27,13 +27,10 @@ get_bootstrap_ci <- function(
   require("rlang")
 
   # Check if type is correct
-  type <- tryCatch({
-    match.arg(type, c("perc", "bca", "norm", "basic"))
-  }, error = function(e) {
-    stop("`type` must be one of 'perc', 'bca', 'norm', 'basic'.",
-         call. = FALSE)
-  })
+  stopifnot("`type` must be one of 'perc', 'bca', 'norm', 'basic'." =
+              all(is.element(type, c("perc", "bca", "norm", "basic"))))
 
+  # Calculate intervals
   alpha <- (1 - conf) / 2
 
   out_list <- vector(mode = "list", length = length(type))
