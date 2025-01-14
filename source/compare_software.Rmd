@@ -117,7 +117,8 @@ estimate_df <- bootstrap_denmark_final %>%
 
 bootstrap_denmark_final %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = est_boot, group = year), fill = alpha("cornflowerblue", 0.2)) +
+    geom_violin(aes(y = est_boot, group = year),
+                fill = alpha("cornflowerblue", 0.2)) +
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
                   position = position_dodge(0.8), linewidth = 1) +
     geom_point(data = estimate_df, aes(y = estimate),
@@ -136,9 +137,10 @@ Perform the same analysis with own functions.
 ```{r}
 # Define function for calculating statistic
 mean_obs2 <- function(data) {
-  data %>%
-    summarise(diversity_val = mean(obs),
-              .by = "year")
+  aggregate(data$obs,
+            by = list(year = data$year),
+            FUN = mean) %>%
+    rename("diversity_val" = "x")
 }
 
 # Bootstrapping
@@ -162,11 +164,11 @@ The results compare very well.
 
 ```{r}
 years <- sort(unique(bootstrap_denmark_final$year))
-year_list <- split(years, ceiling(seq_along(years)/3))
+year_list <- split(years, ceiling(seq_along(years) / 3))
 
 for (i in seq_along(year_list)) {
   year_group <- year_list[[i]]
-    
+
   p <- bind_rows(
       bootstrap_denmark_final %>%
         mutate(package = "boot",
@@ -181,10 +183,11 @@ for (i in seq_along(year_list)) {
       geom_violin(aes(y = rep_boot, group = package),
                   fill = alpha("cornflowerblue", 0.2)) +
       geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
-                    position = position_dodge(0.8), linewidth = 1, width = 0.5) +
+                    position = position_dodge(0.8), linewidth = 1,
+                    width = 0.5) +
       labs(y = "Mean number of observations", colour = "Confidence interval") +
       scale_y_continuous(limits = c(0, NA), breaks = seq(0, 50, 5)) +
-      facet_grid(int_type~year) +
+      facet_grid(int_type ~ year) +
       theme_minimal() +
       theme(legend.position = "bottom")
   print(p)

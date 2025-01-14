@@ -64,8 +64,8 @@ get_bootstrap_ci <- function(
           int_type = t,
           lower_quantile = stats::quantile(.data$rep_boot, probs = alpha),
           upper_quantile = stats::quantile(.data$rep_boot, probs = 1 - alpha),
-          ll = 2 * .data$est_original - upper_quantile,
-          ul = 2 * .data$est_original - lower_quantile,
+          ll = 2 * .data$est_original - .data$upper_quantile,
+          ul = 2 * .data$est_original - .data$lower_quantile,
           conf_level = conf,
           .by = all_of(grouping_var)) %>%
         select(-ends_with("quantile"))
