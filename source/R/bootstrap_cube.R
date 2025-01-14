@@ -16,6 +16,8 @@
 #' generation to ensure reproducibility. If `NA` (default), then `set.seed()`
 #' is not called at all. If not `NA`, then the random number generator state is
 #' reset (to the state before calling this function) upon exiting this function.
+#' @param progress Logical. Whether to show a progress bar `TRUE` (default) or
+#' not (`FALSE`).
 #'
 #' @returns The returned value is a list of objects of class `"boot"` per time
 #' point. See `boot::boot()`.
@@ -26,7 +28,8 @@ bootstrap_cube <- function(
     grouping_var,
     samples = 1000,
     ref_group = NA,
-    seed = NA) {
+    seed = NA,
+    progress = TRUE) {
   require("dplyr")
   require("rlang")
 
@@ -78,7 +81,7 @@ bootstrap_cube <- function(
   # Perform bootstrapping
   bootstrap_samples_list_raw <- resample_df %>%
     split(seq_len(nrow(resample_df))) %>%
-    purrr::map(bootstrap_resample, fun = fun, .progress = TRUE)
+    purrr::map(bootstrap_resample, fun = fun, .progress = progress)
 
   if (!is.na(ref_group)) {
     # Calculate true statistic
