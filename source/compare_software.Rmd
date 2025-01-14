@@ -139,8 +139,8 @@ Perform the same analysis with own functions.
 mean_obs2 <- function(data) {
   aggregate(data$obs,
             by = list(year = data$year),
-            FUN = mean) %>%
-    rename("diversity_val" = "x")
+            FUN = mean) |>
+    dplyr::rename("diversity_val" = "x")
 }
 
 # Bootstrapping
