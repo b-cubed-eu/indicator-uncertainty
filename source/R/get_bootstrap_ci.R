@@ -107,13 +107,14 @@ get_bootstrap_ci <- function(
         left_join(bootstrap_samples_df %>%
                     distinct(!!sym(grouping_var), .data$est_original),
                   by = join_by(!!grouping_var)) %>%
-        mutate(n = ifelse(jackknife == "usual", n() - 1, n() + 1),
+        mutate(n = n(),
                .by = grouping_var) %>%
         rowwise() %>%
-        mutate(intensity = ifelse(jackknife == "usual",
-                                  n * (.data$est_original - .data$jack_rep),
-                                  n * (.data$jack_rep - .data$est_original)
-                                  )
+        mutate(intensity = ifelse(
+          jackknife == "usual",
+          (n - 1) * (.data$est_original - .data$jack_rep),
+          (n + 1) * (.data$jack_rep - .data$est_original)
+          )
         ) %>%
         ungroup() %>%
         summarise(
