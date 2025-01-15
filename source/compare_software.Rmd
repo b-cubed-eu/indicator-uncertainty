@@ -100,7 +100,7 @@ Calculate confidence intervals.
 ci_denmark <- get_bootstrap_ci_old(
   bootstrap_list_denmark,
   fun = mean_obs,
-  type = c("perc", "norm", "basic"))
+  type = c("perc", "bca", "norm", "basic"))
 
 # Join dataframes
 bootstrap_denmark_final <- bootstrap_denmark_full %>%
@@ -155,7 +155,7 @@ bootstrap_denmark2 <- bootstrap_cube(
 ci_denmark2 <- get_bootstrap_ci(
   bootstrap_samples_df = bootstrap_denmark2,
   grouping_var = "year",
-  type = c("perc", "norm", "basic"),
+  type = c("perc", "bca", "norm", "basic"),
   conf = 0.95,
   aggregate = FALSE)
 ```
