@@ -6,11 +6,14 @@
 #' @param bootstrap_samples_df A dataframe containing the bootstrap samples.
 #' @param grouping_var ...
 #' @param type A vector of character strings representing the type of intervals
-#' required. The value should one or more of the following
-#' `c("perc", "bca", "norm", "basic")`. Default is calculating all.
+#' required. The value should be any subset of the values
+#' `c("perc", "bca", "norm", "basic")` or simply `"all"` which will compute all
+#' types of intervals (default).
 #' @param conf A scalar or vector containing the confidence level(s) of the
 #' required interval(s). Default 0.95.
 #' @param aggregate ...
+#' @param data_cube ...
+#' @param fun ...
 #'
 #' @returns The returned value is a dataframe containing the time point,
 #' the type of interval (`int_type`), the lower limit of the confidence
@@ -22,22 +25,22 @@ get_bootstrap_ci <- function(
     grouping_var,
     type = c("perc", "bca", "norm", "basic"),
     conf = 0.95,
-    aggregate = TRUE) {
+    aggregate = TRUE,
+    data_cube = NULL,
+    fun = NULL) {
   require("dplyr")
   require("rlang")
 
   # Check if type is correct
   stopifnot("`type` must be one of 'perc', 'bca', 'norm', 'basic'." =
-              all(is.element(type, c("perc", "bca", "norm", "basic"))))
+              all(is.element(type, c("perc", "bca", "norm", "basic", "all"))))
 
   # Calculate intervals
-  alpha <- (1 - conf) / 2
-
   out_list <- vector(mode = "list", length = length(type))
   for (i in seq_along(type)) {
     t <- type[i]
 
-    if (t == "perc") {
+    if (any(t == "all" | t == "perc")) {
       # Calculate confidence limits per group
       intervals_list <- bootstrap_samples_df %>%
         split(bootstrap_samples_df[[grouping_var]]) %>%
@@ -57,7 +60,7 @@ get_bootstrap_ci <- function(
         mutate(int_type = t) %>%
         left_join(intervals_df, by = join_by(!!grouping_var == "group"))
     }
-    if (t == "bca") {
+    if (any(t == "all" | t == "bca")) {
       # Finite jackknife
       if (inherits(data_cube, "processed_cube")) {
         jackknife_estimates <- sapply(
@@ -74,11 +77,12 @@ get_bootstrap_ci <- function(
             # Calculate indicator value without i'th observation
             fun(data_cube_copy$data)$data %>%
               filter(!!sym(grouping_var) == group) %>%
-              pull(diversity_val)
+              pull(.data$diversity_val)
           })
 
         jackknife_df <- data_cube$data %>%
-          mutate(jack_rep)
+          mutate(jack_rep = jackknife_estimates) %>%
+          select(c(all_of(grouping_var), "jack_rep"))
       } else {
         jackknife_estimates <- sapply(
           seq_len(nrow(data_cube)),
@@ -89,7 +93,7 @@ get_bootstrap_ci <- function(
             # Calculate indicator value without i'th observation
             fun(data_cube[-i, ]) %>%
               filter(!!sym(grouping_var) == group) %>%
-              pull(diversity_val)
+              pull(.data$diversity_val)
           })
 
         jackknife_df <- data_cube %>%
@@ -99,17 +103,17 @@ get_bootstrap_ci <- function(
 
       acceleration_df <- jackknife_df %>%
         left_join(bootstrap_samples_df %>%
-                    distinct(!!sym(grouping_var), est_original),
+                    distinct(!!sym(grouping_var), .data$est_original),
                   by = join_by(!!grouping_var)) %>%
         mutate(n = n() - 1,
                .by = grouping_var) %>%
         rowwise() %>%
-        mutate(intensity = n * (est_original - jack_rep)) %>%
+        mutate(intensity = n * (.data$est_original - .data$jack_rep)) %>%
         ungroup() %>%
         summarise(
-          numerator = sum(intensity^3),
-          denominator = 6 * sum(intensity^2)^1.5,
-          acceleration = numerator / denominator,
+          numerator = sum(.data$intensity^3),
+          denominator = 6 * sum(.data$intensity^2)^1.5,
+          acceleration = .data$numerator / .data$denominator,
           .by = grouping_var
         )
 
@@ -134,8 +138,8 @@ get_bootstrap_ci <- function(
           stopifnot("Estimated adjustment 'z0' is infinite." = is.finite(z0))
 
           # Adjust for acceleration
-          adj.alpha <- pnorm(z0 + (z0 + zalpha)/(1 - a * (z0 + zalpha)))
-          qq <- boot:::norm.inter(t, adj.alpha)
+          adj_alpha <- pnorm(z0 + (z0 + zalpha) / (1 - a * (z0 + zalpha)))
+          qq <- boot:::norm.inter(t, adj_alpha)
 
           return(cbind(conf, matrix(qq[, 2L], ncol = 2L)))
         })
@@ -151,7 +155,7 @@ get_bootstrap_ci <- function(
         mutate(int_type = t) %>%
         left_join(intervals_df, by = join_by(!!grouping_var == "group"))
     }
-    if (t == "norm") {
+    if (any(t == "all" | t == "norm")) {
       # Calculate confidence limits per group
       intervals_list <- bootstrap_samples_df %>%
         split(bootstrap_samples_df[[grouping_var]]) %>%
@@ -172,7 +176,7 @@ get_bootstrap_ci <- function(
         mutate(int_type = t) %>%
         left_join(intervals_df, by = join_by(!!grouping_var == "group"))
     }
-    if (t == "basic") {
+    if (any(t == "all" | t == "basic")) {
       # Calculate confidence limits per group
       intervals_list <- bootstrap_samples_df %>%
         split(bootstrap_samples_df[[grouping_var]]) %>%
@@ -197,8 +201,10 @@ get_bootstrap_ci <- function(
     out_list[[i]] <- conf_df
   }
 
+  # Combine dataframes from all interval types
   conf_df_full <- bind_rows(out_list)
 
+  # Aggregate if requested
   if (aggregate) {
     conf_df_out <- conf_df_full %>%
       select(-c("sample", "rep_boot")) %>%
