@@ -58,25 +58,72 @@ get_bootstrap_ci <- function(
         left_join(intervals_df, by = join_by(!!grouping_var == "group"))
     }
     if (t == "bca") {
+      # Finite jackknife
+      if (inherits(data_cube, "processed_cube")) {
+        jackknife_estimates <- sapply(
+          seq_len(nrow(data_cube$data)),
+          function(i) {
+            # Identify group
+            group <- data_cube$data[[i, grouping_var]]
+
+            # Remove i'th observation
+            data <- data_cube$data[-i, ]
+            data_cube_copy <- data_cube
+            data_cube_copy$data <- data
+
+            # Calculate indicator value without i'th observation
+            fun(data_cube_copy$data)$data %>%
+              filter(!!sym(grouping_var) == group) %>%
+              pull(diversity_val)
+          })
+
+        jackknife_df <- data_cube$data %>%
+          mutate(jack_rep)
+      } else {
+        jackknife_estimates <- sapply(
+          seq_len(nrow(data_cube)),
+          function(i) {
+            # Identify group
+            group <- data_cube[[i, grouping_var]]
+
+            # Calculate indicator value without i'th observation
+            fun(data_cube[-i, ]) %>%
+              filter(!!sym(grouping_var) == group) %>%
+              pull(diversity_val)
+          })
+
+        jackknife_df <- data_cube %>%
+          mutate(jack_rep = jackknife_estimates) %>%
+          select(c(all_of(grouping_var), "jack_rep"))
+      }
+
+      acceleration_df <- jackknife_df %>%
+        left_join(bootstrap_samples_df %>%
+                    distinct(!!sym(grouping_var), est_original),
+                  by = join_by(!!grouping_var)) %>%
+        mutate(n = n() - 1,
+               .by = grouping_var) %>%
+        rowwise() %>%
+        mutate(intensity = n * (est_original - jack_rep)) %>%
+        ungroup() %>%
+        summarise(
+          numerator = sum(intensity^3),
+          denominator = 6 * sum(intensity^2)^1.5,
+          acceleration = numerator / denominator,
+          .by = grouping_var
+        )
+
       # Calculate confidence limits per group
       intervals_list <- bootstrap_samples_df %>%
+        left_join(acceleration_df, by = join_by(!!grouping_var)) %>%
         split(bootstrap_samples_df[[grouping_var]]) %>%
         lapply(function(df) {
           # Get the original statistic and bootstrap replicates
           t0 <- unique(df$est_original)
           t <- df$rep_boot
 
-          # Calculate the acceleration
-          # Compute the jackknife replicates
-          jackknife_replicates <- sapply(1:length(t), function(i) {
-            mean(t[-i])
-          })
-
-          # Calculate the acceleration
-          diff <- jackknife_replicates - mean(jackknife_replicates)
-          numerator <- sum(diff^3)
-          denominator <- 6 * (sum(diff^2))^(3 / 2)
-          a <- numerator / denominator
+          # Get the acceleration
+          a <- unique(df$acceleration)
           stopifnot("Estimated adjustment 'a' is NA." = is.finite(a))
 
           # Calculate the BCa critical values
@@ -90,7 +137,7 @@ get_bootstrap_ci <- function(
           adj.alpha <- pnorm(z0 + (z0 + zalpha)/(1 - a * (z0 + zalpha)))
           qq <- boot:::norm.inter(t, adj.alpha)
 
-          return(cbind(conf, matrix(qq[,2L], ncol = 2L)))
+          return(cbind(conf, matrix(qq[, 2L], ncol = 2L)))
         })
 
       # Combine confidence levels in dataframe
