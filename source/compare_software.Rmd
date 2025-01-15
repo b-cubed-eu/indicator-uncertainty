@@ -100,7 +100,7 @@ Calculate confidence intervals.
 ci_denmark <- get_bootstrap_ci_old(
   bootstrap_list_denmark,
   fun = mean_obs,
-  type = c("perc", "norm", "basic"))
+  type = c("perc", "bca", "norm", "basic"))
 
 # Join dataframes
 bootstrap_denmark_final <- bootstrap_denmark_full %>%
@@ -155,12 +155,37 @@ bootstrap_denmark2 <- bootstrap_cube(
 ci_denmark2 <- get_bootstrap_ci(
   bootstrap_samples_df = bootstrap_denmark2,
   grouping_var = "year",
-  type = c("perc", "norm", "basic"),
+  type = c("perc", "bca", "norm", "basic"),
   conf = 0.95,
-  aggregate = FALSE)
+  aggregate = FALSE,
+  data_cube = denmark_cube$data,
+  fun = mean_obs2)
 ```
 
-The results compare very well.
+Visualise results.
+
+```{r}
+estimate_df2 <- ci_denmark2 %>%
+  distinct(year, estimate = est_original, bias_boot)
+
+ci_denmark2 %>%
+  ggplot(aes(x = year)) +
+    geom_violin(aes(y = rep_boot, group = year),
+                fill = alpha("cornflowerblue", 0.2)) +
+    geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
+                  position = position_dodge(0.8), linewidth = 1) +
+    geom_point(data = estimate_df2, aes(y = estimate),
+               colour = "firebrick", size = 2) +
+    labs(y = "Mean number of observations", colour = "Confidence interval") +
+    scale_y_continuous(limits = c(0, NA), breaks = seq(0, 50, 5)) +
+    scale_x_continuous(breaks = sort(unique(ci_denmark2$year))) +
+    theme_minimal() +
+    theme(legend.position = "bottom")
+```
+
+# Comparison
+
+The results of both compare very well.
 
 ```{r}
 years <- sort(unique(bootstrap_denmark_final$year))
