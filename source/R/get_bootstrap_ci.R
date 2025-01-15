@@ -38,13 +38,24 @@ get_bootstrap_ci <- function(
     t <- type[i]
 
     if (t == "perc") {
+      # Calculate confidence limits per group
+      intervals_list <- bootstrap_samples_df %>%
+        split(bootstrap_samples_df[[grouping_var]]) %>%
+        lapply(function(df) {
+          replicates <- df$rep_boot
+          boot:::perc.ci(t = replicates, conf = conf)
+        })
+
+      # Combine confidence levels in dataframe
+      intervals_df <- do.call(rbind.data.frame, intervals_list) %>%
+        mutate(group = unique(bootstrap_samples_df[[grouping_var]])) %>%
+        rename("ll" = "V4", "ul" = "V5") %>%
+        select("group", "ll", "ul", "conf")
+
+      # Join with input data
       conf_df <- bootstrap_samples_df %>%
-        mutate(
-          int_type = t,
-          ll = stats::quantile(.data$rep_boot, probs = alpha),
-          ul = stats::quantile(.data$rep_boot, probs = 1 - alpha),
-          conf_level = conf,
-          .by = all_of(grouping_var))
+        mutate(int_type = t) %>%
+        left_join(intervals_df, by = join_by(!!grouping_var == "group"))
     }
     if (t == "bca") {
       stop("bca not implemented yet")
@@ -62,7 +73,8 @@ get_bootstrap_ci <- function(
       # Combine confidence levels in dataframe
       intervals_df <- do.call(rbind.data.frame, intervals_list) %>%
         mutate(group = unique(bootstrap_samples_df[[grouping_var]])) %>%
-        rename("ll" = "V2", "ul" = "V3")
+        rename("ll" = "V2", "ul" = "V3") %>%
+        select("group", "ll", "ul", "conf")
 
       # Join with input data
       conf_df <- bootstrap_samples_df %>%
@@ -70,16 +82,25 @@ get_bootstrap_ci <- function(
         left_join(intervals_df, by = join_by(!!grouping_var == "group"))
     }
     if (t == "basic") {
+      # Calculate confidence limits per group
+      intervals_list <- bootstrap_samples_df %>%
+        split(bootstrap_samples_df[[grouping_var]]) %>%
+        lapply(function(df) {
+          estimate <- unique(df$est_original)
+          replicates <- df$rep_boot
+          boot:::basic.ci(t0 = estimate, t = replicates, conf = conf)
+        })
+
+      # Combine confidence levels in dataframe
+      intervals_df <- do.call(rbind.data.frame, intervals_list) %>%
+        mutate(group = unique(bootstrap_samples_df[[grouping_var]])) %>%
+        rename("ll" = "V4", "ul" = "V5") %>%
+        select("group", "ll", "ul", "conf")
+
+      # Join with input data
       conf_df <- bootstrap_samples_df %>%
-        mutate(
-          int_type = t,
-          lower_quantile = stats::quantile(.data$rep_boot, probs = alpha),
-          upper_quantile = stats::quantile(.data$rep_boot, probs = 1 - alpha),
-          ll = 2 * .data$est_original - .data$upper_quantile,
-          ul = 2 * .data$est_original - .data$lower_quantile,
-          conf_level = conf,
-          .by = all_of(grouping_var)) %>%
-        select(-ends_with("quantile"))
+        mutate(int_type = t) %>%
+        left_join(intervals_df, by = join_by(!!grouping_var == "group"))
     }
 
     out_list[[i]] <- conf_df
