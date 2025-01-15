@@ -50,13 +50,24 @@ get_bootstrap_ci <- function(
       stop("bca not implemented yet")
     }
     if (t == "norm") {
+      # Calculate confidence limits per group
+      intervals_list <- bootstrap_samples_df %>%
+        split(bootstrap_samples_df[[grouping_var]]) %>%
+        lapply(function(df) {
+          estimate <- unique(df$est_original)
+          replicates <- df$rep_boot
+          boot:::norm.ci(t0 = estimate, t = replicates, conf = conf)
+        })
+
+      # Combine confidence levels in dataframe
+      intervals_df <- do.call(rbind.data.frame, intervals_list) %>%
+        mutate(group = unique(bootstrap_samples_df[[grouping_var]])) %>%
+        rename("ll" = "V2", "ul" = "V3")
+
+      # Join with input data
       conf_df <- bootstrap_samples_df %>%
-        mutate(
-          int_type = t,
-          ll = .data$est_original + qnorm(alpha) * .data$se_boot,
-          ul = .data$est_original + qnorm(1 - alpha) * .data$se_boot,
-          conf_level = conf,
-          .by = all_of(grouping_var))
+        mutate(int_type = t) %>%
+        left_join(intervals_df, by = join_by(!!grouping_var == "group"))
     }
     if (t == "basic") {
       conf_df <- bootstrap_samples_df %>%
