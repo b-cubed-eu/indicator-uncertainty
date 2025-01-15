@@ -14,6 +14,7 @@
 #' @param aggregate ...
 #' @param data_cube ...
 #' @param fun ...
+#' @param jackknife `"usual"`, `"pos"` ...
 #'
 #' @returns The returned value is a dataframe containing the time point,
 #' the type of interval (`int_type`), the lower limit of the confidence
@@ -27,7 +28,8 @@ get_bootstrap_ci <- function(
     conf = 0.95,
     aggregate = TRUE,
     data_cube = NULL,
-    fun = NULL) {
+    fun = NULL,
+    jackknife = "usual") {
   require("dplyr")
   require("rlang")
 
@@ -105,10 +107,14 @@ get_bootstrap_ci <- function(
         left_join(bootstrap_samples_df %>%
                     distinct(!!sym(grouping_var), .data$est_original),
                   by = join_by(!!grouping_var)) %>%
-        mutate(n = n() - 1,
+        mutate(n = ifelse(jackknife == "usual", n() - 1, n() + 1),
                .by = grouping_var) %>%
         rowwise() %>%
-        mutate(intensity = n * (.data$est_original - .data$jack_rep)) %>%
+        mutate(intensity = ifelse(jackknife == "usual",
+                                  n * (.data$est_original - .data$jack_rep),
+                                  n * (.data$jack_rep - .data$est_original)
+                                  )
+        ) %>%
         ungroup() %>%
         summarise(
           numerator = sum(.data$intensity^3),
