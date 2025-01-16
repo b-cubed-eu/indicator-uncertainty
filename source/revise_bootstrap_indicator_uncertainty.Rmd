@@ -421,6 +421,7 @@ ggplot(cv_results_loo,
   geom_text(aes(y = rmse * 2.5, label = "RMSE*2.5"), colour = "black", size = 3,
             nudge_x = 0.4, nudge_y = 0.02) +
   labs(x = "Year", y = "Absolute difference") +
+  theme_minimal() +
   theme(legend.position = "")
 ```
 
@@ -508,11 +509,12 @@ ggplot(ds, aes(x = effect, y = mean, ymin = lcl, ymax = ucl, link_sd = sd)) +
 
 ## Comparing with a constant
 
-We select the summary statistics.
+We select the summary statistics. We only focus on the percentile interval.
 
 ```{r}
 summary_df <- ci_df %>%
-  select(year, est_original, ll, ul, conf_level, int_type)
+  filter(int_type == "perc") %>%
+  select(year, est_original, ll, ul, conf, int_type)
 ```
 
 ```{r, echo=FALSE}
