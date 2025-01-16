@@ -255,19 +255,22 @@ We visualise the distribution of the bootstrap replicates and the confidence int
 ```{r, fig.width = 10, echo=FALSE, warning=FALSE}
 p <- bootstrap_insect_data %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = rep_boot, group = year)) +
+    geom_violin(aes(y = rep_boot, group = year),
+                fill = alpha("cornflowerblue", 0.2)) +
     geom_point(data = estimate_df, aes(y = value, shape = Legend),
-               colour = "firebrick", size = 3, alpha = 0.5) +
-    geom_errorbar(data = ci_df, aes(ymin = ll, ymax = ul), linewidth = 1,
-                  width = 0.4, colour = "cornflowerblue") +
-    labs(y = "evenness") +
-    theme(legend.position = "bottom") +
-    scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data$year)))
+               colour = "firebrick", size = 2, alpha = 0.5) +
+    geom_errorbar(data = ci_df, aes(ymin = ll, ymax = ul, colour = int_type),
+                  position = position_dodge(0.8), linewidth = 1) +
+    labs(y = "evenness", colour = "Interval type:", x = "",
+         shape = "Legend:") +
+    scale_y_continuous(limits = c(NA, 1), breaks = seq(-10, 10, 0.25)) +
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data$year))) +
+    theme_minimal() +
+    theme(legend.position = "bottom")
 p
 ```
 
-The interval width of percent increases when the bootstrap standard error increases as expected.
+The interval width increases when the bootstrap standard error increases, as expected.
 
 ```{r, echo=FALSE}
 ci_df %>%
@@ -317,6 +320,7 @@ ci_df %>%
 
 There is some discussion on the use of [the percentile interval](https://stats.stackexchange.com/questions/355781/is-it-true-that-the-percentile-bootstrap-should-never-be-used).
 The BCa approach takes into account both bias and skewness and seems to be the best method for the complete range of estimates from all possible indicator functions.
+However it takes some time to do the jackknife estimation.
 
 # Influence of species on indicator value
 
@@ -330,6 +334,7 @@ insect_data_new$data %>%
   ggplot(aes(x = as.factor(year), y = n, colour = as.factor(taxonKey))) +
     geom_text(aes(label = as.factor(taxonKey))) +
     labs(x = "Year", y = "Number of observations") +
+    theme_minimal() +
     theme(legend.position = "")
 ```
 
@@ -392,7 +397,8 @@ if (file.exists(cv_results_loo_path)) {
     data_cube = insect_data_new,
     fun = b3gbi::pielou_evenness_ts,
     grouping_var = "year",
-    crossv_method = "loo")
+    crossv_method = "loo",
+    progress = TRUE)
   saveRDS(cv_results_loo, cv_results_loo_path)
 }
 ```
@@ -402,7 +408,8 @@ cv_results_loo <- cross_validate_species(
   data_cube = insect_data_new,
   fun = b3gbi::pielou_evenness_ts,
   grouping_var = "year",
-  crossv_method = "loo")
+  crossv_method = "loo",
+  progress = TRUE)
 ```
 
 ```{r, echo=FALSE}
@@ -448,7 +455,8 @@ cv_results_kfold <- cross_validate_species(
   fun = b3gbi::pielou_evenness_ts,
   grouping_var = "year",
   crossv_method = "kfold",
-  k = 10)
+  k = 10,
+  progress = TRUE)
 ```
 
 They are very different.
@@ -733,77 +741,9 @@ insect_eveness_diff_effects %>%
 
 # Conclusion
 
-Let's compare trends in evenness with data from 2005 from the b3gbi package with what we developed above.
-
-```{r, class.source = "fold-hide"}
-insect_data_2005 <- process_cube_old(cube_name, tax_info, first_year = 2005)
-eveness_insect_data_2005 <- pielou_evenness_ts(insect_data_2005)
-plot(eveness_insect_data_2005)
-```
-
-```{r, class.source = "fold-hide", warning=FALSE, message=FALSE}
-# Bootstrapping
-insect_data_bootstrapped_path <- file.path(
-  cache_path, "insect_data_bootstrapped.Rds")
-if (file.exists(insect_data_bootstrapped_path)) {
-  insect_data_bootstrapped <- readRDS(insect_data_bootstrapped_path)
-} else {
-  insect_data_bootstrapped <- bootstrap_cube(
-    data_cube = insect_data_2005,
-    fun = b3gbi::pielou_evenness_ts,
-    grouping_var = "year",
-    samples = 1000,
-    ref_group = 2005,
-    seed = 123,
-    progress = TRUE)
-  saveRDS(insect_data_bootstrapped, insect_data_bootstrapped_path)
-}
-
-# Calculate confidence intervals
-insect_data_ci <- get_bootstrap_ci(
-  bootstrap_samples_df = insect_data_bootstrapped,
-  grouping_var = "year",
-  type = "perc",
-  conf = 0.95,
-  aggregate = TRUE)
-
-# Add classification based on reference and thresholds
-insect_eveness_effects_tot <- add_classification_as_factor(
-  df = insect_data_ci,
-  cl_columns = c("ll", "ul"),
-  threshold = 0.15,
-  reference = 0,
-  coarse = TRUE)
-
-# Visualise
-insect_eveness_effects_tot %>%
-  ggplot(aes(x = as.character(year))) +
-    geom_hline(yintercept = 0, linetype = "longdash", colour = "black") +
-    geom_hline(yintercept = c(-0.15, 0.15), linetype = "dotdash") +
-    geom_errorbar(aes(ymin = ll, ymax = ul, colour = effect),
-                  linewidth = 1.5, show.legend = TRUE) +
-    geom_point(aes(y = est_original), colour = "black", size = 3.5) +
-    scale_colour_manual(values =  c("darkgreen",
-                                    "chartreuse3",
-                                    "darkolivegreen1",
-                                    "gold",
-                                    "orange",
-                                    "firebrick1",
-                                    "darkred",
-                                    "gray80",
-                                    "gray30",
-                                    "grey55"),
-                        drop = FALSE) +
-    labs(y = "difference in evenness compared to 2005", x = "",
-         colour = "Classification") +
-    scale_y_continuous(limits = c(-1, 1), breaks = seq(-10, 10, 0.25)) +
-    theme_minimal() +
-    theme(axis.text.x = element_text(angle = 60, vjust = 0.5, hjust = 1))
-```
-
 Although these methods require additional testing, the first results show that bootstrapping can be used to correctly visualise and interpret trends from indicators based on biodiversity data cubes.
 
-## What's next?
+*What's next?*
 
 - Test workflow on other datasets
 - Test workflow on other indicators
