@@ -15,6 +15,8 @@
 #' @param data_cube ...
 #' @param fun ...
 #' @param jackknife `"usual"`, `"pos"` ...
+#' @param progress Logical. Whether to show a progress bar for jackknife
+#' estimation `TRUE` or not `FALSE` (default).
 #'
 #' @returns The returned value is a dataframe containing the time point,
 #' the type of interval (`int_type`), the lower limit of the confidence
@@ -29,7 +31,8 @@ get_bootstrap_ci <- function(
     aggregate = TRUE,
     data_cube = NULL,
     fun = NULL,
-    jackknife = ifelse(is.element("bca", type), "usual", NULL)) {
+    jackknife = ifelse(is.element("bca", type), "usual", NULL),
+    progress = FALSE) {
   require("dplyr")
   require("rlang")
 
@@ -65,7 +68,7 @@ get_bootstrap_ci <- function(
     if (any(t == "all" | t == "bca")) {
       # Finite jackknife
       if (inherits(data_cube, "processed_cube")) {
-        jackknife_estimates <- sapply(
+        jackknife_estimates <- purrr::map(
           seq_len(nrow(data_cube$data)),
           function(i) {
             # Identify group
@@ -77,16 +80,18 @@ get_bootstrap_ci <- function(
             data_cube_copy$data <- data
 
             # Calculate indicator value without i'th observation
-            fun(data_cube_copy$data)$data %>%
+            fun(data_cube_copy)$data %>%
               filter(!!sym(grouping_var) == group) %>%
               pull(.data$diversity_val)
-          })
+          },
+          .progress = ifelse(progress, "Jackknife estimation", progress)) %>%
+          unlist()
 
         jackknife_df <- data_cube$data %>%
           mutate(jack_rep = jackknife_estimates) %>%
           select(c(all_of(grouping_var), "jack_rep"))
       } else {
-        jackknife_estimates <- sapply(
+        jackknife_estimates <- purrr::map(
           seq_len(nrow(data_cube)),
           function(i) {
             # Identify group
@@ -96,7 +101,9 @@ get_bootstrap_ci <- function(
             fun(data_cube[-i, ]) %>%
               filter(!!sym(grouping_var) == group) %>%
               pull(.data$diversity_val)
-          })
+          },
+          .progress = ifelse(progress, "Jackknife estimation", progress)) %>%
+          unlist()
 
         jackknife_df <- data_cube %>%
           mutate(jack_rep = jackknife_estimates) %>%
