@@ -87,7 +87,7 @@ Let's calculate Pielou's eveness over time using b3gbi.
 
 ```{r}
 eveness_insect_data <- pielou_evenness_ts(insect_data)
-head(eveness_insect_data)
+tail(eveness_insect_data$data)
 ```
 
 ```{r}
