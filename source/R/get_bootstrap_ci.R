@@ -29,7 +29,7 @@ get_bootstrap_ci <- function(
     aggregate = TRUE,
     data_cube = NULL,
     fun = NULL,
-    jackknife = "usual") {
+    jackknife = ifelse(is.element("bca", type), "usual", NULL)) {
   require("dplyr")
   require("rlang")
 
