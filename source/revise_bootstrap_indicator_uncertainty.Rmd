@@ -685,9 +685,10 @@ bootstrap_insect_data_diff %>%
     geom_errorbar(data = ci_diff_df, aes(ymin = ll, ymax = ul),
                   linewidth = 1, width = 0.4, colour = "cornflowerblue") +
     labs(y = "evenness") +
-    theme(legend.position = "bottom") +
     scale_y_continuous(limits = c(-1, 1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data_diff$year)))
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data_diff$year))) +
+    theme_minimal() +
+    theme(legend.position = "bottom")
 ```
 
 We classify the effects as we did before.
@@ -696,7 +697,7 @@ This time our reference is 0 (no change with 2011) and we choose an arbitrary th
 ```{r}
 # Select data for visualisation
 summary_diff_df <- ci_diff_df %>%
-  select(year, est_original, ll, ul, conf_level, int_type)
+  select(year, est_original, ll, ul, conf, int_type)
 
 # Add classification based on reference and thresholds
 insect_eveness_diff_effects <- add_classification_as_factor(
