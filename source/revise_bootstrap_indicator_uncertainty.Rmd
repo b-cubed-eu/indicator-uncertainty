@@ -205,7 +205,7 @@ bootstrap_insect_data %>%
                  aes(xend = year, y = estimate, yend = `bootstrap estimate`),
                  colour = "cornflowerblue", linewidth = 1) +
     geom_point(data = estimate_df, aes(y = value, shape = Legend),
-               colour = "firebrick", size = 3) +
+               colour = "firebrick", size = 2) +
     labs(y = "evenness") +
     theme(legend.position = "bottom") +
     scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
@@ -216,6 +216,36 @@ There are multiple intervals that can be calculated, see `bootstrap_indicator_un
 
 ```{r, message=FALSE}
 # Calculate confidence intervals
+ci_df <- get_bootstrap_ci(
+  bootstrap_samples_df = bootstrap_insect_data,
+  grouping_var = "year",
+  type = c("perc", "bca", "norm", "basic"),
+  conf = 0.95,
+  aggregate = TRUE,
+  data_cube = insect_data_new,
+  fun = b3gbi::pielou_evenness_ts)
+```
+
+```{r, echo=FALSE, message=FALSE}
+# Bootstrapping
+ci_insect_data_path <- file.path(cache_path, "ci_df.Rds")
+if (file.exists(bootstrap_insect_data_path)) {
+  ci_df <- readRDS(bootstrap_insect_data_path)
+} else {
+  # Calculate confidence intervals
+  ci_df <- get_bootstrap_ci(
+    bootstrap_samples_df = bootstrap_insect_data,
+    grouping_var = "year",
+    type = c("perc", "bca", "norm", "basic"),
+    conf = 0.95,
+    aggregate = TRUE,
+    data_cube = insect_data_new,
+    fun = b3gbi::pielou_evenness_ts)
+  saveRDS(ci_df, ci_insect_data_path)
+}
+```
+
+```r
 ci_df <- get_bootstrap_ci(
   bootstrap_samples_df = bootstrap_insect_data,
   grouping_var = "year",
