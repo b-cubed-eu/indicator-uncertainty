@@ -71,7 +71,7 @@ insect_data
 
 We choose 3 indicators for comparison:
 
-1.  Pielou's Evenness (`pielou_evenness_ts()`): real between 0-1
+1.  Pielou's Evenness (`obs_richness_ts()`): real between 0-1
 2.  Observed Species Richness (`obs_richness_ts()`): positive integer
 3.  Mean Number of Observations: real (normal)
 
@@ -80,7 +80,7 @@ We choose 3 indicators for comparison:
 Let's calculate Pielou's Evenness over time.
 
 ```{r}
-eveness_insect_data <- pielou_evenness_ts(insect_data)
+eveness_insect_data <- obs_richness_ts(insect_data)
 eveness_insect_data$data %>%
   kable(digits = 3)
 ```
@@ -137,7 +137,7 @@ mean_obs_insect_data %>%
 # Bootstrapping and interval calculation
 ## Pielou's Eveness
 
-Bootstrapping
+Bootstrapping:
 
 ```{r, echo=FALSE, message=FALSE}
 # Bootstrapping
@@ -147,7 +147,7 @@ if (file.exists(insect_evenness_path)) {
 } else {
   bootstrap_insect_evenness <- bootstrap_cube(
     data_cube = insect_data,
-    fun = b3gbi::pielou_evenness_ts,
+    fun = b3gbi::obs_richness_ts,
     grouping_var = "year",
     samples = 1000,
     seed = 123,
@@ -159,7 +159,7 @@ if (file.exists(insect_evenness_path)) {
 ```r
 bootstrap_insect_data <- bootstrap_cube(
   data_cube = insect_data,
-  fun = b3gbi::pielou_evenness_ts,
+  fun = b3gbi::obs_richness_ts,
   grouping_var = "year",
   samples = 1000,
   seed = 123,
@@ -185,7 +185,7 @@ bootstrap_insect_evenness %>%
                 fill = alpha("cornflowerblue", 0.2)) +
     geom_segment(data = bias_df,
                  aes(xend = year, y = estimate, yend = `bootstrap estimate`),
-                 colour = "cornflowerblue", linewidth = 1) +
+                 colour = "purple", linewidth = 1) +
     geom_point(data = estimate_df, aes(y = value, shape = Legend),
                colour = "firebrick", size = 2) +
     labs(x = "", y = "Pielou's Eveness", shape = "Legend:") +
@@ -211,7 +211,7 @@ if (file.exists(ci_insect_eveness_path)) {
     conf = 0.95,
     aggregate = TRUE,
     data_cube = insect_data,
-    fun = b3gbi::pielou_evenness_ts,
+    fun = b3gbi::obs_richness_ts,
     progress = TRUE)
   saveRDS(ci_insect_eveness, ci_insect_eveness_path)
 }
@@ -225,7 +225,195 @@ ci_insect_eveness <- get_bootstrap_ci(
   conf = 0.95,
   aggregate = TRUE,
   data_cube = insect_data,
-  fun = b3gbi::pielou_evenness_ts,
+  fun = b3gbi::obs_richness_ts,
+  progress = TRUE)
+```
+
+## Observed Species Richness
+
+Bootstrapping:
+
+```{r, echo=FALSE, message=FALSE}
+# Bootstrapping
+insect_richness_path <- file.path(cache_path, "bootstrap_insect_richness.Rds")
+if (file.exists(insect_richness_path)) {
+  bootstrap_insect_richness <- readRDS(insect_richness_path)
+} else {
+  bootstrap_insect_richness <- bootstrap_cube(
+    data_cube = insect_data,
+    fun = b3gbi::obs_richness_ts,
+    grouping_var = "year",
+    samples = 1000,
+    seed = 123,
+    progress = TRUE)
+  saveRDS(bootstrap_insect_richness, insect_richness_path)
+}
+```
+
+```r
+bootstrap_insect_data <- bootstrap_cube(
+  data_cube = insect_data,
+  fun = b3gbi::obs_richness_ts,
+  grouping_var = "year",
+  samples = 1000,
+  seed = 123,
+  progress = TRUE)
+```
+
+We visualise the distribution of the bootstrap replicates
+The bootstrap bias is the difference between the estimate and the bootstrap estimate.
+
+```{r, fig.width = 10, echo=FALSE, warning=FALSE}
+bias_df <- bootstrap_insect_richness %>%
+  distinct(year, estimate = est_original, `bootstrap estimate` = est_boot)
+
+estimate_df <- bias_df %>%
+  pivot_longer(cols = c("estimate", "bootstrap estimate"),
+               names_to = "Legend", values_to = "value") %>%
+  mutate(Legend = factor(Legend, levels = c("estimate", "bootstrap estimate"),
+                         ordered = TRUE))
+
+bootstrap_insect_richness %>%
+  ggplot(aes(x = year)) +
+    geom_violin(aes(y = rep_boot, group = year),
+                fill = alpha("cornflowerblue", 0.2)) +
+    geom_segment(data = bias_df,
+                 aes(xend = year, y = estimate, yend = `bootstrap estimate`),
+                 colour = "purple", linewidth = 1) +
+    geom_point(data = estimate_df, aes(y = value, shape = Legend),
+               colour = "firebrick", size = 2) +
+    labs(x = "", y = "Observed Species Richness", shape = "Legend:") +
+    scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_richness$year))) +
+    theme_minimal() +
+    theme(legend.position = "bottom")
+```
+
+We calculate all types of intervals.
+
+```{r, echo=FALSE, message=FALSE}
+# Bootstrapping
+ci_insect_eveness_path <- file.path(cache_path, "ci_df.Rds")
+if (file.exists(ci_insect_eveness_path)) {
+  ci_insect_eveness <- readRDS(ci_insect_eveness_path)
+} else {
+  # Calculate confidence intervals
+  ci_insect_eveness <- get_bootstrap_ci(
+    bootstrap_samples_df = bootstrap_insect_richness,
+    grouping_var = "year",
+    type = c("perc", "bca", "norm", "basic"),
+    conf = 0.95,
+    aggregate = TRUE,
+    data_cube = insect_data,
+    fun = b3gbi::obs_richness_ts,
+    progress = TRUE)
+  saveRDS(ci_insect_eveness, ci_insect_eveness_path)
+}
+```
+
+```r
+ci_insect_eveness <- get_bootstrap_ci(
+  bootstrap_samples_df = bootstrap_insect_richness,
+  grouping_var = "year",
+  type = c("perc", "bca", "norm", "basic"),
+  conf = 0.95,
+  aggregate = TRUE,
+  data_cube = insect_data,
+  fun = b3gbi::obs_richness_ts,
+  progress = TRUE)
+```
+
+## Mean Number of Observations
+
+Bootstrapping:
+
+```{r, echo=FALSE, message=FALSE}
+# Bootstrapping
+insect_mean_obs_path <- file.path(cache_path, "bootstrap_insect_mean_obs.Rds")
+if (file.exists(insect_mean_obs_path)) {
+  bootstrap_insect_mean_obs <- readRDS(insect_mean_obs_path)
+} else {
+  bootstrap_insect_mean_obs <- bootstrap_cube(
+    data_cube = insect_data$data,
+    fun = mean_obs,
+    grouping_var = "year",
+    samples = 1000,
+    seed = 123,
+    progress = TRUE)
+  saveRDS(bootstrap_insect_mean_obs, insect_mean_obs_path)
+}
+```
+
+```r
+bootstrap_insect_data <- bootstrap_cube(
+  data_cube = insect_data,
+  fun = b3gbi::obs_mean_obs_ts,
+  grouping_var = "year",
+  samples = 1000,
+  seed = 123,
+  progress = TRUE)
+```
+
+We visualise the distribution of the bootstrap replicates
+The bootstrap bias is the difference between the estimate and the bootstrap estimate.
+
+```{r, fig.width = 10, echo=FALSE, warning=FALSE}
+bias_df <- bootstrap_insect_mean_obs %>%
+  distinct(year, estimate = est_original, `bootstrap estimate` = est_boot)
+
+estimate_df <- bias_df %>%
+  pivot_longer(cols = c("estimate", "bootstrap estimate"),
+               names_to = "Legend", values_to = "value") %>%
+  mutate(Legend = factor(Legend, levels = c("estimate", "bootstrap estimate"),
+                         ordered = TRUE))
+
+bootstrap_insect_mean_obs %>%
+  ggplot(aes(x = year)) +
+    geom_violin(aes(y = rep_boot, group = year),
+                fill = alpha("cornflowerblue", 0.2)) +
+    geom_segment(data = bias_df,
+                 aes(xend = year, y = estimate, yend = `bootstrap estimate`),
+                 colour = "purple", linewidth = 1) +
+    geom_point(data = estimate_df, aes(y = value, shape = Legend),
+               colour = "firebrick", size = 2) +
+    labs(x = "", y = "Mean Number of Observations", shape = "Legend:") +
+    scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_mean_obs$year))) +
+    theme_minimal() +
+    theme(legend.position = "bottom")
+```
+
+We calculate all types of intervals.
+
+```{r, echo=FALSE, message=FALSE}
+# Bootstrapping
+ci_insect_eveness_path <- file.path(cache_path, "ci_df.Rds")
+if (file.exists(ci_insect_eveness_path)) {
+  ci_insect_eveness <- readRDS(ci_insect_eveness_path)
+} else {
+  # Calculate confidence intervals
+  ci_insect_eveness <- get_bootstrap_ci(
+    bootstrap_samples_df = bootstrap_insect_mean_obs,
+    grouping_var = "year",
+    type = c("perc", "bca", "norm", "basic"),
+    conf = 0.95,
+    aggregate = TRUE,
+    data_cube = insect_data$data,
+    fun = mean_obs,
+    progress = TRUE)
+  saveRDS(ci_insect_eveness, ci_insect_eveness_path)
+}
+```
+
+```r
+ci_insect_eveness <- get_bootstrap_ci(
+  bootstrap_samples_df = bootstrap_insect_mean_obs,
+  grouping_var = "year",
+  type = c("perc", "bca", "norm", "basic"),
+  conf = 0.95,
+  aggregate = TRUE,
+  data_cube = insect_data,
+  fun = b3gbi::obs_mean_obs_ts,
   progress = TRUE)
 ```
 
