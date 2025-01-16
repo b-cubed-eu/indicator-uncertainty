@@ -135,27 +135,30 @@ mean_obs_insect_data %>%
 ```
 
 # Bootstrapping and interval calculation
+## Pielou's Eveness
+
+Bootstrapping
 
 ```{r, echo=FALSE, message=FALSE}
 # Bootstrapping
-bootstrap_insect_data_path <- file.path(cache_path, "bootstrap_insect_data.Rds")
-if (file.exists(bootstrap_insect_data_path)) {
-  bootstrap_insect_data <- readRDS(bootstrap_insect_data_path)
+insect_evenness_path <- file.path(cache_path, "bootstrap_insect_data.Rds")
+if (file.exists(insect_evenness_path)) {
+  bootstrap_insect_evenness <- readRDS(insect_evenness_path)
 } else {
-  bootstrap_insect_data <- bootstrap_cube(
-    data_cube = insect_data_new,
+  bootstrap_insect_evenness <- bootstrap_cube(
+    data_cube = insect_data,
     fun = b3gbi::pielou_evenness_ts,
     grouping_var = "year",
     samples = 1000,
     seed = 123,
     progress = TRUE)
-  saveRDS(bootstrap_insect_data, bootstrap_insect_data_path)
+  saveRDS(bootstrap_insect_evenness, insect_evenness_path)
 }
 ```
 
 ```r
 bootstrap_insect_data <- bootstrap_cube(
-  data_cube = insect_data_new,
+  data_cube = insect_data,
   fun = b3gbi::pielou_evenness_ts,
   grouping_var = "year",
   samples = 1000,
@@ -167,7 +170,7 @@ We visualise the distribution of the bootstrap replicates
 The bootstrap bias is the difference between the estimate and the bootstrap estimate.
 
 ```{r, fig.width = 10, echo=FALSE, warning=FALSE}
-bias_df <- bootstrap_insect_data %>%
+bias_df <- bootstrap_insect_evenness %>%
   distinct(year, estimate = est_original, `bootstrap estimate` = est_boot)
 
 estimate_df <- bias_df %>%
@@ -176,50 +179,52 @@ estimate_df <- bias_df %>%
   mutate(Legend = factor(Legend, levels = c("estimate", "bootstrap estimate"),
                          ordered = TRUE))
 
-bootstrap_insect_data %>%
+bootstrap_insect_evenness %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = rep_boot, group = year)) +
+    geom_violin(aes(y = rep_boot, group = year),
+                fill = alpha("cornflowerblue", 0.2)) +
     geom_segment(data = bias_df,
                  aes(xend = year, y = estimate, yend = `bootstrap estimate`),
                  colour = "cornflowerblue", linewidth = 1) +
     geom_point(data = estimate_df, aes(y = value, shape = Legend),
                colour = "firebrick", size = 2) +
-    labs(y = "evenness") +
-    theme(legend.position = "bottom") +
+    labs(x = "", y = "Pielou's Eveness", shape = "Legend:") +
     scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data$year)))
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_evenness$year))) +
+    theme_minimal() +
+    theme(legend.position = "bottom")
 ```
 
-There are multiple intervals that can be calculated, see `bootstrap_indicator_uncertainty_old.Rmd`.
+We calculate all types of intervals.
 
 ```{r, echo=FALSE, message=FALSE}
 # Bootstrapping
-ci_insect_data_path <- file.path(cache_path, "ci_df.Rds")
-if (file.exists(ci_insect_data_path)) {
-  ci_df <- readRDS(ci_insect_data_path)
+ci_insect_eveness_path <- file.path(cache_path, "ci_df.Rds")
+if (file.exists(ci_insect_eveness_path)) {
+  ci_insect_eveness <- readRDS(ci_insect_eveness_path)
 } else {
   # Calculate confidence intervals
-  ci_df <- get_bootstrap_ci(
-    bootstrap_samples_df = bootstrap_insect_data,
+  ci_insect_eveness <- get_bootstrap_ci(
+    bootstrap_samples_df = bootstrap_insect_evenness,
     grouping_var = "year",
     type = c("perc", "bca", "norm", "basic"),
     conf = 0.95,
     aggregate = TRUE,
-    data_cube = insect_data_new,
+    data_cube = insect_data,
     fun = b3gbi::pielou_evenness_ts,
     progress = TRUE)
-  saveRDS(ci_df, ci_insect_data_path)
+  saveRDS(ci_insect_eveness, ci_insect_eveness_path)
 }
 ```
 
 ```r
-ci_df <- get_bootstrap_ci(
-  bootstrap_samples_df = bootstrap_insect_data,
+ci_insect_eveness <- get_bootstrap_ci(
+  bootstrap_samples_df = bootstrap_insect_evenness,
   grouping_var = "year",
   type = c("perc", "bca", "norm", "basic"),
   conf = 0.95,
   aggregate = TRUE,
-  data_cube = insect_data_new,
+  data_cube = insect_data,
   fun = b3gbi::pielou_evenness_ts,
   progress = TRUE)
 ```
@@ -235,7 +240,7 @@ p <- bootstrap_insect_data %>%
                 fill = alpha("cornflowerblue", 0.2)) +
     geom_point(data = estimate_df, aes(y = value, shape = Legend),
                colour = "firebrick", size = 2, alpha = 0.5) +
-    geom_errorbar(data = ci_df, aes(ymin = ll, ymax = ul, colour = int_type),
+    geom_errorbar(data = ci_insect_eveness, aes(ymin = ll, ymax = ul, colour = int_type),
                   position = position_dodge(0.8), linewidth = 1) +
     labs(y = "evenness", colour = "Interval type:", x = "",
          shape = "Legend:") +
@@ -249,7 +254,7 @@ p
 The interval width increases when the bootstrap standard error increases, as expected.
 
 ```{r, echo=FALSE}
-ci_df %>%
+ci_insect_eveness %>%
   mutate(ci_width = ul - ll) %>%
   distinct(year, se_boot, int_type, ci_width) %>%
   ggplot(aes(x = se_boot, y = ci_width, colour = int_type)) +
@@ -260,7 +265,7 @@ ci_df %>%
 ```
 
 ```{r, echo=FALSE}
-ci_df %>%
+ci_insect_eveness %>%
   mutate(ci_width = ul - ll) %>%
   distinct(year, se_boot, int_type, ci_width) %>%
   group_by(int_type) %>%
@@ -273,7 +278,7 @@ ci_df %>%
 We see no clear relation to bias.
 
 ```{r, echo=FALSE}
-ci_df %>%
+ci_insect_eveness %>%
   mutate(ci_width = ul - ll) %>%
   distinct(year, bias_boot, int_type, ci_width) %>%
   ggplot(aes(x = bias_boot, y = ci_width, colour = int_type)) +
@@ -284,7 +289,7 @@ ci_df %>%
 ```
 
 ```{r, echo=FALSE}
-ci_df %>%
+ci_insect_eveness %>%
   mutate(ci_width = ul - ll) %>%
   distinct(year, bias_boot, int_type, ci_width) %>%
   group_by(int_type) %>%
