@@ -150,7 +150,8 @@ bootstrap_denmark2 <- bootstrap_cube(
   fun = mean_obs2,
   grouping_var = "year",
   samples = 1000,
-  seed = 123)
+  seed = 123,
+  progress = TRUE)
 
 # Calculate confidence intervals
 ci_denmark2 <- get_bootstrap_ci(
@@ -160,7 +161,8 @@ ci_denmark2 <- get_bootstrap_ci(
   conf = 0.95,
   aggregate = FALSE,
   data_cube = denmark_cube$data,
-  fun = mean_obs2)
+  fun = mean_obs2,
+  progress = TRUE)
 ```
 
 Visualise results.

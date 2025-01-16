@@ -171,7 +171,8 @@ if (file.exists(bootstrap_insect_data_path)) {
     fun = b3gbi::pielou_evenness_ts,
     grouping_var = "year",
     samples = 1000,
-    seed = 123)
+    seed = 123,
+    progress = TRUE)
   saveRDS(bootstrap_insect_data, bootstrap_insect_data_path)
 }
 ```
@@ -182,7 +183,8 @@ bootstrap_insect_data <- bootstrap_cube(
   fun = b3gbi::pielou_evenness_ts,
   grouping_var = "year",
   samples = 1000,
-  seed = 123)
+  seed = 123,
+  progress = TRUE)
 ```
 
 We visualise the distribution of the bootstrap replicates
@@ -214,23 +216,11 @@ bootstrap_insect_data %>%
 
 There are multiple intervals that can be calculated, see `bootstrap_indicator_uncertainty_old.Rmd`.
 
-```{r, message=FALSE}
-# Calculate confidence intervals
-ci_df <- get_bootstrap_ci(
-  bootstrap_samples_df = bootstrap_insect_data,
-  grouping_var = "year",
-  type = c("perc", "bca", "norm", "basic"),
-  conf = 0.95,
-  aggregate = TRUE,
-  data_cube = insect_data_new,
-  fun = b3gbi::pielou_evenness_ts)
-```
-
 ```{r, echo=FALSE, message=FALSE}
 # Bootstrapping
 ci_insect_data_path <- file.path(cache_path, "ci_df.Rds")
-if (file.exists(bootstrap_insect_data_path)) {
-  ci_df <- readRDS(bootstrap_insect_data_path)
+if (file.exists(ci_insect_data_path)) {
+  ci_df <- readRDS(ci_insect_data_path)
 } else {
   # Calculate confidence intervals
   ci_df <- get_bootstrap_ci(
@@ -240,7 +230,8 @@ if (file.exists(bootstrap_insect_data_path)) {
     conf = 0.95,
     aggregate = TRUE,
     data_cube = insect_data_new,
-    fun = b3gbi::pielou_evenness_ts)
+    fun = b3gbi::pielou_evenness_ts,
+    progress = TRUE)
   saveRDS(ci_df, ci_insect_data_path)
 }
 ```
@@ -253,7 +244,8 @@ ci_df <- get_bootstrap_ci(
   conf = 0.95,
   aggregate = TRUE,
   data_cube = insect_data_new,
-  fun = b3gbi::pielou_evenness_ts)
+  fun = b3gbi::pielou_evenness_ts,
+  progress = TRUE)
 ```
 
 ## Visualise confidence intervals
@@ -636,7 +628,8 @@ if (file.exists(bootstrap_insect_data_path2)) {
     grouping_var = "year",
     samples = 1000,
     ref_group = 2011,
-    seed = 123)
+    seed = 123,
+    progress = TRUE)
   saveRDS(bootstrap_insect_data_diff, bootstrap_insect_data_path2)
 }
 ```
@@ -648,7 +641,8 @@ bootstrap_insect_data_diff <- bootstrap_cube(
   grouping_var = "year",
   samples = 1000,
   ref_group = 2011,
-  seed = 123)
+  seed = 123,
+  progress = TRUE)
 ```
 
 We calculate the percentile interval.
@@ -760,7 +754,8 @@ if (file.exists(insect_data_bootstrapped_path)) {
     grouping_var = "year",
     samples = 1000,
     ref_group = 2005,
-    seed = 123)
+    seed = 123,
+    progress = TRUE)
   saveRDS(insect_data_bootstrapped, insect_data_bootstrapped_path)
 }
 
