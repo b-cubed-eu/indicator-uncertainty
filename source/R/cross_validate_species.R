@@ -18,6 +18,7 @@
 #' `k` exclusive partitions containing `S / k` rows each.
 #' @param k Number of folds (an integer). Used only if
 #' `crossv_method = "kfold"`. Default 5.
+
 #'
 #' @returns A dataframe summarizing the cross-validation results, including:
 #' - Cross-Validation id (`id_cv`)
@@ -35,7 +36,8 @@ cross_validate_species <- function(
     fun,
     grouping_var,
     crossv_method = c("loo", "kfold"),
-    k = ifelse(crossv_method == "kfold", 5, NA)) {
+    k = ifelse(crossv_method == "kfold", 5, NA),
+    progress = FALSE) {
   require("dplyr")
   require("rlang")
 
@@ -101,7 +103,10 @@ cross_validate_species <- function(
 
   # Perform function on training data
   results <- cv_datasets %>%
-    purrr::map(cross_validate_f, fun = fun, .progress = TRUE)
+    purrr::map(
+      cross_validate_f,
+      fun = fun,
+      .progress = ifelse(progress, "Cross-Validation", progress))
 
   # Summarise CV statistics in dataframe
   out_df <- results %>%

@@ -35,6 +35,10 @@ source(here("source", "R", "leave_one_species_out_ts.R"))
 source(here("source", "R", "utils.R"))
 ```
 
+# Goal
+
+Test bootstrap and other functions in combination with the **b3gbi** package.
+
 # Exploration of the b3gbi package
 
 We install b3gbi package version 0.2.1.
@@ -178,7 +182,7 @@ See also [this site](https://www.r-bloggers.com/2019/09/understanding-bootstrap-
 Assuming the bootstrap distribution of the statistic is approximately normal.
 
 $$
-\left[ \hat{\theta} - \text{Bias}_{\text{boot}} - \text{SE}_{\text{boot}} \times z_{1-\alpha/2}, \hat{\theta} - \text{Bias}_{\text{boot}} + \text{SE}_{\text{boot}} \times z_{1-\alpha/2} \right]
+\left[ \hat{\theta}_{boot} - \text{Bias}_{\text{boot}} - \text{SE}_{\text{boot}} \times z_{1-\alpha/2}, \hat{\theta}_{boot} - \text{Bias}_{\text{boot}} + \text{SE}_{\text{boot}} \times z_{1-\alpha/2} \right]
 $$
 
 where $z_{1-\alpha/2}$ is the $1-\alpha/2$ quantile of the standard normal distribution for $\alpha$ confidence level.
@@ -193,11 +197,7 @@ $$
 
 where $\hat{\theta}^*_{(\alpha/2)}$ and $\hat{\theta}^*_{(1-\alpha/2)}$ are the $\alpha/2$ and $1-\alpha/2$ percentiles of the bootstrap distribution, respectively.
 
-**3. Studentized bootstrap method**
-
-Similar as **1**, but $z_{1-\alpha/2}$ estimated based on the bootstrap distribution.
-
-**4. Bootstrap percentile method**
+**3. Bootstrap percentile method**
 
 Using the percentiles of the bootstrap distribution.
 
@@ -207,7 +207,7 @@ $$
 
 where $\hat{\theta}^*_{(\alpha/2)}$ and $\hat{\theta}^*_{(1-\alpha/2)}$ are the $\alpha/2$ and $1-\alpha/2$ percentiles of the bootstrap distribution, respectively.
 
-**5. Adjusted bootstrap percentile method (Bias-Corrected and Accelerated, BCa)**
+**4. Adjusted bootstrap percentile method (Bias-Corrected and Accelerated, BCa)**
 
 Adjusting for bias and skewness in the bootstrap distribution.
 
@@ -946,5 +946,7 @@ Although these methods require additional testing, the first results show that b
 - Incorporation of functions in b3gbi package (or separate package?)
 
 > Bootstrapping should happen on cube level
+
 > Transformation is not a good idea, evenness can be 0 or 1
+
 > ...

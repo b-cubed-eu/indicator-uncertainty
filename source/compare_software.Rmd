@@ -30,9 +30,10 @@ source(here("source", "R", "bootstrap_cube.R"))
 source(here("source", "R", "get_bootstrap_ci.R"))
 ```
 
-# Introduction
+# Goal
 
 We want to compare the **boot** package output with our own functions.
+We aim to implement code from the **boot** package as much as possible to ensure correct analyses.
 
 # Data
 
@@ -134,7 +135,7 @@ bootstrap_denmark_final %>%
 
 Perform the same analysis with own functions.
 
-```{r}
+```{r, message=FALSE}
 # Define function for calculating statistic
 mean_obs2 <- function(data) {
   aggregate(data$obs,
@@ -149,7 +150,8 @@ bootstrap_denmark2 <- bootstrap_cube(
   fun = mean_obs2,
   grouping_var = "year",
   samples = 1000,
-  seed = 123)
+  seed = 123,
+  progress = TRUE)
 
 # Calculate confidence intervals
 ci_denmark2 <- get_bootstrap_ci(
@@ -159,7 +161,8 @@ ci_denmark2 <- get_bootstrap_ci(
   conf = 0.95,
   aggregate = FALSE,
   data_cube = denmark_cube$data,
-  fun = mean_obs2)
+  fun = mean_obs2,
+  progress = TRUE)
 ```
 
 Visualise results.
