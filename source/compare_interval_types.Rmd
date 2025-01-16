@@ -80,13 +80,13 @@ We choose 3 indicators for comparison:
 Let's calculate Pielou's Evenness over time.
 
 ```{r}
-eveness_insect_data <- obs_richness_ts(insect_data)
-eveness_insect_data$data %>%
+evenness_insect_data <- obs_richness_ts(insect_data)
+evenness_insect_data$data %>%
   kable(digits = 3)
 ```
 
 ```{r}
-plot(eveness_insect_data)
+plot(evenness_insect_data)
 ```
 
 **2. Observed Species Richness**
@@ -185,7 +185,7 @@ bootstrap_insect_evenness %>%
                 fill = alpha("cornflowerblue", 0.2)) +
     geom_segment(data = bias_df,
                  aes(xend = year, y = estimate, yend = `bootstrap estimate`),
-                 colour = "purple", linewidth = 1) +
+                 colour = "darkblue", linewidth = 0.8, linetype = "dashed") +
     geom_point(data = estimate_df, aes(y = value, shape = Legend),
                colour = "firebrick", size = 2) +
     labs(x = "", y = "Pielou's Eveness", shape = "Legend:") +
@@ -199,12 +199,12 @@ We calculate all types of intervals.
 
 ```{r, echo=FALSE, message=FALSE}
 # Bootstrapping
-ci_insect_eveness_path <- file.path(cache_path, "ci_df.Rds")
-if (file.exists(ci_insect_eveness_path)) {
-  ci_insect_eveness <- readRDS(ci_insect_eveness_path)
+ci_insect_evenness_path <- file.path(cache_path, "ci_df.Rds")
+if (file.exists(ci_insect_evenness_path)) {
+  ci_insect_evenness <- readRDS(ci_insect_evenness_path)
 } else {
   # Calculate confidence intervals
-  ci_insect_eveness <- get_bootstrap_ci(
+  ci_insect_evenness <- get_bootstrap_ci(
     bootstrap_samples_df = bootstrap_insect_evenness,
     grouping_var = "year",
     type = c("perc", "bca", "norm", "basic"),
@@ -213,12 +213,12 @@ if (file.exists(ci_insect_eveness_path)) {
     data_cube = insect_data,
     fun = b3gbi::obs_richness_ts,
     progress = TRUE)
-  saveRDS(ci_insect_eveness, ci_insect_eveness_path)
+  saveRDS(ci_insect_evenness, ci_insect_evenness_path)
 }
 ```
 
 ```r
-ci_insect_eveness <- get_bootstrap_ci(
+ci_insect_evenness <- get_bootstrap_ci(
   bootstrap_samples_df = bootstrap_insect_evenness,
   grouping_var = "year",
   type = c("perc", "bca", "norm", "basic"),
@@ -279,11 +279,11 @@ bootstrap_insect_richness %>%
                 fill = alpha("cornflowerblue", 0.2)) +
     geom_segment(data = bias_df,
                  aes(xend = year, y = estimate, yend = `bootstrap estimate`),
-                 colour = "purple", linewidth = 1) +
+                 colour = "darkblue", linewidth = 0.8, linetype = "dashed") +
     geom_point(data = estimate_df, aes(y = value, shape = Legend),
                colour = "firebrick", size = 2) +
     labs(x = "", y = "Observed Species Richness", shape = "Legend:") +
-    scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
+    #scale_y_continuous(limits = c(0, NA), breaks = seq(-10, 10, 0.25)) +
     scale_x_continuous(breaks = sort(unique(bootstrap_insect_richness$year))) +
     theme_minimal() +
     theme(legend.position = "bottom")
@@ -293,12 +293,12 @@ We calculate all types of intervals.
 
 ```{r, echo=FALSE, message=FALSE}
 # Bootstrapping
-ci_insect_eveness_path <- file.path(cache_path, "ci_df.Rds")
-if (file.exists(ci_insect_eveness_path)) {
-  ci_insect_eveness <- readRDS(ci_insect_eveness_path)
+ci_insect_richness_path <- file.path(cache_path, "ci_insect_richness.Rds")
+if (file.exists(ci_insect_richness_path)) {
+  ci_insect_richness <- readRDS(ci_insect_richness_path)
 } else {
   # Calculate confidence intervals
-  ci_insect_eveness <- get_bootstrap_ci(
+  ci_insect_richness <- get_bootstrap_ci(
     bootstrap_samples_df = bootstrap_insect_richness,
     grouping_var = "year",
     type = c("perc", "bca", "norm", "basic"),
@@ -307,12 +307,12 @@ if (file.exists(ci_insect_eveness_path)) {
     data_cube = insect_data,
     fun = b3gbi::obs_richness_ts,
     progress = TRUE)
-  saveRDS(ci_insect_eveness, ci_insect_eveness_path)
+  saveRDS(ci_insect_richness, ci_insect_richness_path)
 }
 ```
 
 ```r
-ci_insect_eveness <- get_bootstrap_ci(
+ci_insect_richness <- get_bootstrap_ci(
   bootstrap_samples_df = bootstrap_insect_richness,
   grouping_var = "year",
   type = c("perc", "bca", "norm", "basic"),
@@ -346,8 +346,8 @@ if (file.exists(insect_mean_obs_path)) {
 
 ```r
 bootstrap_insect_data <- bootstrap_cube(
-  data_cube = insect_data,
-  fun = b3gbi::obs_mean_obs_ts,
+  data_cube = insect_data$data,
+  fun = mean_obs,
   grouping_var = "year",
   samples = 1000,
   seed = 123,
@@ -373,11 +373,11 @@ bootstrap_insect_mean_obs %>%
                 fill = alpha("cornflowerblue", 0.2)) +
     geom_segment(data = bias_df,
                  aes(xend = year, y = estimate, yend = `bootstrap estimate`),
-                 colour = "purple", linewidth = 1) +
+                 colour = "darkblue", linewidth = 0.8, linetype = "dashed") +
     geom_point(data = estimate_df, aes(y = value, shape = Legend),
                colour = "firebrick", size = 2) +
     labs(x = "", y = "Mean Number of Observations", shape = "Legend:") +
-    scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
+    scale_y_continuous(limits = c(0, NA)) +
     scale_x_continuous(breaks = sort(unique(bootstrap_insect_mean_obs$year))) +
     theme_minimal() +
     theme(legend.position = "bottom")
@@ -387,12 +387,12 @@ We calculate all types of intervals.
 
 ```{r, echo=FALSE, message=FALSE}
 # Bootstrapping
-ci_insect_eveness_path <- file.path(cache_path, "ci_df.Rds")
-if (file.exists(ci_insect_eveness_path)) {
-  ci_insect_eveness <- readRDS(ci_insect_eveness_path)
+ci_insect_mean_obs_path <- file.path(cache_path, "ci_insect_mean_obs.Rds")
+if (file.exists(ci_insect_mean_obs_path)) {
+  ci_insect_mean_obs <- readRDS(ci_insect_mean_obs_path)
 } else {
   # Calculate confidence intervals
-  ci_insect_eveness <- get_bootstrap_ci(
+  ci_insect_mean_obs <- get_bootstrap_ci(
     bootstrap_samples_df = bootstrap_insect_mean_obs,
     grouping_var = "year",
     type = c("perc", "bca", "norm", "basic"),
@@ -401,19 +401,19 @@ if (file.exists(ci_insect_eveness_path)) {
     data_cube = insect_data$data,
     fun = mean_obs,
     progress = TRUE)
-  saveRDS(ci_insect_eveness, ci_insect_eveness_path)
+  saveRDS(ci_insect_mean_obs, ci_insect_mean_obs_path)
 }
 ```
 
 ```r
-ci_insect_eveness <- get_bootstrap_ci(
+ci_insect_mean_obs <- get_bootstrap_ci(
   bootstrap_samples_df = bootstrap_insect_mean_obs,
   grouping_var = "year",
   type = c("perc", "bca", "norm", "basic"),
   conf = 0.95,
   aggregate = TRUE,
-  data_cube = insect_data,
-  fun = b3gbi::obs_mean_obs_ts,
+  data_cube = insect_data$data,
+  fun = mean_obs,
   progress = TRUE)
 ```
 
@@ -428,7 +428,7 @@ p <- bootstrap_insect_data %>%
                 fill = alpha("cornflowerblue", 0.2)) +
     geom_point(data = estimate_df, aes(y = value, shape = Legend),
                colour = "firebrick", size = 2, alpha = 0.5) +
-    geom_errorbar(data = ci_insect_eveness, aes(ymin = ll, ymax = ul, colour = int_type),
+    geom_errorbar(data = ci_insect_evenness, aes(ymin = ll, ymax = ul, colour = int_type),
                   position = position_dodge(0.8), linewidth = 1) +
     labs(y = "evenness", colour = "Interval type:", x = "",
          shape = "Legend:") +
@@ -442,7 +442,7 @@ p
 The interval width increases when the bootstrap standard error increases, as expected.
 
 ```{r, echo=FALSE}
-ci_insect_eveness %>%
+ci_insect_evenness %>%
   mutate(ci_width = ul - ll) %>%
   distinct(year, se_boot, int_type, ci_width) %>%
   ggplot(aes(x = se_boot, y = ci_width, colour = int_type)) +
@@ -453,7 +453,7 @@ ci_insect_eveness %>%
 ```
 
 ```{r, echo=FALSE}
-ci_insect_eveness %>%
+ci_insect_evenness %>%
   mutate(ci_width = ul - ll) %>%
   distinct(year, se_boot, int_type, ci_width) %>%
   group_by(int_type) %>%
@@ -466,7 +466,7 @@ ci_insect_eveness %>%
 We see no clear relation to bias.
 
 ```{r, echo=FALSE}
-ci_insect_eveness %>%
+ci_insect_evenness %>%
   mutate(ci_width = ul - ll) %>%
   distinct(year, bias_boot, int_type, ci_width) %>%
   ggplot(aes(x = bias_boot, y = ci_width, colour = int_type)) +
@@ -477,7 +477,7 @@ ci_insect_eveness %>%
 ```
 
 ```{r, echo=FALSE}
-ci_insect_eveness %>%
+ci_insect_evenness %>%
   mutate(ci_width = ul - ll) %>%
   distinct(year, bias_boot, int_type, ci_width) %>%
   group_by(int_type) %>%
