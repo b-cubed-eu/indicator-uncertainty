@@ -428,7 +428,8 @@ ggplot(aes(x = year)) +
               fill = alpha("cornflowerblue", 0.2)) +
   geom_point(data = estimate_evenness, aes(y = value, shape = Legend),
              colour = "firebrick", size = 2, alpha = 0.5) +
-  geom_errorbar(data = ci_insect_evenness, aes(ymin = ll, ymax = ul, colour = int_type),
+  geom_errorbar(data = ci_insect_evenness,
+                aes(ymin = ll, ymax = ul, colour = int_type),
                 position = position_dodge(0.8), linewidth = 1) +
   labs(y = "evenness", colour = "Interval type:", x = "",
        shape = "Legend:") +
@@ -445,7 +446,8 @@ ggplot(aes(x = year)) +
               fill = alpha("cornflowerblue", 0.2)) +
   geom_point(data = estimate_richness, aes(y = value, shape = Legend),
              colour = "firebrick", size = 2, alpha = 0.5) +
-  geom_errorbar(data = ci_insect_richness, aes(ymin = ll, ymax = ul, colour = int_type),
+  geom_errorbar(data = ci_insect_richness,
+                aes(ymin = ll, ymax = ul, colour = int_type),
                 position = position_dodge(0.8), linewidth = 1) +
   labs(y = "richness", colour = "Interval type:", x = "",
        shape = "Legend:") +
@@ -462,7 +464,8 @@ ggplot(aes(x = year)) +
               fill = alpha("cornflowerblue", 0.2)) +
   geom_point(data = estimate_mean_obs, aes(y = value, shape = Legend),
              colour = "firebrick", size = 2, alpha = 0.5) +
-  geom_errorbar(data = ci_insect_mean_obs, aes(ymin = ll, ymax = ul, colour = int_type),
+  geom_errorbar(data = ci_insect_mean_obs,
+                aes(ymin = ll, ymax = ul, colour = int_type),
                 position = position_dodge(0.8), linewidth = 1) +
   labs(y = "mean_obs", colour = "Interval type:", x = "",
        shape = "Legend:") +
