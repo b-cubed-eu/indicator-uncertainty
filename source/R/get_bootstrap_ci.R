@@ -66,6 +66,14 @@ get_bootstrap_ci <- function(
         left_join(intervals_df, by = join_by(!!grouping_var == "group"))
     }
     if (any(t == "all" | t == "bca")) {
+      # Check if jackknife is usual or pos
+      jackknife <- tryCatch({
+        match.arg(jackknife, c("usual", "pos"))
+      }, error = function(e) {
+        stop("`jackknife` must be one of 'usual', 'pos'.",
+             call. = FALSE)
+      })
+
       # Finite jackknife
       if (inherits(data_cube, "processed_cube")) {
         jackknife_estimates <- purrr::map(
