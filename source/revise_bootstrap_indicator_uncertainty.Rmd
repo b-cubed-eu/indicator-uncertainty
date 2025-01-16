@@ -36,7 +36,7 @@ cache_path <- here("data", "cache")
 dir.create(cache_path)
 ```
 
-# Introduction
+# Goal
 
 We developed functions for bootstrapping in `bootstrap_indicator_uncertainty_old.Rmd`.
 However, these were not correctly implemented and not scalable for all indicator functions.
@@ -212,48 +212,18 @@ bootstrap_insect_data %>%
     scale_x_continuous(breaks = sort(unique(bootstrap_insect_data$year)))
 ```
 
-We provide two types of intervals that can be calculated.
-
-Davison, A.C. & Hinkley, D.V. (1997). *Bootstrap Methods and Their Application*, Chapter 5. Cambridge University Press.
-
-DiCiccio, T. J., & Efron, B. (1996). Bootstrap confidence intervals. Statistical science, 11(3), 189-228. https://doi.org/10.1214/ss/1032280214
-
-See also [this blog post](https://www.r-bloggers.com/2019/09/understanding-bootstrap-confidence-interval-output-from-the-r-boot-package/) and [this post](https://www.datacamp.com/tutorial/bootstrap-r?dc_referrer=https%3A%2F%2Fduckduckgo.com%2F).
-
-**1. Bootstrap percentile method**
-
-Using the percentiles of the bootstrap distribution.
-
-$$
-\left[ \hat{\theta}^*_{(\alpha/2)}, \hat{\theta}^*_{(1-\alpha/2)} \right]
-$$
-
-where $\hat{\theta}^*_{(\alpha/2)}$ and $\hat{\theta}^*_{(1-\alpha/2)}$ are the $\alpha/2$ and $1-\alpha/2$ percentiles of the bootstrap distribution, respectively.
-
-**2. Adjusted bootstrap percentile method (Bias-Corrected and Accelerated, BCa)**
-
-Adjusting for bias and skewness in the bootstrap distribution.
-
-$$
-\left[ \hat{\theta}^*_{(\alpha_1)}, \hat{\theta}^*_{(\alpha_2)} \right]
-$$
-
-where $\alpha_1$ and $\alpha_2$ are adjusted percentiles taking into account the bias and acceleration (adjust for skewness).
-
-> Figure out how this is calculated. See e.g. [this site](https://blogs.sas.com/content/iml/2017/07/12/bootstrap-bca-interval.html#:~:text=BCa%20interval%3A%20The%20main%20ideas&text=The%20BCa%20interval%20requires%20that,skewness%20of%20the%20bootstrap%20distribution)
-
-We calculate the percentile intervals.
-
-> Later also implement BCa and compare the intervals
+There are multiple intervals that can be calculated, see `bootstrap_indicator_uncertainty_old.Rmd`.
 
 ```{r, message=FALSE}
 # Calculate confidence intervals
 ci_df <- get_bootstrap_ci(
   bootstrap_samples_df = bootstrap_insect_data,
   grouping_var = "year",
-  type = "perc",
+  type = c("perc", "bca", "norm", "basic"),
   conf = 0.95,
-  aggregate = TRUE)
+  aggregate = TRUE,
+  data_cube = insect_data_new,
+  fun = b3gbi::pielou_evenness_ts)
 ```
 
 ## Visualise confidence intervals
