@@ -69,16 +69,69 @@ insect_data
 
 ## Indicators
 
-Let's calculate Pielou's eveness over time.
+We choose 3 indicators for comparison:
+
+1.  Pielou's Evenness (`pielou_evenness_ts()`): real between 0-1
+2.  Observed Species Richness (`obs_richness_ts()`): positive integer
+3.  Mean Number of Observations: real (normal)
+
+**1. Pielou's Eveness**
+
+Let's calculate Pielou's Evenness over time.
 
 ```{r}
 eveness_insect_data <- pielou_evenness_ts(insect_data)
 eveness_insect_data$data %>%
-  kable()
+  kable(digits = 3)
 ```
 
 ```{r}
 plot(eveness_insect_data)
+```
+
+**2. Observed Species Richness**
+
+Let's calculate the Observed Species Richness over time.
+
+```{r}
+richness_insect_data <- obs_richness_ts(insect_data)
+richness_insect_data$data %>%
+  kable()
+```
+
+```{r}
+plot(richness_insect_data)
+```
+
+**3. Mean Number of Observations**
+
+```{r}
+# Define function for calculating statistic
+mean_obs <- function(data) {
+  aggregate(data$obs,
+            by = list(year = data$year),
+            FUN = mean) |>
+    dplyr::rename("diversity_val" = "x")
+}
+```
+
+Let's calculate the Mean Number of Observations over time.
+
+```{r}
+mean_obs_insect_data <- mean_obs(insect_data$data)
+mean_obs_insect_data %>%
+  kable(digits = 3)
+```
+
+```{r}
+mean_obs_insect_data %>%
+  ggplot(aes(x = year, y = diversity_val)) +
+    geom_smooth(method = "loess", formula = "y ~ x", se = TRUE,
+                colour = alpha("cornflowerblue", 0.8),
+                fill = alpha("cornflowerblue", 0.1), linetype = "dashed") +
+    geom_line(colour = "orange", linewidth = 1) +
+    theme_minimal() +
+    labs(x = "Year", y = "Mean Number of Observations")
 ```
 
 # Bootstrapping and interval calculation
