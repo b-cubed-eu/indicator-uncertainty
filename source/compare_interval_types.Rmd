@@ -469,7 +469,7 @@ ggplot(aes(x = year)) +
                 position = position_dodge(0.8), linewidth = 1) +
   labs(y = "mean_obs", colour = "Interval type:", x = "",
        shape = "Legend:") +
-  scale_y_continuous(limits = c(0, NA)) +
+  scale_y_continuous(limits = c(NA, NA)) +
   scale_x_continuous(breaks = sort(unique(bootstrap_insect_mean_obs$year))) +
   theme_minimal() +
   theme(legend.position = "bottom")
