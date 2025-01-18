@@ -488,7 +488,7 @@ ci_insect_evenness %>%
          colour = "Confidence\ninterval")
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
 ci_insect_evenness %>%
   mutate(ci_width = ul - ll) %>%
   distinct(year, se_boot, int_type, ci_width) %>%
