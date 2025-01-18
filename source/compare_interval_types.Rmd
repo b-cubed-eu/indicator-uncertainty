@@ -485,7 +485,8 @@ ci_insect_evenness %>%
     geom_point() +
     geom_smooth(method = "lm", formula = "y ~ x") +
     labs(x = "bootstrap standard error", y = "interval width",
-         colour = "Confidence\ninterval")
+         colour = "Confidence\ninterval") +
+    theme_minimal()
 ```
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
@@ -509,7 +510,8 @@ ci_insect_evenness %>%
     geom_point() +
     geom_smooth(method = "lm", formula = "y ~ x") +
     labs(x = "bootstrap bias", y = "interval width",
-         colour = "Confidence\ninterval")
+         colour = "Confidence\ninterval") +
+    theme_minimal()
 ```
 
 ```{r, echo=FALSE}
