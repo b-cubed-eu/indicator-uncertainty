@@ -32,7 +32,9 @@ source(here("source", "R", "utils.R"))
 
 # Cache folder
 cache_path <- here("data", "cache")
-dir.create(cache_path)
+dir.create(cache_path, showWarnings = FALSE, recursive = TRUE)
+out_path <- here("output", "figures")
+dir.create(out_path, showWarnings = FALSE, recursive = TRUE)
 ```
 
 # Goal
