@@ -182,7 +182,7 @@ See also [this site](https://www.r-bloggers.com/2019/09/understanding-bootstrap-
 Assuming the bootstrap distribution of the statistic is approximately normal.
 
 $$
-\left[ \hat{\theta}_{boot} - \text{Bias}_{\text{boot}} - \text{SE}_{\text{boot}} \times z_{1-\alpha/2}, \hat{\theta}_{boot} - \text{Bias}_{\text{boot}} + \text{SE}_{\text{boot}} \times z_{1-\alpha/2} \right]
+\left[ \hat{\theta} - \text{Bias}_{\text{boot}} - \text{SE}_{\text{boot}} \times z_{1-\alpha/2}, \hat{\theta} - \text{Bias}_{\text{boot}} + \text{SE}_{\text{boot}} \times z_{1-\alpha/2} \right]
 $$
 
 where $z_{1-\alpha/2}$ is the $1-\alpha/2$ quantile of the standard normal distribution for $\alpha$ confidence level.

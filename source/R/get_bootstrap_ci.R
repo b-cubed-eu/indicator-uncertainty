@@ -97,7 +97,7 @@ get_bootstrap_ci <- function(
 
         jackknife_df <- data_cube$data %>%
           mutate(jack_rep = jackknife_estimates) %>%
-          select(c(all_of(grouping_var), "jack_rep"))
+          select(all_of(c(grouping_var, "jack_rep")))
       } else {
         jackknife_estimates <- purrr::map(
           seq_len(nrow(data_cube)),
@@ -115,7 +115,7 @@ get_bootstrap_ci <- function(
 
         jackknife_df <- data_cube %>%
           mutate(jack_rep = jackknife_estimates) %>%
-          select(c(all_of(grouping_var), "jack_rep"))
+          select(all_of(c(grouping_var, "jack_rep")))
       }
 
       acceleration_df <- jackknife_df %>%
@@ -150,14 +150,20 @@ get_bootstrap_ci <- function(
 
           # Get the acceleration
           a <- unique(df$acceleration)
-          stopifnot("Estimated adjustment 'a' is NA." = is.finite(a))
+          if (is.finite(a)) {
+            warning("Estimated adjustment 'a' is NA.")
+            return(cbind(conf, NA, NA))
+          }
 
           # Calculate the BCa critical values
           alpha <- (1 + c(-conf, conf)) / 2
           zalpha <- qnorm(alpha)
 
           z0 <- qnorm(sum(t < t0) / length(t))
-          stopifnot("Estimated adjustment 'z0' is infinite." = is.finite(z0))
+          if (is.finite(z0)) {
+            warning("Estimated adjustment 'z0' is infinite.")
+            return(cbind(conf, NA, NA))
+          }
 
           # Adjust for acceleration
           adj_alpha <- pnorm(z0 + (z0 + zalpha) / (1 - a * (z0 + zalpha)))
