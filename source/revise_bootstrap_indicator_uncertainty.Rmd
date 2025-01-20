@@ -36,7 +36,8 @@ source(here("source", "R", "utils.R"))
 # Cache folder
 cache_path <- here("data", "cache")
 dir.create(cache_path, showWarnings = FALSE, recursive = TRUE)
-out_path <- here("output", "figures")
+out_path <- here("output", "figures",
+                 "revise_bootstrap_indicator_uncertainty")
 dir.create(out_path, showWarnings = FALSE, recursive = TRUE)
 ```
 

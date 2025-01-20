@@ -33,7 +33,7 @@ source(here("source", "R", "utils.R"))
 # Cache folder
 cache_path <- here("data", "cache")
 dir.create(cache_path, showWarnings = FALSE, recursive = TRUE)
-out_path <- here("output", "figures")
+out_path <- here("output", "figures", "compare_interval_types")
 dir.create(out_path, showWarnings = FALSE, recursive = TRUE)
 ```
 
@@ -442,7 +442,7 @@ ci_insect_mean_obs <- ci_insect_mean_obs %>%
 We visualise the distribution of the bootstrap replicates and the confidence intervals.
 
 ```{r, fig.width = 10, echo=FALSE, warning=FALSE}
-bootstrap_insect_evenness %>%
+p_ci_evenness <- bootstrap_insect_evenness %>%
   ggplot(aes(x = year)) +
     geom_violin(aes(y = rep_boot, group = year),
                 fill = alpha("cornflowerblue", 0.2)) +
@@ -458,10 +458,11 @@ bootstrap_insect_evenness %>%
     theme_minimal() +
     theme(legend.position = "bottom",
           legend.title = element_text(face = "bold"))
+p_ci_evenness
 ```
 
 ```{r, fig.width = 10, echo=FALSE, warning=FALSE}
-bootstrap_insect_richness %>%
+p_ci_richness <- bootstrap_insect_richness %>%
   ggplot(aes(x = year)) +
     geom_violin(aes(y = rep_boot, group = year),
                 fill = alpha("cornflowerblue", 0.2)) +
@@ -477,10 +478,11 @@ bootstrap_insect_richness %>%
     theme_minimal() +
     theme(legend.position = "bottom",
           legend.title = element_text(face = "bold"))
+p_ci_richness
 ```
 
 ```{r, fig.width = 10, echo=FALSE, warning=FALSE}
-bootstrap_insect_mean_obs %>%
+p_ci_mean_obs <- bootstrap_insect_mean_obs %>%
   ggplot(aes(x = year)) +
     geom_violin(aes(y = rep_boot, group = year),
                 fill = alpha("cornflowerblue", 0.2)) +
@@ -496,6 +498,21 @@ bootstrap_insect_mean_obs %>%
     theme_minimal() +
     theme(legend.position = "bottom",
           legend.title = element_text(face = "bold"))
+p_ci_mean_obs
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+p_ci <- cowplot::plot_grid(
+  p_ci_evenness, p_ci_richness, p_ci_mean_obs,
+  labels = c("A.","B.","C."),
+  ncol = 1)
+
+ggsave(
+  filename = file.path(out_path, "compare_confidence_intervals.png"),
+  plot = p_ci,
+  dpi = 300,
+  width = 8,
+  height = 20)
 ```
 
 The interval width increases when the bootstrap standard error increases, as expected.
