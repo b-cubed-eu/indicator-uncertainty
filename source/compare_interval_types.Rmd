@@ -75,7 +75,7 @@ We choose 3 indicators for comparison:
 2.  Observed Species Richness (`obs_richness_ts()`): positive integer
 3.  Mean Number of Observations: real (normal)
 
-**1. Pielou's Eveness**
+**1. Pielou's Evenness**
 
 Let's calculate Pielou's Evenness over time.
 
@@ -135,7 +135,7 @@ mean_obs_insect_data %>%
 ```
 
 # Bootstrapping and interval calculation
-## Pielou's Eveness
+## Pielou's Evenness
 
 Bootstrapping:
 
@@ -188,11 +188,12 @@ bootstrap_insect_evenness %>%
                  colour = "darkblue", linewidth = 0.8, linetype = "dashed") +
     geom_point(data = estimate_evenness, aes(y = value, shape = Legend),
                colour = "firebrick", size = 2) +
-    labs(x = "", y = "Pielou's Eveness", shape = "Legend:") +
+    labs(x = "", y = "Pielou's Evenness", shape = "Legend:") +
     scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
     scale_x_continuous(breaks = sort(unique(bootstrap_insect_evenness$year))) +
     theme_minimal() +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom",
+        legend.title = element_text(face = "bold"))
 ```
 
 We calculate all types of intervals.
@@ -283,10 +284,10 @@ bootstrap_insect_richness %>%
     geom_point(data = estimate_richness, aes(y = value, shape = Legend),
                colour = "firebrick", size = 2) +
     labs(x = "", y = "Observed Species Richness", shape = "Legend:") +
-    #scale_y_continuous(limits = c(0, NA), breaks = seq(-10, 10, 0.25)) +
     scale_x_continuous(breaks = sort(unique(bootstrap_insect_richness$year))) +
     theme_minimal() +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom",
+          legend.title = element_text(face = "bold"))
 ```
 
 We calculate all types of intervals.
@@ -380,7 +381,8 @@ bootstrap_insect_mean_obs %>%
     scale_y_continuous(limits = c(0, NA)) +
     scale_x_continuous(breaks = sort(unique(bootstrap_insect_mean_obs$year))) +
     theme_minimal() +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom",
+        legend.title = element_text(face = "bold"))
 ```
 
 We calculate all types of intervals.
@@ -419,108 +421,245 @@ ci_insect_mean_obs <- get_bootstrap_ci(
 
 # Analysis and visualisation
 
+```{r}
+ci_insect_evenness <- ci_insect_evenness %>%
+  mutate(int_type = factor(int_type,
+                           levels = c("norm", "basic", "perc", "bca")))
+ci_insect_richness <- ci_insect_richness %>%
+  mutate(int_type = factor(int_type,
+                           levels = c("norm", "basic", "perc", "bca"))) %>%
+  drop_na()
+ci_insect_mean_obs <- ci_insect_mean_obs %>%
+  mutate(int_type = factor(int_type,
+                           levels = c("norm", "basic", "perc", "bca")))
+```
+
 We visualise the distribution of the bootstrap replicates and the confidence intervals.
 
 ```{r, fig.width = 10, echo=FALSE, warning=FALSE}
 bootstrap_insect_evenness %>%
-ggplot(aes(x = year)) +
-  geom_violin(aes(y = rep_boot, group = year),
-              fill = alpha("cornflowerblue", 0.2)) +
-  geom_point(data = estimate_evenness, aes(y = value, shape = Legend),
-             colour = "firebrick", size = 2, alpha = 0.5) +
-  geom_errorbar(data = ci_insect_evenness,
-                aes(ymin = ll, ymax = ul, colour = int_type),
-                position = position_dodge(0.8), linewidth = 1) +
-  labs(y = "evenness", colour = "Interval type:", x = "",
-       shape = "Legend:") +
-  scale_y_continuous(limits = c(NA, 1), breaks = seq(-10, 10, 0.25)) +
-  scale_x_continuous(breaks = sort(unique(bootstrap_insect_evenness$year))) +
-  theme_minimal() +
-  theme(legend.position = "bottom")
+  ggplot(aes(x = year)) +
+    geom_violin(aes(y = rep_boot, group = year),
+                fill = alpha("cornflowerblue", 0.2)) +
+    geom_point(data = estimate_evenness, aes(y = value, shape = Legend),
+               colour = "firebrick", size = 2, alpha = 0.5) +
+    geom_errorbar(data = ci_insect_evenness,
+                  aes(ymin = ll, ymax = ul, colour = int_type),
+                  position = position_dodge(0.8), linewidth = 1) +
+    labs(y = "Pielou's Evenness", colour = "Interval type:", x = "",
+         shape = "Legend:") +
+    scale_y_continuous(limits = c(NA, 1), breaks = seq(-10, 10, 0.25)) +
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_evenness$year))) +
+    theme_minimal() +
+    theme(legend.position = "bottom",
+          legend.title = element_text(face = "bold"))
 ```
 
 ```{r, fig.width = 10, echo=FALSE, warning=FALSE}
 bootstrap_insect_richness %>%
-ggplot(aes(x = year)) +
-  geom_violin(aes(y = rep_boot, group = year),
-              fill = alpha("cornflowerblue", 0.2)) +
-  geom_point(data = estimate_richness, aes(y = value, shape = Legend),
-             colour = "firebrick", size = 2, alpha = 0.5) +
-  geom_errorbar(data = ci_insect_richness,
-                aes(ymin = ll, ymax = ul, colour = int_type),
-                position = position_dodge(0.8), linewidth = 1) +
-  labs(y = "richness", colour = "Interval type:", x = "",
-       shape = "Legend:") +
-  scale_y_continuous(limits = c(0, NA)) +
-  scale_x_continuous(breaks = sort(unique(bootstrap_insect_richness$year))) +
-  theme_minimal() +
-  theme(legend.position = "bottom")
+  ggplot(aes(x = year)) +
+    geom_violin(aes(y = rep_boot, group = year),
+                fill = alpha("cornflowerblue", 0.2)) +
+    geom_point(data = estimate_richness, aes(y = value, shape = Legend),
+               colour = "firebrick", size = 2, alpha = 0.5) +
+    geom_errorbar(data = ci_insect_richness,
+                  aes(ymin = ll, ymax = ul, colour = int_type),
+                  position = position_dodge(0.8), linewidth = 1) +
+    labs(y = "Observed Species Richness", colour = "Interval type:", x = "",
+         shape = "Legend:") +
+    scale_y_continuous(limits = c(0, NA)) +
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_richness$year))) +
+    theme_minimal() +
+    theme(legend.position = "bottom",
+          legend.title = element_text(face = "bold"))
 ```
 
 ```{r, fig.width = 10, echo=FALSE, warning=FALSE}
 bootstrap_insect_mean_obs %>%
-ggplot(aes(x = year)) +
-  geom_violin(aes(y = rep_boot, group = year),
-              fill = alpha("cornflowerblue", 0.2)) +
-  geom_point(data = estimate_mean_obs, aes(y = value, shape = Legend),
-             colour = "firebrick", size = 2, alpha = 0.5) +
-  geom_errorbar(data = ci_insect_mean_obs,
-                aes(ymin = ll, ymax = ul, colour = int_type),
-                position = position_dodge(0.8), linewidth = 1) +
-  labs(y = "mean_obs", colour = "Interval type:", x = "",
-       shape = "Legend:") +
-  scale_y_continuous(limits = c(NA, NA)) +
-  scale_x_continuous(breaks = sort(unique(bootstrap_insect_mean_obs$year))) +
-  theme_minimal() +
-  theme(legend.position = "bottom")
+  ggplot(aes(x = year)) +
+    geom_violin(aes(y = rep_boot, group = year),
+                fill = alpha("cornflowerblue", 0.2)) +
+    geom_point(data = estimate_mean_obs, aes(y = value, shape = Legend),
+               colour = "firebrick", size = 2, alpha = 0.5) +
+    geom_errorbar(data = ci_insect_mean_obs,
+                  aes(ymin = ll, ymax = ul, colour = int_type),
+                  position = position_dodge(0.8), linewidth = 1) +
+    labs(y = "Mean Number of Observations", colour = "Interval type:", x = "",
+         shape = "Legend:") +
+    scale_y_continuous(limits = c(NA, NA)) +
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_mean_obs$year))) +
+    theme_minimal() +
+    theme(legend.position = "bottom",
+          legend.title = element_text(face = "bold"))
 ```
 
 The interval width increases when the bootstrap standard error increases, as expected.
 
 ```{r, echo=FALSE}
 ci_insect_evenness %>%
-  mutate(ci_width = ul - ll) %>%
-  distinct(year, se_boot, int_type, ci_width) %>%
+  mutate(indicator = "Pielou's Evenness") %>%
+  bind_rows(
+    ci_insect_richness %>%
+      mutate(indicator = "Observed Species Richness"),
+    ci_insect_mean_obs %>%
+      mutate(indicator = "Mean Number of Observations")
+  ) %>%
+  mutate(ci_width = ul - ll,
+         indicator = factor(indicator,
+                            levels = c("Pielou's Evenness",
+                                       "Observed Species Richness",
+                                       "Mean Number of Observations"))
+  ) %>%
+  distinct(year, se_boot, int_type, ci_width, indicator) %>%
   ggplot(aes(x = se_boot, y = ci_width, colour = int_type)) +
-    geom_point() +
     geom_smooth(method = "lm", formula = "y ~ x") +
-    labs(x = "bootstrap standard error", y = "interval width",
-         colour = "Confidence\ninterval") +
-    theme_minimal()
+    geom_point(size = 1.5) +
+    labs(x = "Bootstrap Standard Error", y = "Interval Width",
+         colour = "Interval type") +
+    facet_wrap(~indicator, ncol = 2, scales = "free") +
+    theme_minimal() +
+    theme(
+      legend.title = element_text(face = "bold"),
+      legend.position = c(1, 0),
+      legend.justification = c(2, -0.25)
+    )
 ```
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 ci_insect_evenness %>%
-  mutate(ci_width = ul - ll) %>%
-  distinct(year, se_boot, int_type, ci_width) %>%
-  group_by(int_type) %>%
+  mutate(indicator = "Pielou's Evenness") %>%
+  bind_rows(
+    ci_insect_richness %>%
+      mutate(indicator = "Observed Species Richness"),
+    ci_insect_mean_obs %>%
+      mutate(indicator = "Mean Number of Observations")
+  ) %>%
+  mutate(ci_width = ul - ll,
+         indicator = factor(indicator,
+                            levels = c("Pielou's Evenness",
+                                       "Observed Species Richness",
+                                       "Mean Number of Observations"))
+  ) %>%
+  distinct(year, se_boot, int_type, ci_width, indicator) %>%
+  group_by(int_type, indicator) %>%
   group_modify(~ grouped_regression(df = ., formula = ci_width ~ se_boot)) %>%
   ungroup() %>%
   filter(param == "se_boot") %>%
-  kable()
+  arrange(int_type, indicator) %>%
+  kable(digits = 5)
 ```
 
-We see no clear relation to bias.
+We see no relation to bias for evenness.
+For species richness there is a negative relationship.
 
 ```{r, echo=FALSE}
 ci_insect_evenness %>%
-  mutate(ci_width = ul - ll) %>%
-  distinct(year, bias_boot, int_type, ci_width) %>%
+  mutate(indicator = "Pielou's Evenness") %>%
+  bind_rows(
+    ci_insect_richness %>%
+      mutate(indicator = "Observed Species Richness"),
+    ci_insect_mean_obs %>%
+      mutate(indicator = "Mean Number of Observations")
+  ) %>%
+  mutate(ci_width = ul - ll,
+         indicator = factor(indicator,
+                            levels = c("Pielou's Evenness",
+                                       "Observed Species Richness",
+                                       "Mean Number of Observations"))
+  ) %>%
+  distinct(year, bias_boot, int_type, ci_width, indicator) %>%
   ggplot(aes(x = bias_boot, y = ci_width, colour = int_type)) +
-    geom_point() +
     geom_smooth(method = "lm", formula = "y ~ x") +
-    labs(x = "bootstrap bias", y = "interval width",
-         colour = "Confidence\ninterval") +
-    theme_minimal()
+    geom_point(size = 1.5) +
+    labs(x = "Bootstrap Bias", y = "Interval Width",
+         colour = "Interval type") +
+    facet_wrap(~indicator, ncol = 2, scales = "free") +
+    theme_minimal() +
+    theme(
+      legend.title = element_text(face = "bold"),
+      legend.position = c(1, 0),
+      legend.justification = c(2, -0.25)
+    )
 ```
 
 ```{r, echo=FALSE}
 ci_insect_evenness %>%
-  mutate(ci_width = ul - ll) %>%
-  distinct(year, bias_boot, int_type, ci_width) %>%
-  group_by(int_type) %>%
+  mutate(indicator = "Pielou's Evenness") %>%
+  bind_rows(
+    ci_insect_richness %>%
+      mutate(indicator = "Observed Species Richness"),
+    ci_insect_mean_obs %>%
+      mutate(indicator = "Mean Number of Observations")
+  ) %>%
+  mutate(ci_width = ul - ll,
+         indicator = factor(indicator,
+                            levels = c("Pielou's Evenness",
+                                       "Observed Species Richness",
+                                       "Mean Number of Observations"))
+  ) %>%
+  distinct(year, bias_boot, int_type, ci_width, indicator) %>%
+  group_by(int_type, indicator) %>%
   group_modify(~ grouped_regression(df = ., formula = ci_width ~ bias_boot)) %>%
   ungroup() %>%
   filter(param == "bias_boot") %>%
-  kable()
+  arrange(int_type, indicator) %>%
+  kable(digits = 5)
+```
+
+If we remove the outliers for mean number of observations, we do not see a trend there as well.
+
+```{r, echo=FALSE}
+ci_insect_evenness %>%
+  mutate(indicator = "Pielou's Evenness") %>%
+  bind_rows(
+    ci_insect_richness %>%
+      mutate(indicator = "Observed Species Richness"),
+    ci_insect_mean_obs %>%
+      mutate(indicator = "Mean Number of Observations")
+  ) %>%
+  mutate(ci_width = ul - ll,
+         indicator = factor(indicator,
+                            levels = c("Pielou's Evenness",
+                                       "Observed Species Richness",
+                                       "Mean Number of Observations"))
+  ) %>%
+  distinct(year, bias_boot, int_type, ci_width, indicator) %>%
+  filter(!(indicator == "Mean Number of Observations" & bias_boot > 2)) %>%
+  ggplot(aes(x = bias_boot, y = ci_width, colour = int_type)) +
+    geom_smooth(method = "lm", formula = "y ~ x") +
+    geom_point(size = 1.5) +
+    labs(x = "Bootstrap Bias", y = "Interval Width",
+         colour = "Interval type") +
+    facet_wrap(~indicator, ncol = 2, scales = "free") +
+    theme_minimal() +
+    theme(
+      legend.title = element_text(face = "bold"),
+      legend.position = c(1, 0),
+      legend.justification = c(2, -0.25)
+    )
+```
+
+```{r, echo=FALSE}
+ci_insect_evenness %>%
+  mutate(indicator = "Pielou's Evenness") %>%
+  bind_rows(
+    ci_insect_richness %>%
+      mutate(indicator = "Observed Species Richness"),
+    ci_insect_mean_obs %>%
+      mutate(indicator = "Mean Number of Observations")
+  ) %>%
+  mutate(ci_width = ul - ll,
+         indicator = factor(indicator,
+                            levels = c("Pielou's Evenness",
+                                       "Observed Species Richness",
+                                       "Mean Number of Observations"))
+  ) %>%
+  distinct(year, bias_boot, int_type, ci_width, indicator) %>%
+  filter(!(indicator == "Mean Number of Observations" & bias_boot > 2)) %>%
+  group_by(int_type, indicator) %>%
+  group_modify(~ grouped_regression(df = ., formula = ci_width ~ bias_boot)) %>%
+  ungroup() %>%
+  filter(param == "bias_boot") %>%
+  arrange(int_type, indicator) %>%
+  kable(digits = 5)
 ```
