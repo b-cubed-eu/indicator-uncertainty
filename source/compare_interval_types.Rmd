@@ -193,7 +193,7 @@ bootstrap_insect_evenness %>%
     scale_x_continuous(breaks = sort(unique(bootstrap_insect_evenness$year))) +
     theme_minimal() +
     theme(legend.position = "bottom",
-        legend.title = element_text(face = "bold"))
+          legend.title = element_text(face = "bold"))
 ```
 
 We calculate all types of intervals.
@@ -284,6 +284,7 @@ bootstrap_insect_richness %>%
     geom_point(data = estimate_richness, aes(y = value, shape = Legend),
                colour = "firebrick", size = 2) +
     labs(x = "", y = "Observed Species Richness", shape = "Legend:") +
+    scale_y_continuous(limits = c(0, NA)) +
     scale_x_continuous(breaks = sort(unique(bootstrap_insect_richness$year))) +
     theme_minimal() +
     theme(legend.position = "bottom",
@@ -495,7 +496,7 @@ bootstrap_insect_mean_obs %>%
 
 The interval width increases when the bootstrap standard error increases, as expected.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 ci_insect_evenness %>%
   mutate(indicator = "Pielou's Evenness") %>%
   bind_rows(
@@ -552,7 +553,7 @@ ci_insect_evenness %>%
 We see no relation to bias for evenness.
 For species richness there is a negative relationship.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 ci_insect_evenness %>%
   mutate(indicator = "Pielou's Evenness") %>%
   bind_rows(
@@ -608,7 +609,7 @@ ci_insect_evenness %>%
 
 If we remove the outliers for mean number of observations, we do not see a trend there as well.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 ci_insect_evenness %>%
   mutate(indicator = "Pielou's Evenness") %>%
   bind_rows(
