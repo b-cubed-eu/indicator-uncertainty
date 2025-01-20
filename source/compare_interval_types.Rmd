@@ -496,6 +496,31 @@ bootstrap_insect_mean_obs %>%
 
 The interval width increases when the bootstrap standard error increases, as expected.
 
+```{r}
+ci_insect_evenness %>%
+    mutate(indicator = "Pielou's Evenness") %>%
+    bind_rows(
+        ci_insect_richness %>%
+            mutate(indicator = "Observed Species Richness"),
+        ci_insect_mean_obs %>%
+            mutate(indicator = "Mean Number of Observations")
+    ) %>%
+    mutate(ci_width = ul - ll,
+           indicator = factor(indicator,
+                              levels = c("Pielou's Evenness",
+                                         "Observed Species Richness",
+                                         "Mean Number of Observations"))
+    ) %>%
+    distinct(year, se_boot, indicator) %>%
+    ggplot(aes(x = indicator, y = se_boot)) +
+    geom_boxplot(fill = alpha("cornflowerblue", 0.2),
+                 outlier.colour = "firebrick") +
+    geom_jitter(size = 1.5, width = 0.2) +
+    labs(y = "Bootstrap Standard Error", x = "") +
+    facet_wrap(~indicator, ncol = 3, scales = "free") +
+    theme_minimal()
+```
+
 ```{r, echo=FALSE, warning=FALSE}
 ci_insect_evenness %>%
   mutate(indicator = "Pielou's Evenness") %>%
@@ -552,6 +577,31 @@ ci_insect_evenness %>%
 
 We see no relation to bias for evenness.
 For species richness there is a negative relationship.
+
+```{r}
+ci_insect_evenness %>%
+    mutate(indicator = "Pielou's Evenness") %>%
+    bind_rows(
+        ci_insect_richness %>%
+            mutate(indicator = "Observed Species Richness"),
+        ci_insect_mean_obs %>%
+            mutate(indicator = "Mean Number of Observations")
+    ) %>%
+    mutate(ci_width = ul - ll,
+           indicator = factor(indicator,
+                              levels = c("Pielou's Evenness",
+                                         "Observed Species Richness",
+                                         "Mean Number of Observations"))
+    ) %>%
+    distinct(year, bias_boot, indicator) %>%
+    ggplot(aes(x = indicator, y = bias_boot)) +
+    geom_boxplot(fill = alpha("cornflowerblue", 0.2),
+                 outlier.colour = "firebrick") +
+    geom_jitter(size = 1.5, width = 0.2) +
+    labs(y = "Bootstrap Bias", x = "") +
+    facet_wrap(~indicator, ncol = 3, scales = "free") +
+    theme_minimal()
+```
 
 ```{r, echo=FALSE, warning=FALSE}
 ci_insect_evenness %>%
