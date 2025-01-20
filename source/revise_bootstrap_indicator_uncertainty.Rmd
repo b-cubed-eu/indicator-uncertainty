@@ -83,7 +83,7 @@ plot(map_obs_rich_insects,
 
 ## Calculate an index over time
 
-Let's calculate Pielou's eveness over time using b3gbi.
+Let's calculate Pielou's evenness over time using b3gbi.
 
 ```{r}
 eveness_insect_data <- pielou_evenness_ts(insect_data)
@@ -99,7 +99,7 @@ plot(eveness_insect_data)
 The visualisation of uncertainty in trends is not correct because of two factors:
 
 1. Uncertainty is based on evenness values per year and is not based on the data itself
-2. The predicted eveness becomes negative although evenness is a value between 0 and 1
+2. The predicted evenness becomes negative although evenness is a value between 0 and 1
 
 Let's calculate this metric from scratch in the next section.
 We select the data after 2010 to ensure calculations with enough data.
