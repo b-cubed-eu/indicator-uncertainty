@@ -442,6 +442,17 @@ ci_insect_mean_obs <- ci_insect_mean_obs %>%
 We visualise the distribution of the bootstrap replicates and the confidence intervals.
 
 ```{r, fig.width = 10, echo=FALSE, warning=FALSE}
+my_theme <- theme_minimal() +
+    theme(
+      axis.text = element_text(size = 12),
+      axis.title = element_text(size = 15)
+    ) +
+    theme(
+      legend.position = "bottom",
+      legend.title = element_text(face = "bold", size = 12),
+      legend.text = element_text(size = 12)
+      )
+
 p_ci_evenness <- bootstrap_insect_evenness %>%
   ggplot(aes(x = year)) +
     geom_violin(aes(y = rep_boot, group = year),
@@ -450,14 +461,12 @@ p_ci_evenness <- bootstrap_insect_evenness %>%
                colour = "firebrick", size = 2, alpha = 0.5) +
     geom_errorbar(data = ci_insect_evenness,
                   aes(ymin = ll, ymax = ul, colour = int_type),
-                  position = position_dodge(0.8), linewidth = 1) +
+                  position = position_dodge(0.8), linewidth = 0.8) +
     labs(y = "Pielou's Evenness", colour = "Interval type:", x = "",
          shape = "Legend:") +
     scale_y_continuous(limits = c(NA, 1), breaks = seq(-10, 10, 0.25)) +
     scale_x_continuous(breaks = sort(unique(bootstrap_insect_evenness$year))) +
-    theme_minimal() +
-    theme(legend.position = "bottom",
-          legend.title = element_text(face = "bold"))
+    my_theme
 p_ci_evenness
 ```
 
@@ -470,14 +479,13 @@ p_ci_richness <- bootstrap_insect_richness %>%
                colour = "firebrick", size = 2, alpha = 0.5) +
     geom_errorbar(data = ci_insect_richness,
                   aes(ymin = ll, ymax = ul, colour = int_type),
-                  position = position_dodge(0.8), linewidth = 1) +
+                  position = position_dodge(0.8), linewidth = 0.8,
+                  width = 0.5) +
     labs(y = "Observed Species Richness", colour = "Interval type:", x = "",
          shape = "Legend:") +
     scale_y_continuous(limits = c(0, NA)) +
     scale_x_continuous(breaks = sort(unique(bootstrap_insect_richness$year))) +
-    theme_minimal() +
-    theme(legend.position = "bottom",
-          legend.title = element_text(face = "bold"))
+    my_theme
 p_ci_richness
 ```
 
@@ -490,29 +498,36 @@ p_ci_mean_obs <- bootstrap_insect_mean_obs %>%
                colour = "firebrick", size = 2, alpha = 0.5) +
     geom_errorbar(data = ci_insect_mean_obs,
                   aes(ymin = ll, ymax = ul, colour = int_type),
-                  position = position_dodge(0.8), linewidth = 1) +
+                  position = position_dodge(0.8), linewidth = 0.8) +
     labs(y = "Mean Number of Observations", colour = "Interval type:", x = "",
          shape = "Legend:") +
     scale_y_continuous(limits = c(NA, NA)) +
     scale_x_continuous(breaks = sort(unique(bootstrap_insect_mean_obs$year))) +
-    theme_minimal() +
-    theme(legend.position = "bottom",
-          legend.title = element_text(face = "bold"))
+    my_theme
 p_ci_mean_obs
 ```
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-p_ci <- cowplot::plot_grid(
-  p_ci_evenness, p_ci_richness, p_ci_mean_obs,
-  labels = c("A.","B.","C."),
-  ncol = 1)
+ggsave(
+  filename = file.path(out_path, "compare_ci_evenness.png"),
+  plot = p_ci_evenness,
+  dpi = 300,
+  width = 10,
+  height = 5)
 
 ggsave(
-  filename = file.path(out_path, "compare_confidence_intervals.png"),
-  plot = p_ci,
+  filename = file.path(out_path, "compare_ci_richness.png"),
+  plot = p_ci_richness,
   dpi = 300,
-  width = 8,
-  height = 20)
+  width = 10,
+  height = 5)
+
+ggsave(
+  filename = file.path(out_path, "compare_ci_mean_obs.png"),
+  plot = p_ci_mean_obs,
+  dpi = 300,
+  width = 10,
+  height = 5)
 ```
 
 The interval width increases when the bootstrap standard error increases, as expected.
