@@ -334,13 +334,27 @@ This might be due to species having a much larger number of observations compare
 During the resampling process of bootstrapping, they might be included or not, which results in large variability in the indicator value.
 
 ```{r, echo=FALSE}
-insect_data_new$data %>%
+p_nobs <- insect_data_new$data %>%
   summarise(n = sum(obs), .by = c("year", "taxonKey")) %>%
   ggplot(aes(x = as.factor(year), y = n, colour = as.factor(taxonKey))) +
     geom_text(aes(label = as.factor(taxonKey))) +
-    labs(x = "Year", y = "Number of observations") +
+    labs(x = "", y = "Number of Observations") +
     theme_minimal() +
+    theme(
+      axis.text = element_text(size = 12),
+      axis.title = element_text(size = 15)
+    ) +
     theme(legend.position = "")
+p_nobs
+```
+
+```{r}
+ggsave(
+  filename = file.path(out_path, "number_of_obs.png"),
+  plot = p_nobs,
+  dpi = 300,
+  width = 10,
+  height = 6)
 ```
 
 We can calculate a measure for each species of how much it influences the indicator.
@@ -356,18 +370,17 @@ Below are the notations used in leave-one-species-out cross-validation:
 3. **Statistic of Interest**: $\theta$
     - The parameter or statistic being estimated, such as the mean $\bar{X}$, variance $\sigma^2$, or median. Let $\hat{\theta}$ denote the estimated value of $\theta$ calculated on the complete dataset $\mathbf{X}$.
 
-4. **CV Estimate for species** $\mathbf{j}$: $\hat{\theta}_{-s_j}$
+4. **CV Estimate for Species** $\mathbf{j}$: $\hat{\theta}_{-s_j}$
     - The value of the statistic of interest calculated from $\mathbf{X}_{-s_j}$, which excludes species $j$.
     
-5. **Error**: $\text{Error}_{s_j}$
-   - The difference between the statistic estimated without species $j$ ($\hat{\theta}_{-s_j}$) and the statistic calculated on the complete dataset ($\hat{\theta}$).
+5. **Error Measures**: 
+   - The **Error** is the difference between the statistic estimated without species $j$ ($\hat{\theta}_{-s_j}$) and the statistic calculated on the complete dataset ($\hat{\theta}$).
 
 $$
 \text{Error}_{s_j} = \hat{\theta}_{-s_j} - \hat{\theta}
 $$
 
-6. **Relative Error**: $\text{Rel. Error}_{s_j}$
-   - The absolute error, normalised by the true estimate $\hat{\theta}$ and a small error term $\epsilon = 10^{-8}$ to avoid division by zero.
+   - The **Relative Error** is the absolute error, normalised by the true estimate $\hat{\theta}$ and a small error term $\epsilon = 10^{-8}$ to avoid division by zero.
 
 <!-- spell-check: ignore:start -->
 $$
@@ -418,16 +431,61 @@ cv_results_loo <- cross_validate_species(
 ```
 
 ```{r, echo=FALSE}
-ggplot(cv_results_loo,
-       aes(x = as.factor(year), y = abs_diff,
-           colour = as.factor(species_left_out))) +
-  geom_text(aes(label = as.factor(species_left_out))) +
-  geom_point(aes(y = rmse * 2.5), colour = "black", size = 3) +
-  geom_text(aes(y = rmse * 2.5, label = "RMSE*2.5"), colour = "black", size = 3,
-            nudge_x = 0.4, nudge_y = 0.02) +
-  labs(x = "Year", y = "Absolute difference") +
+original_ests <- cv_results_loo %>%
+  distinct(year, est_original) %>%
+  mutate(label = paste("hat(theta) ==", round(est_original, 3)))
+p_loo_error <- ggplot(cv_results_loo, aes(x = as.factor(year))) +
+  geom_hline(yintercept = 0, colour = "black", linetype = "dashed") +
+  geom_text(aes(y = error, colour = as.factor(species_left_out),
+                label = as.factor(species_left_out))) +
+  geom_label(data = original_ests, aes(label = label), y = 0.9, parse = TRUE) +
+  labs(x = "", y = "LOSO-CV Error") +
+  scale_y_continuous(breaks = seq(-1, 1, 0.2), limits = c(-0.25, 0.9)) +
   theme_minimal() +
-  theme(legend.position = "")
+  theme(
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 15)
+  ) +
+  theme(legend.position = "") +
+  # Add arrows to indicate direction commonness in regions
+  annotate("segment",
+    x = length(unique(cv_results_loo$year)) + 0.4,
+    y = -0.035,
+    xend = length(unique(cv_results_loo$year)) + 0.4,
+    yend = -0.2,
+    arrow = arrow(type = "closed", length = unit(0.01, "npc")),
+    colour = "black"
+  ) +
+  annotate("segment",
+    x = length(unique(cv_results_loo$year)) + 0.4,
+    y = 0.035,
+    xend = length(unique(cv_results_loo$year)) + 0.4,
+    yend = 0.2,
+    arrow = arrow(type = "closed", length = unit(0.01, "npc")),
+    colour = "black"
+  ) +
+  annotate("text",
+    label = c("Decreases evenness"),
+    x = length(unique(cv_results_loo$year)) + 0.5,
+    y = -0.035,
+    size = 3, hjust = "right", colour = "black", angle = 90
+  ) +
+  annotate("text",
+    label = c("Increases evenness"),
+    x = length(unique(cv_results_loo$year)) + 0.5,
+    y = 0.035,
+    size = 3, hjust = "left", colour = "black", angle = 90
+  )
+p_loo_error
+```
+
+```{r}
+ggsave(
+  filename = file.path(out_path, "eveness_loo_absdiff.png"),
+  plot = p_loo_error,
+  dpi = 300,
+  width = 10,
+  height = 6)
 ```
 
 We look at the relative error (RE).
