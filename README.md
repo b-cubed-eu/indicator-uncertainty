@@ -42,9 +42,10 @@ This code is developed in context of **T5.4** of the [B-Cubed project](https://b
 ├── source                         ├ R markdown files
 │   └── R                          ├ R scripts
 ├── data
-│   ├── raw                        ├ store raw data
-│   ├── intermediate               ├ store intermediate data
-│   └── processed                  ├ store processed data
+│   └── cache                      ├ store cached data
+├── output
+│   ├── figures                    ├ save rendered figures 
+│   └── reports                    ├ save rendered reports
 ├── checklist.yml                  ├ options checklist package (https://github.com/inbo/checklist)
 ├── organisation.yml               ├ organisation info (https://inbo.github.io/checklist/articles/organisation.html)
 ├── inst

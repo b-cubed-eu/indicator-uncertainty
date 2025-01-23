@@ -8,6 +8,8 @@ output:
     toc: true
     toc_float: true
     toc_collapsed: true
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_dir = "../output/reports") })
 editor_options: 
   chunk_output_type: console
 ---
@@ -33,7 +35,10 @@ source(here("source", "R", "utils.R"))
 
 # Cache folder
 cache_path <- here("data", "cache")
-dir.create(cache_path)
+dir.create(cache_path, showWarnings = FALSE, recursive = TRUE)
+out_path <- here("output", "figures",
+                 "revise_bootstrap_indicator_uncertainty")
+dir.create(out_path, showWarnings = FALSE, recursive = TRUE)
 ```
 
 # Goal
@@ -329,13 +334,27 @@ This might be due to species having a much larger number of observations compare
 During the resampling process of bootstrapping, they might be included or not, which results in large variability in the indicator value.
 
 ```{r, echo=FALSE}
-insect_data_new$data %>%
+p_nobs <- insect_data_new$data %>%
   summarise(n = sum(obs), .by = c("year", "taxonKey")) %>%
   ggplot(aes(x = as.factor(year), y = n, colour = as.factor(taxonKey))) +
     geom_text(aes(label = as.factor(taxonKey))) +
-    labs(x = "Year", y = "Number of observations") +
+    labs(x = "", y = "Number of Observations") +
     theme_minimal() +
+    theme(
+      axis.text = element_text(size = 12),
+      axis.title = element_text(size = 15)
+    ) +
     theme(legend.position = "")
+p_nobs
+```
+
+```{r}
+ggsave(
+  filename = file.path(out_path, "number_of_obs.png"),
+  plot = p_nobs,
+  dpi = 300,
+  width = 10,
+  height = 6)
 ```
 
 We can calculate a measure for each species of how much it influences the indicator.
@@ -351,18 +370,17 @@ Below are the notations used in leave-one-species-out cross-validation:
 3. **Statistic of Interest**: $\theta$
     - The parameter or statistic being estimated, such as the mean $\bar{X}$, variance $\sigma^2$, or median. Let $\hat{\theta}$ denote the estimated value of $\theta$ calculated on the complete dataset $\mathbf{X}$.
 
-4. **CV Estimate for species** $\mathbf{j}$: $\hat{\theta}_{-s_j}$
+4. **CV Estimate for Species** $\mathbf{j}$: $\hat{\theta}_{-s_j}$
     - The value of the statistic of interest calculated from $\mathbf{X}_{-s_j}$, which excludes species $j$.
     
-5. **Error**: $\text{Error}_{s_j}$
-   - The difference between the statistic estimated without species $j$ ($\hat{\theta}_{-s_j}$) and the statistic calculated on the complete dataset ($\hat{\theta}$).
+5. **Error Measures**: 
+   - The **Error** is the difference between the statistic estimated without species $j$ ($\hat{\theta}_{-s_j}$) and the statistic calculated on the complete dataset ($\hat{\theta}$).
 
 $$
 \text{Error}_{s_j} = \hat{\theta}_{-s_j} - \hat{\theta}
 $$
 
-6. **Relative Error**: $\text{Rel. Error}_{s_j}$
-   - The absolute error, normalised by the true estimate $\hat{\theta}$ and a small error term $\epsilon = 10^{-8}$ to avoid division by zero.
+   - The **Relative Error** is the absolute error, normalised by the true estimate $\hat{\theta}$ and a small error term $\epsilon = 10^{-8}$ to avoid division by zero.
 
 <!-- spell-check: ignore:start -->
 $$
@@ -413,16 +431,61 @@ cv_results_loo <- cross_validate_species(
 ```
 
 ```{r, echo=FALSE}
-ggplot(cv_results_loo,
-       aes(x = as.factor(year), y = abs_diff,
-           colour = as.factor(species_left_out))) +
-  geom_text(aes(label = as.factor(species_left_out))) +
-  geom_point(aes(y = rmse * 2.5), colour = "black", size = 3) +
-  geom_text(aes(y = rmse * 2.5, label = "RMSE*2.5"), colour = "black", size = 3,
-            nudge_x = 0.4, nudge_y = 0.02) +
-  labs(x = "Year", y = "Absolute difference") +
+original_ests <- cv_results_loo %>%
+  distinct(year, est_original) %>%
+  mutate(label = paste("hat(theta) ==", round(est_original, 3)))
+p_loo_error <- ggplot(cv_results_loo, aes(x = as.factor(year))) +
+  geom_hline(yintercept = 0, colour = "black", linetype = "dashed") +
+  geom_text(aes(y = error, colour = as.factor(species_left_out),
+                label = as.factor(species_left_out))) +
+  geom_label(data = original_ests, aes(label = label), y = 0.9, parse = TRUE) +
+  labs(x = "", y = "LOSO-CV Error") +
+  scale_y_continuous(breaks = seq(-1, 1, 0.2), limits = c(-0.25, 0.9)) +
   theme_minimal() +
-  theme(legend.position = "")
+  theme(
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 15)
+  ) +
+  theme(legend.position = "") +
+  # Add arrows to indicate direction commonness in regions
+  annotate("segment",
+    x = length(unique(cv_results_loo$year)) + 0.4,
+    y = -0.035,
+    xend = length(unique(cv_results_loo$year)) + 0.4,
+    yend = -0.2,
+    arrow = arrow(type = "closed", length = unit(0.01, "npc")),
+    colour = "black"
+  ) +
+  annotate("segment",
+    x = length(unique(cv_results_loo$year)) + 0.4,
+    y = 0.035,
+    xend = length(unique(cv_results_loo$year)) + 0.4,
+    yend = 0.2,
+    arrow = arrow(type = "closed", length = unit(0.01, "npc")),
+    colour = "black"
+  ) +
+  annotate("text",
+    label = c("Decreases evenness"),
+    x = length(unique(cv_results_loo$year)) + 0.5,
+    y = -0.035,
+    size = 3, hjust = "right", colour = "black", angle = 90
+  ) +
+  annotate("text",
+    label = c("Increases evenness"),
+    x = length(unique(cv_results_loo$year)) + 0.5,
+    y = 0.035,
+    size = 3, hjust = "left", colour = "black", angle = 90
+  )
+p_loo_error
+```
+
+```{r}
+ggsave(
+  filename = file.path(out_path, "eveness_loo_absdiff.png"),
+  plot = p_loo_error,
+  dpi = 300,
+  width = 10,
+  height = 6)
 ```
 
 We look at the relative error (RE).
@@ -522,7 +585,7 @@ summary_df %>%
   kable()
 ```
 
-Let's say we want to test whether the evenness of insects differs from 0.7.
+Let's say we want to test whether the evenness of insects differs from 0.5.
 We use thresholds of 0.1 to distinguish between strong and moderate effects.
 
 ```{r}
@@ -531,7 +594,7 @@ insect_eveness_effects <- add_classification_as_factor(
   df = summary_df,
   cl_columns = c("ll", "ul"),
   threshold = 0.1,
-  reference = 0.4,
+  reference = 0.5,
   coarse = TRUE)
 ```
 
@@ -546,7 +609,7 @@ Coarse classification:
 ```{r}
 insect_eveness_effects %>%
   ggplot(aes(x = year, y = est_original, ymin = ll, ymax = ul)) +
-    stat_effect(reference = 0.4, threshold = c(0.3, 0.5), detailed = FALSE) +
+    stat_effect(reference = 0.5, threshold = c(0.4, 0.6), detailed = FALSE) +
     labs(y = "evenness") +
     scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
     scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year)))
@@ -557,8 +620,8 @@ We can create this figure ourselves:
 ```{r}
 insect_eveness_effects %>%
   ggplot(aes(x = year)) +
-    geom_hline(yintercept = 0.4, linetype = "longdash", colour = "black") +
-    geom_hline(yintercept = c(0.3, 0.5), linetype = "dotdash") +
+    geom_hline(yintercept = 0.5, linetype = "longdash", colour = "black") +
+    geom_hline(yintercept = c(0.4, 0.6), linetype = "dotdash") +
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = effect_coarse),
                   linewidth = 1.5, show.legend = TRUE) +
     geom_point(aes(y = est_original), colour = "black", size = 3.5) +
@@ -578,17 +641,27 @@ Fine classification:
 ```{r}
 insect_eveness_effects %>%
   ggplot(aes(x = year, y = est_original, ymin = ll, ymax = ul)) +
-  stat_effect(threshold = c(0.3, 0.5), reference = 0.4) +
+  stat_effect(threshold = c(0.4, 0.6), reference = 0.5) +
   labs(y = "evenness") +
   scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
   scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year)))
 ```
 
-```{r}
-insect_eveness_effects %>%
+```{r, fig.width = 10, echo=FALSE, warning=FALSE}
+my_theme <- theme_minimal() +
+    theme(
+      axis.text = element_text(size = 12),
+      axis.title = element_text(size = 15)
+    ) +
+    theme(
+      legend.title = element_text(face = "bold", size = 12),
+      legend.text = element_text(size = 12)
+      )
+
+p_effect_evenness <- insect_eveness_effects %>%
   ggplot(aes(x = year)) +
-    geom_hline(yintercept = 0.4, linetype = "longdash", colour = "black") +
-    geom_hline(yintercept = c(0.3, 0.5), linetype = "dotdash") +
+    geom_hline(yintercept = 0.5, linetype = "longdash", colour = "black") +
+    geom_hline(yintercept = c(0.4, 0.6), linetype = "dotdash") +
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = effect),
                   linewidth = 1.5, show.legend = TRUE) +
     geom_point(aes(y = est_original), colour = "black", size = 3.5) +
@@ -603,10 +676,20 @@ insect_eveness_effects %>%
                                     "gray30",
                                     "grey55"),
                         drop = FALSE) +
-    labs(y = "evenness", colour = "Classification") +
+    labs(x = "", y = "Pielou's Evenness", colour = "Classification:") +
     scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
     scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year))) +
-    theme_minimal()
+    my_theme
+p_effect_evenness
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+ggsave(
+  filename = file.path(out_path, "eveness_effect_constant.png"),
+  plot = p_effect_evenness,
+  dpi = 300,
+  width = 10,
+  height = 6)
 ```
 
 ## Comparing with a statistic
@@ -692,7 +775,7 @@ bootstrap_insect_data_diff %>%
 ```
 
 We classify the effects as we did before.
-This time our reference is 0 (no change with 2011) and we choose an arbitrary threshold of 0.15.
+This time our reference is 0 (no change with 2011) and we choose an arbitrary threshold of 0.2.
 
 ```{r}
 # Select data for visualisation
@@ -703,7 +786,7 @@ summary_diff_df <- ci_diff_df %>%
 insect_eveness_diff_effects <- add_classification_as_factor(
   df = summary_diff_df,
   cl_columns = c("ll", "ul"),
-  threshold = 0.15,
+  threshold = 0.2,
   reference = 0,
   coarse = TRUE)
 ```
@@ -717,10 +800,10 @@ We visualise these effects.
 
 ```{r, fig.width = 10, echo=FALSE}
 # Visualise
-insect_eveness_diff_effects %>%
+p_effect_evenness2 <- insect_eveness_diff_effects %>%
   ggplot(aes(x = year)) +
     geom_hline(yintercept = 0, linetype = "longdash", colour = "black") +
-    geom_hline(yintercept = c(-0.15, 0.15), linetype = "dotdash") +
+    geom_hline(yintercept = c(-0.2, 0.2), linetype = "dotdash") +
     geom_errorbar(aes(ymin = ll, ymax = ul, colour = effect),
                   linewidth = 1.5, show.legend = TRUE) +
     geom_point(aes(y = est_original), colour = "black", size = 3.5) +
@@ -735,11 +818,21 @@ insect_eveness_diff_effects %>%
                                     "gray30",
                                     "grey55"),
                         drop = FALSE) +
-    labs(y = "difference in evenness compared to 2011",
-         colour = "Classification") +
+    labs(x = "", y = "Difference in Pielou's Evenness\ncompared to 2011",
+         colour = "Classification:") +
     scale_y_continuous(limits = c(-1, 1), breaks = seq(-10, 10, 0.25)) +
     scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year))) +
-    theme_minimal()
+    my_theme
+p_effect_evenness2
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+ggsave(
+  filename = file.path(out_path, "eveness_effect_ref.png"),
+  plot = p_effect_evenness2,
+  dpi = 300,
+  width = 10,
+  height = 6)
 ```
 
 # Conclusion
