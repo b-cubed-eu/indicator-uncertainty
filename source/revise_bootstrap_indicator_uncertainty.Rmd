@@ -481,7 +481,7 @@ p_loo_error
 
 ```{r}
 ggsave(
-  filename = file.path(out_path, "eveness_loo_absdiff.png"),
+  filename = file.path(out_path, "eveness_loo_error.png"),
   plot = p_loo_error,
   dpi = 300,
   width = 10,
