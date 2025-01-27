@@ -388,7 +388,7 @@ $$
 $$
 <!-- spell-check: ignore:end -->
 
-7. **Summary Measures**:
+6. **Summary Measures**:
    - The **Mean Relative Error (MRE)** is the average of the relative errors over all species:
 <!-- spell-check: ignore:start -->
 $$
