@@ -129,12 +129,12 @@ Below are the common notations used in bootstrapping:
 
 1. **Original Sample Data**: $\mathbf{X} = \{X_1, X_2, \ldots, X_n\}$
     - The initial set of observed data points. Here, $n$ is the sample size.
+    
+2. **Statistic of Interest**: $\theta$
+    - The parameter or statistic being estimated, such as the mean $\bar{X}$, variance $\sigma^2$, or median.  Let $\hat{\theta}$ denote the estimated value of $\theta$ calculated from the complete dataset $\mathbf{X}$.
 
-2. **Bootstrap Sample**: $\mathbf{X}^* = \{X_1^*, X_2^*, \ldots, X_n^*\}$
+3. **Bootstrap Sample**: $\mathbf{X}^* = \{X_1^*, X_2^*, \ldots, X_n^*\}$
     - A sample of size $n$ drawn with replacement from the original sample $\mathbf{X}$. Each $X_i^*$ is drawn independently from $\mathbf{X}$.
-
-3. **Statistic of Interest**: $\theta$
-    - The parameter or statistic being estimated, such as the mean $\bar{X}$, variance $\sigma^2$, or median.  Let $\hat{\theta}$ denote the estimated value of $\theta$ calculated on the complete dataset $\mathbf{X}$.
 
 4. **Bootstrap Replication**: $\hat{\theta}^*_b$
     - The value of the statistic of interest calculated from the $b$-th bootstrap sample $\mathbf{X}^*_b$. For example, if $\theta$ is the sample mean, $\hat{\theta}^*_b = \bar{X}^*_b$.
@@ -363,12 +363,12 @@ Below are the notations used in leave-one-species-out cross-validation:
 
 1. **Original Sample Data**: $\mathbf{X} = \{X_{11}, X_{12}, X_{13}, \ldots, X_{sn}\}$
     - The initial set of observed data points, where there are $s$ different species and $n$ total samples across all species.
+    
+2. **Statistic of Interest**: $\theta$
+    - The parameter or statistic being estimated, such as the mean $\bar{X}$, variance $\sigma^2$, or median. Let $\hat{\theta}$ denote the estimated value of $\theta$ calculated from the complete dataset $\mathbf{X}$.
 
-2. **Cross-Validation (CV) Sample**: $\mathbf{X}_{-s_j}$
+3. **Cross-Validation (CV) Sample**: $\mathbf{X}_{-s_j}$
     - The full dataset $\mathbf{X}$ excluding all samples belonging to species $j$. This subset is used for training the model when evaluating the performance for species $j$.
-
-3. **Statistic of Interest**: $\theta$
-    - The parameter or statistic being estimated, such as the mean $\bar{X}$, variance $\sigma^2$, or median. Let $\hat{\theta}$ denote the estimated value of $\theta$ calculated on the complete dataset $\mathbf{X}$.
 
 4. **CV Estimate for Species** $\mathbf{j}$: $\hat{\theta}_{-s_j}$
     - The value of the statistic of interest calculated from $\mathbf{X}_{-s_j}$, which excludes species $j$.
