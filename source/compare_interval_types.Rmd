@@ -89,7 +89,7 @@ mean_obs <- function(data) {
 
   data %>%
     mutate(x = mean(.data$obs), .by = .data$cellCode) %>%
-    summarise(diversity_val = mean(.data$x), .by = year) %>%
+    summarise(diversity_val = mean(.data$x), .by = .data$year) %>%
     as.data.frame()
 }
 ```
