@@ -1,6 +1,6 @@
 <!-- badges: start -->
 ![GitHub](https://img.shields.io/github/license/b-cubed-eu/comp-unstructured-data)
-[![repo status](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+[![repo status](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 ![GitHub repo size](https://img.shields.io/github/repo-size/b-cubed-eu/comp-unstructured-data)
 <!-- badges: end -->
 
