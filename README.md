@@ -1,7 +1,9 @@
 <!-- badges: start -->
 ![GitHub](https://img.shields.io/github/license/b-cubed-eu/comp-unstructured-data)
+[![Release](https://img.shields.io/github/release/b-cubed-eu/indicator-uncertainty.svg)](https://github.com/b-cubed-eu/indicator-uncertainty/releases)
 [![repo status](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 ![GitHub repo size](https://img.shields.io/github/repo-size/b-cubed-eu/comp-unstructured-data)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14754769.svg)](https://doi.org/10.5281/zenodo.14754769)
 <!-- badges: end -->
 
 # Investigate indicator uncertainty
