@@ -150,7 +150,7 @@ get_bootstrap_ci <- function(
 
           # Get the acceleration
           a <- unique(df$acceleration)
-          if (is.finite(a)) {
+          if (!is.finite(a)) {
             warning("Estimated adjustment 'a' is NA.")
             return(cbind(conf, NA, NA))
           }
@@ -160,7 +160,7 @@ get_bootstrap_ci <- function(
           zalpha <- qnorm(alpha)
 
           z0 <- qnorm(sum(t < t0) / length(t))
-          if (is.finite(z0)) {
+          if (!is.finite(z0)) {
             warning("Estimated adjustment 'z0' is infinite.")
             return(cbind(conf, NA, NA))
           }
