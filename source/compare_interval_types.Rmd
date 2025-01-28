@@ -655,10 +655,11 @@ ci_insect_evenness %>%
                                        "Mean Number of Observations"))
   ) %>%
   distinct(year, bias_boot, int_type, ci_width, indicator) %>%
-  ggplot(aes(x = bias_boot, y = ci_width, colour = int_type)) +
+  mutate(abs_bias = abs(bias_boot)) %>%
+  ggplot(aes(x = abs_bias, y = ci_width, colour = int_type)) +
     geom_smooth(method = "lm", formula = "y ~ x") +
     geom_point(size = 1.5) +
-    labs(x = "Bootstrap Bias", y = "Interval Width",
+    labs(x = "Bootstrap Bias (absolute value)", y = "Interval Width",
          colour = "Interval type") +
     facet_wrap(~indicator, ncol = 2, scales = "free") +
     theme_minimal() +
@@ -685,10 +686,11 @@ ci_insect_evenness %>%
                                        "Mean Number of Observations"))
   ) %>%
   distinct(year, bias_boot, int_type, ci_width, indicator) %>%
+  mutate(abs_bias = abs(bias_boot)) %>%
   group_by(int_type, indicator) %>%
-  group_modify(~ grouped_regression(df = ., formula = ci_width ~ bias_boot)) %>%
+  group_modify(~ grouped_regression(df = ., formula = ci_width ~ abs_bias)) %>%
   ungroup() %>%
-  filter(param == "bias_boot") %>%
+  filter(param == "abs_bias") %>%
   arrange(int_type, indicator) %>%
   kable(digits = 5)
 ```
@@ -711,11 +713,12 @@ ci_insect_evenness %>%
                                        "Mean Number of Observations"))
   ) %>%
   distinct(year, bias_boot, int_type, ci_width, indicator) %>%
+  mutate(abs_bias = abs(bias_boot)) %>%
   filter(!(indicator == "Mean Number of Observations" & bias_boot > 2)) %>%
-  ggplot(aes(x = bias_boot, y = ci_width, colour = int_type)) +
+  ggplot(aes(x = abs_bias, y = ci_width, colour = int_type)) +
     geom_smooth(method = "lm", formula = "y ~ x") +
     geom_point(size = 1.5) +
-    labs(x = "Bootstrap Bias", y = "Interval Width",
+    labs(x = "Bootstrap Bias (absolute value)", y = "Interval Width",
          colour = "Interval type") +
     facet_wrap(~indicator, ncol = 2, scales = "free") +
     theme_minimal() +
@@ -742,11 +745,12 @@ ci_insect_evenness %>%
                                        "Mean Number of Observations"))
   ) %>%
   distinct(year, bias_boot, int_type, ci_width, indicator) %>%
+  mutate(abs_bias = abs(bias_boot)) %>%
   filter(!(indicator == "Mean Number of Observations" & bias_boot > 2)) %>%
   group_by(int_type, indicator) %>%
-  group_modify(~ grouped_regression(df = ., formula = ci_width ~ bias_boot)) %>%
+  group_modify(~ grouped_regression(df = ., formula = ci_width ~ abs_bias)) %>%
   ungroup() %>%
-  filter(param == "bias_boot") %>%
+  filter(param == "abs_bias") %>%
   arrange(int_type, indicator) %>%
   kable(digits = 5)
 ```
