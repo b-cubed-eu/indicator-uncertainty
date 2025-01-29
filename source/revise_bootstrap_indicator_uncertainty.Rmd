@@ -564,7 +564,7 @@ summary_df %>%
   kable()
 ```
 
-We can visualise trends over time using loess smoothers.
+We can visualise trends over time using LOESS smoothers.
 
 ```{r, fig.width = 10, echo=FALSE, warning=FALSE}
 my_theme <- theme_minimal() +
