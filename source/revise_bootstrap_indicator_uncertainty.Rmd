@@ -586,7 +586,6 @@ p_trend_evenness <- summary_df %>%
   ggplot(aes(x = year, y = est_original)) +
     geom_smooth(
         colour = alpha(trendlinecolour, 0.5),
-        #lwd = smooth_linewidth,
         linetype = "solid",
         method = "loess",
         formula = "y ~ x",
@@ -594,7 +593,6 @@ p_trend_evenness <- summary_df %>%
     geom_smooth(
       aes(y = ul),
       colour = alpha(envelopecolour, 1),
-      #lwd = smooth_cilinewidth,
       linetype = "dashed",
       method = "loess",
       formula = "y ~ x",
@@ -602,7 +600,6 @@ p_trend_evenness <- summary_df %>%
     geom_smooth(
       aes(y = ll),
       colour = alpha(envelopecolour, 1),
-      #lwd = smooth_cilinewidth,
       linetype = "dashed",
       method = "loess",
       formula = "y ~ x",
