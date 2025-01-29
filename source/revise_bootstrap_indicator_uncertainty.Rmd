@@ -720,7 +720,7 @@ if (file.exists(bootstrap_insect_data_path2)) {
     fun = b3gbi::pielou_evenness_ts,
     grouping_var = "year",
     samples = 1000,
-    ref_group = 2011,
+    ref_group = 2020,
     seed = 123,
     progress = TRUE)
   saveRDS(bootstrap_insect_data_diff, bootstrap_insect_data_path2)
@@ -733,7 +733,7 @@ bootstrap_insect_data_diff <- bootstrap_cube(
   fun = b3gbi::pielou_evenness_ts,
   grouping_var = "year",
   samples = 1000,
-  ref_group = 2011,
+  ref_group = 2020,
   seed = 123,
   progress = TRUE)
 ```
@@ -775,7 +775,7 @@ bootstrap_insect_data_diff %>%
 ```
 
 We classify the effects as we did before.
-This time our reference is 0 (no change with 2011) and we choose an arbitrary threshold of 0.2.
+This time our reference is 0 (no change with 2020) and we choose an arbitrary threshold of 0.2.
 
 ```{r}
 # Select data for visualisation
@@ -818,7 +818,7 @@ p_effect_evenness2 <- insect_eveness_diff_effects %>%
                                     "gray30",
                                     "grey55"),
                         drop = FALSE) +
-    labs(x = "", y = "Difference in Pielou's Evenness\ncompared to 2011",
+    labs(x = "", y = "Difference in Pielou's Evenness\ncompared to 2020",
          colour = "Classification:") +
     scale_y_continuous(limits = c(-1, 1), breaks = seq(-10, 10, 0.25)) +
     scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year))) +
