@@ -567,6 +567,16 @@ summary_df %>%
 We can visualise trends over time using loess smoothers.
 
 ```{r, fig.width = 10, echo=FALSE, warning=FALSE}
+my_theme <- theme_minimal() +
+    theme(
+      axis.text = element_text(size = 12),
+      axis.title = element_text(size = 15)
+    ) +
+    theme(
+      legend.title = element_text(face = "bold", size = 12),
+      legend.text = element_text(size = 12)
+      )
+
 linecolour <- "darkorange"
 ribboncolour <- "goldenrod1"
 trendlinecolour <- "blue"
@@ -706,16 +716,6 @@ insect_eveness_effects %>%
 ```
 
 ```{r, fig.width = 10, echo=FALSE, warning=FALSE}
-my_theme <- theme_minimal() +
-    theme(
-      axis.text = element_text(size = 12),
-      axis.title = element_text(size = 15)
-    ) +
-    theme(
-      legend.title = element_text(face = "bold", size = 12),
-      legend.text = element_text(size = 12)
-      )
-
 p_effect_evenness <- insect_eveness_effects %>%
   ggplot(aes(x = year)) +
     geom_hline(yintercept = 0.5, linetype = "longdash", colour = "black") +
@@ -747,7 +747,7 @@ ggsave(
   plot = p_effect_evenness,
   dpi = 300,
   width = 10,
-  height = 6)
+  height = 5)
 ```
 
 ## Comparing with a statistic
@@ -890,7 +890,7 @@ ggsave(
   plot = p_effect_evenness2,
   dpi = 300,
   width = 10,
-  height = 6)
+  height = 5)
 ```
 
 # Conclusion
