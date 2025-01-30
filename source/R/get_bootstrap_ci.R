@@ -14,6 +14,7 @@
 #' @param aggregate ...
 #' @param data_cube ...
 #' @param fun ...
+#' @param ref_group ...
 #' @param jackknife `"usual"`, `"pos"` ...
 #' @param progress Logical. Whether to show a progress bar for jackknife
 #' estimation `TRUE` or not `FALSE` (default).
@@ -31,6 +32,7 @@ get_bootstrap_ci <- function(
     aggregate = TRUE,
     data_cube = NULL,
     fun = NULL,
+    ref_group = NA,
     jackknife = ifelse(is.element("bca", type), "usual", NULL),
     progress = FALSE) {
   require("dplyr")
@@ -74,7 +76,7 @@ get_bootstrap_ci <- function(
              call. = FALSE)
       })
 
-      # Finite jackknife
+      # Perform jackknifing
       if (inherits(data_cube, "processed_cube")) {
         jackknife_estimates <- purrr::map(
           seq_len(nrow(data_cube$data)),
@@ -97,7 +99,7 @@ get_bootstrap_ci <- function(
 
         jackknife_df <- data_cube$data %>%
           mutate(jack_rep = jackknife_estimates) %>%
-          select(all_of(c(grouping_var, "jack_rep")))
+          select(c(all_of(grouping_var), "jack_rep"))
       } else {
         jackknife_estimates <- purrr::map(
           seq_len(nrow(data_cube)),
@@ -116,6 +118,46 @@ get_bootstrap_ci <- function(
         jackknife_df <- data_cube %>%
           mutate(jack_rep = jackknife_estimates) %>%
           select(all_of(c(grouping_var, "jack_rep")))
+      }
+
+      # Calculate differences in presence of reference group
+      if (!is.na(ref_group)) {
+        # Get group-specific estimates
+        if (inherits(data_cube, "processed_cube")) {
+          group_estimates <- fun(data_cube)$data
+        } else {
+          group_estimates <- fun(data_cube)
+        }
+
+        # Get estimate for reference group
+        ref_estimate <- group_estimates %>%
+          filter(.data[[grouping_var]] == ref_group) %>%
+          pull(.data$diversity_val)
+
+        # Calculate jackknife estimates for difference for non-reference groups
+        thetai_nonref <- jackknife_df %>%
+          filter(.data[[grouping_var]] != ref_group) %>%
+          mutate(theta2 = ref_estimate) %>%
+          rowwise() %>%
+          mutate(jack_rep = .data$jack_rep - .data$theta2) %>%
+          ungroup()
+
+        # Calculate jackknife estimates for difference for reference group
+        thetai_ref <- tidyr::expand_grid(
+          group_estimates %>%
+            filter(.data[[grouping_var]] != ref_group),
+          jack_rep = jackknife_df %>%
+            filter(.data[[grouping_var]] == ref_group) %>%
+            pull(.data$jack_rep)
+          ) %>%
+          rename("theta1" = "diversity_val") %>%
+          rowwise() %>%
+          mutate(jack_rep = .data$theta1 - .data$jack_rep) %>%
+          ungroup()
+
+        # Combine all jackknife estimates
+        jackknife_df <- bind_rows(thetai_nonref, thetai_ref) %>%
+          select(-starts_with("theta"))
       }
 
       acceleration_df <- jackknife_df %>%

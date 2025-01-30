@@ -551,11 +551,11 @@ bind_rows(mean_cv_stats_loo, mean_cv_stats_kfold) %>%
 
 # Interpretation and visualisation of uncertainty
 
-We select the summary statistics. We only focus on the percentile interval.
+We select the summary statistics. We only focus on the BCa interval.
 
 ```{r}
 summary_df <- ci_df %>%
-  filter(int_type == "perc") %>%
+  filter(int_type == "bca") %>%
   select(year, est_original, ll, ul, conf, int_type)
 ```
 
@@ -793,16 +793,40 @@ bootstrap_insect_data_diff <- bootstrap_cube(
   progress = TRUE)
 ```
 
-We calculate the percentile interval.
+We calculate the BCa interval.
 
-```{r}
+```{r, echo=FALSE, message=FALSE}
 # Calculate confidence intervals
-ci_diff_df <- get_bootstrap_ci(
-  bootstrap_samples_df = bootstrap_insect_data_diff,
-  grouping_var = "year",
-  type = "perc",
-  conf = 0.95,
-  aggregate = TRUE)
+ci_insect_data_path2 <- file.path(
+  cache_path, "ci_diff_df.Rds")
+if (file.exists(ci_insect_data_path2)) {
+  ci_diff_df <- readRDS(ci_insect_data_path2)
+} else {
+  ci_diff_df <- get_bootstrap_ci(
+    bootstrap_samples_df = bootstrap_insect_data_diff,
+    grouping_var = "year",
+    type = "bca",
+    conf = 0.95,
+    data_cube = insect_data_new,
+    fun = b3gbi::pielou_evenness_ts,
+    ref_group = 2020,
+    aggregate = TRUE,
+    progress = TRUE)
+  saveRDS(ci_diff_df, ci_insect_data_path2)
+}
+```
+
+```r
+  ci_diff_df <- get_bootstrap_ci(
+    bootstrap_samples_df = bootstrap_insect_data_diff,
+    grouping_var = "year",
+    type = "bca",
+    conf = 0.95,
+    data_cube = insect_data_new,
+    fun = b3gbi::pielou_evenness_ts,
+    ref_group = 2020,
+    aggregate = TRUE,
+    progress = TRUE)
 ```
 
 We visualise the intervals.
