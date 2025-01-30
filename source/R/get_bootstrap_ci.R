@@ -99,7 +99,7 @@ get_bootstrap_ci <- function(
 
         jackknife_df <- data_cube$data %>%
           mutate(jack_rep = jackknife_estimates) %>%
-          select(c(all_of(grouping_Var), "jack_rep"))
+          select(c(all_of(grouping_var), "jack_rep"))
       } else {
         jackknife_estimates <- purrr::map(
           seq_len(nrow(data_cube)),
