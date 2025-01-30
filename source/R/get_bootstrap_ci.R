@@ -99,7 +99,7 @@ get_bootstrap_ci <- function(
 
         jackknife_df <- data_cube$data %>%
           mutate(jack_rep = jackknife_estimates) %>%
-          select(all_of(c(grouping_var, "jack_rep")))
+          select(c(all_of(grouping_Var), "jack_rep"))
       } else {
         jackknife_estimates <- purrr::map(
           seq_len(nrow(data_cube)),
@@ -132,7 +132,7 @@ get_bootstrap_ci <- function(
         # Get estimate for reference group
         ref_estimate <- group_estimates %>%
           filter(.data[[grouping_var]] == ref_group) %>%
-          pull(diversity_val)
+          pull(.data$diversity_val)
 
         # Calculate jackknife estimates for difference for non-reference groups
         thetai_nonref <- jackknife_df %>%
