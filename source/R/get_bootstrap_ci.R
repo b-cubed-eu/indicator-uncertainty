@@ -32,6 +32,7 @@ get_bootstrap_ci <- function(
     aggregate = TRUE,
     data_cube = NULL,
     fun = NULL,
+    ...,
     ref_group = NA,
     jackknife = ifelse(is.element("bca", type), "usual", NULL),
     progress = FALSE) {
@@ -90,7 +91,7 @@ get_bootstrap_ci <- function(
             data_cube_copy$data <- data
 
             # Calculate indicator value without i'th observation
-            fun(data_cube_copy)$data %>%
+            fun(data_cube_copy, ...)$data %>%
               filter(!!sym(grouping_var) == group) %>%
               pull(.data$diversity_val)
           },
@@ -108,7 +109,7 @@ get_bootstrap_ci <- function(
             group <- data_cube[[i, grouping_var]]
 
             # Calculate indicator value without i'th observation
-            fun(data_cube[-i, ]) %>%
+            fun(data_cube[-i, ], ...) %>%
               filter(!!sym(grouping_var) == group) %>%
               pull(.data$diversity_val)
           },
@@ -124,9 +125,9 @@ get_bootstrap_ci <- function(
       if (!is.na(ref_group)) {
         # Get group-specific estimates
         if (inherits(data_cube, "processed_cube")) {
-          group_estimates <- fun(data_cube)$data
+          group_estimates <- fun(data_cube, ...)$data
         } else {
-          group_estimates <- fun(data_cube)
+          group_estimates <- fun(data_cube, ...)
         }
 
         # Get estimate for reference group

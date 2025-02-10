@@ -29,7 +29,8 @@ bootstrap_cube <- function(
     samples = 1000,
     ref_group = NA,
     seed = NA,
-    progress = FALSE) {
+    progress = FALSE,
+    ...) {
   require("dplyr")
   require("rlang")
 
@@ -52,7 +53,7 @@ bootstrap_cube <- function(
     resample_df <- modelr::bootstrap(data_cube$data, samples, id = "id")
 
     # Function for bootstrapping
-    bootstrap_resample <- function(x, fun) {
+    bootstrap_resample <- function(x, fun, ...) {
       resample_obj <- x$strap[[1]]
       indices <- as.integer(resample_obj)
       data <- resample_obj$data[indices, ]
@@ -60,7 +61,7 @@ bootstrap_cube <- function(
       data_cube_copy <- data_cube
       data_cube_copy$data <- data
 
-      fun(data_cube_copy)$data %>%
+      fun(data_cube_copy, ...)$data %>%
         mutate(sample = as.integer(x$id))
     }
   } else {
@@ -68,12 +69,12 @@ bootstrap_cube <- function(
     resample_df <- modelr::bootstrap(data_cube, samples, id = "id")
 
     # Function for bootstrapping
-    bootstrap_resample <- function(x, fun) {
+    bootstrap_resample <- function(x, fun, ...) {
       resample_obj <- x$strap[[1]]
       indices <- as.integer(resample_obj)
       data <- resample_obj$data[indices, ]
 
-      fun(data) %>%
+      fun(data, ...) %>%
         mutate(sample = as.integer(x$id))
     }
   }
@@ -84,6 +85,7 @@ bootstrap_cube <- function(
     purrr::map(
       bootstrap_resample,
       fun = fun,
+      ...,
       .progress = ifelse(progress, "Bootstrapping", progress))
 
   if (!is.na(ref_group)) {
@@ -115,9 +117,9 @@ bootstrap_cube <- function(
   } else {
     # Calculate true statistic
     if (inherits(data_cube, "processed_cube")) {
-      t0 <- fun(data_cube)$data
+      t0 <- fun(data_cube, ...)$data
     } else {
-      t0 <- fun(data_cube)
+      t0 <- fun(data_cube, ...)
     }
 
     # Get bootstrap samples as a list
