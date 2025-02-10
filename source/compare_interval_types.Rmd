@@ -785,3 +785,516 @@ ci_insect_evenness %>%
   arrange(int_type, indicator) %>%
   kable(digits = 5)
 ```
+
+# Boostrapping Species Richness
+
+We could not use bootstrapping for Observed Species Richness.
+There are however other techniques to estimate Species Richness that could be used:
+https://vegandevs.github.io/vegan/reference/specpool.html
+
+Do we get different results?
+
+The incidence-based estimates use the frequencies of species in a collection of sites.
+$S_P$ is the extrapolated richness in a pool, $S_0$ is the observed number of species in the collection, $a_1$ and $a_2$ are the number of species occurring only in one or only in two sites in the collection, $p_i$ is the frequency of species $i$, and $N$ is the number of sites in the collection.
+
+Chao:
+
+$$
+S_P = S_0 + \frac{a_1^2}{2 a_2}\frac{N-1}{N}
+$$
+
+Chao bias-corrected:
+
+$$
+S_P = S_0 + \frac{a_1(a_1-1)}{2(a_2+1)} \frac{N-1}{N}
+$$
+
+First order jackknife:
+
+$$
+S_P = S_0 + a_1 \frac{N-1}{N}
+$$
+
+
+Second order jackknife:
+
+$$
+S_P = S_0 + a_1 \frac{2N - 3}{N} - a_2 \frac{(N-2)^2}{N (N-1)}
+$$
+
+Bootstrap:
+
+$$
+S_P = S_0 + \sum_{i=1}^{S_0} (1 - p_i)^N
+$$
+
+```{r}
+incidence_estimator <- function(data, index) {
+  require("dplyr")
+  require("rlang")
+  
+  a1_df <- data %>%
+    count(taxonKey, year) %>%
+    filter(n == 1) %>%
+    count(n, year, name = "a1") %>%
+    select(-n)
+  a2_df <- data %>%
+    count(taxonKey, year) %>%
+    filter(n == 2) %>%
+    count(n, year, name = "a2") %>%
+    select(-n)
+  
+  summary_df <- data %>%
+    summarise(
+      s0 = n_distinct(taxonKey),
+      N = n_distinct(cellCode),
+      .by = .data$year) %>%
+    left_join(a1_df, by = join_by(year)) %>%
+    left_join(a2_df, by = join_by(year))
+  
+  if (index == "chao") {
+    out_df <- summary_df %>%
+      mutate(
+        diversity_val = ifelse(.data$a2 == 0,
+          .data$s0 + ((.data$a1 * (.data$a1 - 1)) / (2 * (.data$a2 + 1))) +
+            ((.data$N - 1) / .data$N),
+          .data$s0 + (.data$a1^2 / (2 * .data$a2)) + ((.data$N - 1) / .data$N)
+          )
+        ) %>%
+      select("year", "diversity_val")
+    
+  } else if (index == "jack1") {
+    out_df <- summary_df %>%
+      mutate(
+        diversity_val = .data$s0 + (.data$a1 * ((.data$N - 1) / .data$N))
+        ) %>%
+      select("year", "diversity_val")
+    
+  } else if (index == "jack2") {
+    out_df <- summary_df %>%
+      mutate(
+        a1_part = .data$a1 * (((2 * .data$N) - 3) / .data$N),
+        a2_part = .data$a2 * ((.data$N - 2)^2 / (.data$N * (.data$N - 1))),
+        diversity_val = .data$s0 + .data$a1_part - .data$a2_part
+        ) %>%
+      select("year", "diversity_val")
+    
+  } else if (index == "boot") {
+    p_df <- data %>%
+      mutate(N = n_distinct(cellCode),
+             .by = .data$year) %>%
+      count(taxonKey, year, N) %>%
+      mutate(p = n / N,
+             calc = (1 - .data$p)^.data$N) %>%
+      summarise(
+        sum_of_calc = sum(calc),
+        .by = .data$year
+      )
+    
+    out_df <- summary_df %>%
+      left_join(p_df, by = join_by(year)) %>%
+      mutate(
+        diversity_val = .data$s0 + .data$sum_of_calc
+      ) %>%
+      select("year", "diversity_val")
+    
+    
+  } else {
+    stop("`index` must be one of 'chao', 'jack1'', 'jack2', 'boot'")
+  }
+  
+  return(out_df)
+}
+```
+
+## Bootstrapping and Interval Calculation
+
+Bootstrapping.
+
+```{r, echo=FALSE, message=FALSE}
+# Bootstrapping
+insect_chao_path <- file.path(cache_path, "bootstrap_insect_chao.Rds")
+if (file.exists(insect_chao_path)) {
+  bootstrap_insect_chao <- readRDS(insect_chao_path)
+} else {
+  bootstrap_insect_chao <- bootstrap_cube(
+    data_cube = insect_data$data,
+    fun = incidence_estimator,
+    index = "chao",
+    grouping_var = "year",
+    samples = 1000,
+    seed = 123,
+    progress = TRUE)
+  saveRDS(bootstrap_insect_chao, insect_chao_path)
+}
+```
+
+```r
+bootstrap_insect_chao <- bootstrap_cube(
+  data_cube = insect_data$data,
+  fun = incidence_estimator,
+  index = "chao",
+  grouping_var = "year",
+  samples = 1000,
+  seed = 123,
+  progress = TRUE)
+```
+
+```{r, echo=FALSE, message=FALSE}
+# Bootstrapping
+insect_jack1_path <- file.path(cache_path, "bootstrap_insect_jack1.Rds")
+if (file.exists(insect_jack1_path)) {
+  bootstrap_insect_jack1 <- readRDS(insect_jack1_path)
+} else {
+  bootstrap_insect_jack1 <- bootstrap_cube(
+    data_cube = insect_data$data,
+    fun = incidence_estimator,
+    index = "jack1",
+    grouping_var = "year",
+    samples = 1000,
+    seed = 123,
+    progress = TRUE)
+  saveRDS(bootstrap_insect_jack1, insect_jack1_path)
+}
+```
+
+```r
+bootstrap_insect_jack1 <- bootstrap_cube(
+  data_cube = insect_data$data,
+  fun = incidence_estimator,
+  index = "jack1",
+  grouping_var = "year",
+  samples = 1000,
+  seed = 123,
+  progress = TRUE)
+```
+
+```{r, echo=FALSE, message=FALSE}
+# Bootstrapping
+insect_jack2_path <- file.path(cache_path, "bootstrap_insect_jack2.Rds")
+if (file.exists(insect_jack2_path)) {
+  bootstrap_insect_jack2 <- readRDS(insect_jack2_path)
+} else {
+  bootstrap_insect_jack2 <- bootstrap_cube(
+    data_cube = insect_data$data,
+    fun = incidence_estimator,
+    index = "jack2",
+    grouping_var = "year",
+    samples = 1000,
+    seed = 123,
+    progress = TRUE)
+  saveRDS(bootstrap_insect_jack2, insect_jack2_path)
+}
+```
+
+```r
+bootstrap_insect_jack2 <- bootstrap_cube(
+  data_cube = insect_data$data,
+  fun = incidence_estimator,
+  index = "jack2",
+  grouping_var = "year",
+  samples = 1000,
+  seed = 123,
+  progress = TRUE)
+```
+
+```{r, echo=FALSE, message=FALSE}
+# Bootstrapping
+insect_boot_path <- file.path(cache_path, "bootstrap_insect_boot.Rds")
+if (file.exists(insect_boot_path)) {
+  bootstrap_insect_boot <- readRDS(insect_boot_path)
+} else {
+  bootstrap_insect_boot <- bootstrap_cube(
+    data_cube = insect_data$data,
+    fun = incidence_estimator,
+    index = "boot",
+    grouping_var = "year",
+    samples = 1000,
+    seed = 123,
+    progress = TRUE)
+  saveRDS(bootstrap_insect_boot, insect_boot_path)
+}
+```
+
+```r
+bootstrap_insect_boot <- bootstrap_cube(
+  data_cube = insect_data$data,
+  fun = incidence_estimator,
+  index = "boot",
+  grouping_var = "year",
+  samples = 1000,
+  seed = 123,
+  progress = TRUE)
+```
+
+We calculate all types of intervals.
+
+```{r, echo=FALSE, message=FALSE}
+# Bootstrapping
+ci_insect_chao_path <- file.path(cache_path, "ci_insect_chao.Rds")
+if (file.exists(ci_insect_chao_path)) {
+  ci_insect_chao <- readRDS(ci_insect_chao_path)
+} else {
+  # Calculate confidence intervals
+  ci_insect_chao <- get_bootstrap_ci(
+    bootstrap_samples_df = bootstrap_insect_chao,
+    grouping_var = "year",
+    type = c("perc", "bca", "norm", "basic"),
+    conf = 0.95,
+    aggregate = TRUE,
+    data_cube = insect_data$data,
+    fun = incidence_estimator,
+    index = "chao",
+    progress = TRUE)
+  saveRDS(ci_insect_chao, ci_insect_chao_path)
+}
+```
+
+```r
+ci_insect_chao <- get_bootstrap_ci(
+  bootstrap_samples_df = bootstrap_insect_chao,
+  grouping_var = "year",
+  type = c("perc", "bca", "norm", "basic"),
+  conf = 0.95,
+  aggregate = TRUE,
+  data_cube = insect_data$data,
+  fun = incidence_estimator,
+  index = "chao",
+  progress = TRUE)
+```
+
+```{r, echo=FALSE, message=FALSE}
+# Bootstrapping
+ci_insect_jack1_path <- file.path(cache_path, "ci_insect_jack1.Rds")
+if (file.exists(ci_insect_jack1_path)) {
+  ci_insect_jack1 <- readRDS(ci_insect_jack1_path)
+} else {
+  # Calculate confidence intervals
+  ci_insect_jack1 <- get_bootstrap_ci(
+    bootstrap_samples_df = bootstrap_insect_jack1,
+    grouping_var = "year",
+    type = c("perc", "bca", "norm", "basic"),
+    conf = 0.95,
+    aggregate = TRUE,
+    data_cube = insect_data$data,
+    fun = incidence_estimator,
+    index = "jack1",
+    progress = TRUE)
+  saveRDS(ci_insect_jack1, ci_insect_jack1_path)
+}
+```
+
+```r
+ci_insect_jack1 <- get_bootstrap_ci(
+  bootstrap_samples_df = bootstrap_insect_jack1,
+  grouping_var = "year",
+  type = c("perc", "bca", "norm", "basic"),
+  conf = 0.95,
+  aggregate = TRUE,
+  data_cube = insect_data$data,
+  fun = incidence_estimator,
+  index = "jack1",
+  progress = TRUE)
+```
+
+```{r, echo=FALSE, message=FALSE}
+# Bootstrapping
+ci_insect_jack2_path <- file.path(cache_path, "ci_insect_jack2.Rds")
+if (file.exists(ci_insect_jack2_path)) {
+  ci_insect_jack2 <- readRDS(ci_insect_jack2_path)
+} else {
+  # Calculate confidence intervals
+  ci_insect_jack2 <- get_bootstrap_ci(
+    bootstrap_samples_df = bootstrap_insect_jack2,
+    grouping_var = "year",
+    type = c("perc", "bca", "norm", "basic"),
+    conf = 0.95,
+    aggregate = TRUE,
+    data_cube = insect_data$data,
+    fun = incidence_estimator,
+    index = "jack2",
+    progress = TRUE)
+  saveRDS(ci_insect_jack2, ci_insect_jack2_path)
+}
+```
+
+```r
+ci_insect_jack2 <- get_bootstrap_ci(
+  bootstrap_samples_df = bootstrap_insect_jack2,
+  grouping_var = "year",
+  type = c("perc", "bca", "norm", "basic"),
+  conf = 0.95,
+  aggregate = TRUE,
+  data_cube = insect_data$data,
+  fun = incidence_estimator,
+  index = "jack2",
+  progress = TRUE)
+```
+
+```{r, echo=FALSE, message=FALSE}
+# Bootstrapping
+ci_insect_boot_path <- file.path(cache_path, "ci_insect_boot.Rds")
+if (file.exists(ci_insect_boot_path)) {
+  ci_insect_boot <- readRDS(ci_insect_boot_path)
+} else {
+  # Calculate confidence intervals
+  ci_insect_boot <- get_bootstrap_ci(
+    bootstrap_samples_df = bootstrap_insect_boot,
+    grouping_var = "year",
+    type = c("perc", "bca", "norm", "basic"),
+    conf = 0.95,
+    aggregate = TRUE,
+    data_cube = insect_data$data,
+    fun = incidence_estimator,
+    index = "boot",
+    progress = TRUE)
+  saveRDS(ci_insect_boot, ci_insect_boot_path)
+}
+```
+
+```r
+ci_insect_boot <- get_bootstrap_ci(
+  bootstrap_samples_df = bootstrap_insect_boot,
+  grouping_var = "year",
+  type = c("perc", "bca", "norm", "basic"),
+  conf = 0.95,
+  aggregate = TRUE,
+  data_cube = insect_data$data,
+  fun = incidence_estimator,
+  index = "boot",
+  progress = TRUE)
+```
+
+```{r}
+ci_insect_chao <- ci_insect_chao %>%
+  mutate(int_type = factor(int_type,
+                           levels = c("norm", "basic", "perc", "bca"))) %>%
+  drop_na()
+
+ci_insect_jack2 <- ci_insect_jack2 %>%
+  mutate(int_type = factor(int_type,
+                           levels = c("norm", "basic", "perc", "bca"))) %>%
+  drop_na()
+ci_insect_jack2 <- ci_insect_jack2 %>%
+  mutate(int_type = factor(int_type,
+                           levels = c("norm", "basic", "perc", "bca"))) %>%
+  drop_na()
+ci_insect_boot <- ci_insect_boot %>%
+  mutate(int_type = factor(int_type,
+                           levels = c("norm", "basic", "perc", "bca"))) %>%
+  drop_na()
+```
+
+```{r}
+bias_chao <- bootstrap_insect_chao %>%
+  distinct(year, estimate = est_original, `bootstrap estimate` = est_boot)
+
+estimate_chao <- bias_chao %>%
+  pivot_longer(cols = c("estimate", "bootstrap estimate"),
+               names_to = "Legend", values_to = "value") %>%
+  mutate(Legend = factor(Legend, levels = c("estimate", "bootstrap estimate"),
+                         ordered = TRUE))
+
+bootstrap_insect_chao %>%
+  ggplot(aes(x = year)) +
+    geom_violin(aes(y = rep_boot, group = year),
+                fill = alpha("cornflowerblue", 0.2)) +
+    geom_point(data = estimate_chao, aes(y = value, shape = Legend),
+               colour = "firebrick", size = 2, alpha = 0.5) +
+    geom_errorbar(data = ci_insect_chao,
+                  aes(ymin = ll, ymax = ul, colour = int_type),
+                  position = position_dodge(0.8), linewidth = 0.8,
+                  width = 0.5) +
+    labs(y = "Observed Species Richness", colour = "Interval type:", x = "",
+         shape = "Legend:") +
+    scale_y_continuous(limits = c(0, NA)) +
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_chao$year))) +
+    my_theme
+```
+
+```{r}
+bias_jack1 <- bootstrap_insect_jack1 %>%
+  distinct(year, estimate = est_original, `bootstrap estimate` = est_boot)
+
+estimate_jack1 <- bias_jack1 %>%
+  pivot_longer(cols = c("estimate", "bootstrap estimate"),
+               names_to = "Legend", values_to = "value") %>%
+  mutate(Legend = factor(Legend, levels = c("estimate", "bootstrap estimate"),
+                         ordered = TRUE))
+
+bootstrap_insect_jack1 %>%
+  ggplot(aes(x = year)) +
+    geom_violin(aes(y = rep_boot, group = year),
+                fill = alpha("cornflowerblue", 0.2)) +
+    geom_point(data = estimate_jack1, aes(y = value, shape = Legend),
+               colour = "firebrick", size = 2, alpha = 0.5) +
+    geom_errorbar(data = ci_insect_jack1,
+                  aes(ymin = ll, ymax = ul, colour = int_type),
+                  position = position_dodge(0.8), linewidth = 0.8,
+                  width = 0.5) +
+    labs(y = "Observed Species Richness", colour = "Interval type:", x = "",
+         shape = "Legend:") +
+    scale_y_continuous(limits = c(0, NA)) +
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_jack1$year))) +
+    my_theme
+```
+
+```{r}
+bias_jack2 <- bootstrap_insect_jack2 %>%
+  distinct(year, estimate = est_original, `bootstrap estimate` = est_boot)
+
+estimate_jack2 <- bias_jack2 %>%
+  pivot_longer(cols = c("estimate", "bootstrap estimate"),
+               names_to = "Legend", values_to = "value") %>%
+  mutate(Legend = factor(Legend, levels = c("estimate", "bootstrap estimate"),
+                         ordered = TRUE))
+
+bootstrap_insect_jack2 %>%
+  ggplot(aes(x = year)) +
+    geom_violin(aes(y = rep_boot, group = year),
+                fill = alpha("cornflowerblue", 0.2)) +
+    geom_point(data = estimate_jack2, aes(y = value, shape = Legend),
+               colour = "firebrick", size = 2, alpha = 0.5) +
+    geom_errorbar(data = ci_insect_jack2,
+                  aes(ymin = ll, ymax = ul, colour = int_type),
+                  position = position_dodge(0.8), linewidth = 0.8,
+                  width = 0.5) +
+    labs(y = "Observed Species Richness", colour = "Interval type:", x = "",
+         shape = "Legend:") +
+    scale_y_continuous(limits = c(0, NA)) +
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_jack2$year))) +
+    my_theme
+```
+
+```{r}
+bias_boot <- bootstrap_insect_boot %>%
+  distinct(year, estimate = est_original, `bootstrap estimate` = est_boot)
+
+estimate_boot <- bias_boot %>%
+  pivot_longer(cols = c("estimate", "bootstrap estimate"),
+               names_to = "Legend", values_to = "value") %>%
+  mutate(Legend = factor(Legend, levels = c("estimate", "bootstrap estimate"),
+                         ordered = TRUE))
+
+bootstrap_insect_boot %>%
+  ggplot(aes(x = year)) +
+    geom_violin(aes(y = rep_boot, group = year),
+                fill = alpha("cornflowerblue", 0.2)) +
+    geom_point(data = estimate_boot, aes(y = value, shape = Legend),
+               colour = "firebrick", size = 2, alpha = 0.5) +
+    geom_errorbar(data = ci_insect_boot,
+                  aes(ymin = ll, ymax = ul, colour = int_type),
+                  position = position_dodge(0.8), linewidth = 0.8,
+                  width = 0.5) +
+    labs(y = "Observed Species Richness", colour = "Interval type:", x = "",
+         shape = "Legend:") +
+    scale_y_continuous(limits = c(0, NA)) +
+    scale_x_continuous(breaks = sort(unique(bootstrap_insect_boot$year))) +
+    my_theme
+```
+
+## Conclusion
+
+We still have the same problem as before.
+This is not possible with bootstrapping.
+
