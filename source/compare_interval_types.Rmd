@@ -786,7 +786,7 @@ ci_insect_evenness %>%
   kable(digits = 5)
 ```
 
-# Boostrapping Species Richness
+# Bootstrapping Species Richness
 
 We could not use bootstrapping for Observed Species Richness.
 There are however other techniques to estimate Species Richness that could be used:
@@ -832,26 +832,26 @@ $$
 incidence_estimator <- function(data, index) {
   require("dplyr")
   require("rlang")
-  
+
   a1_df <- data %>%
-    count(taxonKey, year) %>%
+    count(.data$taxonKey, .data$year) %>%
     filter(n == 1) %>%
     count(n, year, name = "a1") %>%
     select(-n)
   a2_df <- data %>%
-    count(taxonKey, year) %>%
+    count(.data$taxonKey, .data$year) %>%
     filter(n == 2) %>%
     count(n, year, name = "a2") %>%
-    select(-n)
-  
+    select(-"n")
+
   summary_df <- data %>%
     summarise(
-      s0 = n_distinct(taxonKey),
-      N = n_distinct(cellCode),
+      s0 = n_distinct(.data$taxonKey),
+      N = n_distinct(.data$cellCode),
       .by = .data$year) %>%
     left_join(a1_df, by = join_by(year)) %>%
     left_join(a2_df, by = join_by(year))
-  
+
   if (index == "chao") {
     out_df <- summary_df %>%
       mutate(
@@ -862,14 +862,14 @@ incidence_estimator <- function(data, index) {
           )
         ) %>%
       select("year", "diversity_val")
-    
+
   } else if (index == "jack1") {
     out_df <- summary_df %>%
       mutate(
         diversity_val = .data$s0 + (.data$a1 * ((.data$N - 1) / .data$N))
         ) %>%
       select("year", "diversity_val")
-    
+
   } else if (index == "jack2") {
     out_df <- summary_df %>%
       mutate(
@@ -878,31 +878,30 @@ incidence_estimator <- function(data, index) {
         diversity_val = .data$s0 + .data$a1_part - .data$a2_part
         ) %>%
       select("year", "diversity_val")
-    
+
   } else if (index == "boot") {
     p_df <- data %>%
-      mutate(N = n_distinct(cellCode),
+      mutate(N = n_distinct(.data$cellCode),
              .by = .data$year) %>%
-      count(taxonKey, year, N) %>%
-      mutate(p = n / N,
+      count(.data$taxonKey, .data$year, .data$N) %>%
+      mutate(p = .data$n / .data$N,
              calc = (1 - .data$p)^.data$N) %>%
       summarise(
-        sum_of_calc = sum(calc),
+        sum_of_calc = sum(.data$calc),
         .by = .data$year
       )
-    
+
     out_df <- summary_df %>%
       left_join(p_df, by = join_by(year)) %>%
       mutate(
         diversity_val = .data$s0 + .data$sum_of_calc
       ) %>%
       select("year", "diversity_val")
-    
-    
+
   } else {
     stop("`index` must be one of 'chao', 'jack1'', 'jack2', 'boot'")
   }
-  
+
   return(out_df)
 }
 ```
