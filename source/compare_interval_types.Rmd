@@ -1296,4 +1296,3 @@ bootstrap_insect_boot %>%
 
 We still have the same problem as before.
 This is not possible with bootstrapping.
-
