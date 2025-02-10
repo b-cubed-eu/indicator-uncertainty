@@ -836,12 +836,12 @@ incidence_estimator <- function(data, index) {
   a1_df <- data %>%
     count(.data$taxonKey, .data$year) %>%
     filter(n == 1) %>%
-    count(n, year, name = "a1") %>%
+    count(n, .data$year, name = "a1") %>%
     select(-n)
   a2_df <- data %>%
     count(.data$taxonKey, .data$year) %>%
     filter(n == 2) %>%
-    count(n, year, name = "a2") %>%
+    count(n, .data$year, name = "a2") %>%
     select(-"n")
 
   summary_df <- data %>%
@@ -849,8 +849,8 @@ incidence_estimator <- function(data, index) {
       s0 = n_distinct(.data$taxonKey),
       N = n_distinct(.data$cellCode),
       .by = .data$year) %>%
-    left_join(a1_df, by = join_by(year)) %>%
-    left_join(a2_df, by = join_by(year))
+    left_join(a1_df, by = join_by(.data$year)) %>%
+    left_join(a2_df, by = join_by(.data$year))
 
   if (index == "chao") {
     out_df <- summary_df %>%
@@ -892,7 +892,7 @@ incidence_estimator <- function(data, index) {
       )
 
     out_df <- summary_df %>%
-      left_join(p_df, by = join_by(year)) %>%
+      left_join(p_df, by = join_by(.data$year)) %>%
       mutate(
         diversity_val = .data$s0 + .data$sum_of_calc
       ) %>%
