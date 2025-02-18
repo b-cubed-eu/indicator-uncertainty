@@ -1,0 +1,91 @@
+---
+title: "Visualisation of spatial uncertainty"
+author: "Ward Langeraert"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    code_folding: show
+    toc: true
+    toc_float: true
+    toc_collapsed: true
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_dir = "../output/reports") })
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, warning=FALSE, message=FALSE}
+# Load packages
+library(ggplot2)
+library(sf)
+library(dplyr)
+library(tidyr)
+library(patchwork)
+```
+
+# Goal
+
+Investigate visualisation of spatial uncertainty.
+
+https://doi.org/10.1559/1523040054738936
+
+https://doi.org/10.1179/1743277414Y.0000000099
+
+```{r}
+# Create a simple 3x3 grid using sf
+grid_size <- 1  # Define cell size
+grid <- expand.grid(x = 1:3, y = 1:3) %>%
+  st_as_sf(coords = c("x", "y"), crs = 4326) %>%
+  st_make_grid(cellsize = grid_size, n = c(3, 3), what = "polygons") %>%
+  st_sf() %>%
+  mutate(id = 1:n())
+
+centroids <- st_centroid(grid) %>%
+  st_buffer(50000)
+
+# Create data for estimates and uncertainty
+data <- expand.grid(
+  x = 1:3,  # Columns for estimate values
+  y = 1:3   # Rows for uncertainty levels
+) %>%
+  mutate(
+    estimate = rep(c(0.2, 0.5, 0.8), each = 3),  # Low, Medium, High estimates
+    uncertainty = rep(c("Low", "Medium", "High"), times = 3)  # Low, Medium, High uncertainty
+  )
+
+# Assign visual properties for uncertainty representation
+data <- data %>%
+  mutate(
+    blur_size = case_when(uncertainty == "Low" ~ 6,
+                          uncertainty == "Medium" ~ 9,
+                          uncertainty == "High" ~ 12),
+    alpha_value = case_when(uncertainty == "Low" ~ 1,
+                            uncertainty == "Medium" ~ 0.6,
+                            uncertainty == "High" ~ 0.3)
+  )
+
+# Convert data to sf points for plotting
+data_sf <- cbind(centroids, data)
+```
+
+# Transparancy
+
+```{r}
+p_transparancy <- ggplot() +
+  geom_sf(data = grid, color = "black", alpha = 0.1) +  # Grid background
+  geom_sf(data = data_sf, aes(fill = estimate, alpha = alpha_value)) +
+  scale_fill_viridis_c(option = "D") +
+  scale_alpha_identity() +
+  theme_minimal() +
+  theme(panel.grid = element_line(linewidth = 1)) +
+  labs(title = "Indicator Estimate with Uncertainty (Transparency)")
+p_transparancy
+```
+
+
+# Fuzziness
+
