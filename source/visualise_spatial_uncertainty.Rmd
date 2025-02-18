@@ -4,7 +4,7 @@ author: "Ward Langeraert"
 date: "`r Sys.Date()`"
 output:
   html_document:
-    code_folding: show
+    code_folding: hide
     toc: true
     toc_float: true
     toc_collapsed: true
@@ -72,20 +72,53 @@ data <- data %>%
 data_sf <- cbind(centroids, data)
 ```
 
-# Transparancy
+# Fuzziness
+
+
+
+# Transparency
+
+Increasing transparency with increasing uncertainty:
 
 ```{r}
-p_transparancy <- ggplot() +
+p_transparency <- ggplot() +
   geom_sf(data = grid, color = "black", alpha = 0.1) +  # Grid background
   geom_sf(data = data_sf, aes(fill = estimate, alpha = alpha_value)) +
   scale_fill_viridis_c(option = "D") +
   scale_alpha_identity() +
   theme_minimal() +
-  theme(panel.grid = element_line(linewidth = 1)) +
-  labs(title = "Indicator Estimate with Uncertainty (Transparency)")
-p_transparancy
+  theme(panel.grid = element_line(linewidth = 1),
+        legend.title = element_text(face = "bold")) +
+  labs(x = "", y = "", fill = "Estimate:") +
+  annotate("segment",
+    x = 1.5,
+    y = 0.8,
+    xend = 3.5,
+    yend = 0.8,
+    linewidth = 1,
+    arrow = arrow(type = "closed", length = unit(0.02, "npc")),
+    colour = "black"
+  ) +
+  annotate("segment",
+    x = 0.8,
+    y = 1.5,
+    xend = 0.8,
+    yend = 3.5,
+    linewidth = 1,
+    arrow = arrow(type = "closed", length = unit(0.02, "npc")),
+    colour = "black"
+  ) +
+  annotate("text",
+    label = c("Higher uncertainty"),
+    x = 2.5,
+    y = 0.7,
+    size = 5, hjust = "center", vjust = "center", colour = "black"
+  ) +
+  annotate("text",
+    label = c("Higher estimate"),
+    x = 0.7,
+    y = 2.5,
+    size = 5, hjust = "center", vjust = "bottom", colour = "black", angle = 90
+  )
+p_transparency
 ```
-
-
-# Fuzziness
-
