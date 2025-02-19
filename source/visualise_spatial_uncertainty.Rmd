@@ -24,6 +24,10 @@ library(ggplot2) # visualisation
 library(sf)      # spatial objects
 library(dplyr)   # data wrangling
 library(ggblur)  # blurred points: https://github.com/coolbutuseless/ggblur
+
+# Out path
+out_path <- here::here("output", "figures", "visualise_spatial_uncertainty")
+dir.create(out_path, showWarnings = FALSE, recursive = TRUE)
 ```
 
 # Goal
@@ -343,3 +347,36 @@ p_transparency3 <- ggplot() +
   )
 p_transparency3
 ```
+
+# Save figures
+
+```{r}
+ggsave(
+  filename = file.path(out_path, "spat_uncertainty_blur.png"),
+  plot = p_blur,
+  dpi = 300,
+  width = 6,
+  height = 5)
+
+ggsave(
+  filename = file.path(out_path, "spat_uncertainty_blursize.png"),
+  plot = p_blur2,
+  dpi = 300,
+  width = 6,
+  height = 5)
+
+ggsave(
+  filename = file.path(out_path, "spat_uncertainty_trans.png"),
+  plot = p_transparency2,
+  dpi = 300,
+  width = 6,
+  height = 5)
+
+ggsave(
+  filename = file.path(out_path, "spat_uncertainty_transsize.png"),
+  plot = p_transparency3,
+  dpi = 300,
+  width = 6,
+  height = 5)
+```
+
