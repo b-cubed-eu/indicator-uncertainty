@@ -64,6 +64,9 @@ data <- data %>%
     blur_size = case_when(uncertainty == "Low" ~ NA,
                           uncertainty == "Medium" ~ 25,
                           uncertainty == "High" ~ 30),
+    blur_size2 = case_when(uncertainty == "Low" ~ NA,
+                      uncertainty == "Medium" ~ 15,
+                      uncertainty == "High" ~ 30),
     alpha_value = case_when(uncertainty == "Low" ~ 1,
                             uncertainty == "Medium" ~ 0.6,
                             uncertainty == "High" ~ 0.3),
@@ -82,7 +85,8 @@ Increasing blur with increasing uncertainty:
 
 ```{r}
 p_blur <- ggplot() +
-  geom_sf(data = grid, color = "black", alpha = 0.1) +  # Grid background
+  geom_sf(data = grid, color = "black", alpha = 0,
+          linewidth = 1) +  # Grid background
   geom_point_blur(
     data = data_sf %>% filter(uncertainty == "High"),
     aes(x = x, y = y, colour = estimate, blur_size = blur_size),
@@ -100,7 +104,7 @@ p_blur <- ggplot() +
   theme_minimal() +
   theme(panel.grid = element_line(linewidth = 1),
         legend.title = element_text(face = "bold")) +
-  labs(title = "Blur", x = "", y = "", fill = "Estimate:") +
+  labs(title = "Blur", x = "", y = "", colour = "Estimate:") +
   guides(blur_size = "none") +
   annotate("segment",
     x = 1.5,
@@ -135,6 +139,62 @@ p_blur <- ggplot() +
 p_blur
 ```
 
+```{r}
+p_blur2 <- ggplot() +
+  geom_sf(data = grid, color = "black", alpha = 0,
+          linewidth = 1) +  # Grid background
+  geom_point_blur(
+    data = data_sf %>% filter(uncertainty == "High"),
+    aes(x = x, y = y, colour = estimate, blur_size = blur_size2),
+    size = 1) +
+  geom_point_blur(
+    data = data_sf %>% filter(uncertainty == "Medium"),
+    aes(x = x, y = y, colour = estimate, blur_size = blur_size2),
+    size = 10) +
+  geom_point(
+    data = data_sf %>% filter(uncertainty == "Low"),
+    aes(x = x, y = y, colour = estimate),
+    size = 30) +
+  scale_colour_viridis_c(option = "D") +
+  scale_blur_size_continuous(range = c(15, 15)) +
+  theme_minimal() +
+  theme(panel.grid = element_line(linewidth = 1),
+        legend.title = element_text(face = "bold")) +
+  labs(title = "Blur + Size", x = "", y = "", colour = "Estimate:") +
+  guides(blur_size = "none") +
+  annotate("segment",
+    x = 1.5,
+    y = 0.8,
+    xend = 3.5,
+    yend = 0.8,
+    linewidth = 1,
+    arrow = arrow(type = "closed", length = unit(0.02, "npc")),
+    colour = "black"
+  ) +
+  annotate("segment",
+    x = 0.8,
+    y = 1.5,
+    xend = 0.8,
+    yend = 3.5,
+    linewidth = 1,
+    arrow = arrow(type = "closed", length = unit(0.02, "npc")),
+    colour = "black"
+  ) +
+  annotate("text",
+    label = c("Higher uncertainty"),
+    x = 2.5,
+    y = 0.7,
+    size = 5, hjust = "center", vjust = "center", colour = "black"
+  ) +
+  annotate("text",
+    label = c("Higher estimate"),
+    x = 0.7,
+    y = 2.5,
+    size = 5, hjust = "center", vjust = "bottom", colour = "black", angle = 90
+  )
+p_blur2
+```
+
 # Transparency
 
 Increasing transparency with increasing uncertainty.
@@ -143,7 +203,8 @@ With `geom_sf()`.
 
 ```{r}
 p_transparency <- ggplot() +
-  geom_sf(data = grid, color = "black", alpha = 0.1) +  # Grid background
+  geom_sf(data = grid, color = "black", alpha = 0,
+          linewidth = 1) +  # Grid background
   geom_sf(data = data_sf, aes(fill = estimate, alpha = alpha_value),
           colour = alpha("white", 1)) +
   scale_fill_viridis_c(option = "D") +
@@ -189,7 +250,8 @@ With `geom_point()`.
 
 ```{r}
 p_transparency2 <- ggplot() +
-  geom_sf(data = grid, color = "black", alpha = 0.1) +  # Grid background
+  geom_sf(data = grid, color = "black", alpha = 0,
+          linewidth = 1) +  # Grid background
   geom_point(data = data_sf,
              aes(x = x, y = y, colour = estimate, alpha = alpha_value),
              size = 30) +
@@ -198,7 +260,7 @@ p_transparency2 <- ggplot() +
   theme_minimal() +
   theme(panel.grid = element_line(linewidth = 1),
         legend.title = element_text(face = "bold")) +
-  labs(title = "Transparency", x = "", y = "", fill = "Estimate:") +
+  labs(title = "Transparency", x = "", y = "", colour = "Estimate:") +
   annotate("segment",
     x = 1.5,
     y = 0.8,
@@ -236,7 +298,8 @@ With variable size:
 
 ```{r}
 p_transparency3 <- ggplot() +
-  geom_sf(data = grid, color = "black", alpha = 0.1) +  # Grid background
+  geom_sf(data = grid, color = "black", alpha = 0,
+          linewidth = 1) +  # Grid background
   geom_point(data = data_sf,
              aes(x = x, y = y, colour = estimate, alpha = alpha_value,
                  size = size)) +
@@ -246,7 +309,7 @@ p_transparency3 <- ggplot() +
   theme_minimal() +
   theme(panel.grid = element_line(linewidth = 1),
         legend.title = element_text(face = "bold")) +
-  labs(title = "Transparency + Size", x = "", y = "", fill = "Estimate:") +
+  labs(title = "Transparency + Size", x = "", y = "", colour = "Estimate:") +
   guides(size = "none") +
   annotate("segment",
     x = 1.5,
