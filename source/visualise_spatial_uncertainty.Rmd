@@ -23,8 +23,6 @@ knitr::opts_chunk$set(echo = TRUE)
 library(ggplot2)
 library(sf)
 library(dplyr)
-library(tidyr)
-library(patchwork)
 ```
 
 # Goal
