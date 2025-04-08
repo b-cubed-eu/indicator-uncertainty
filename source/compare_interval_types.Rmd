@@ -250,7 +250,7 @@ if (file.exists(insect_evenness_path)) {
 } else {
   bootstrap_insect_evenness <- bootstrap_cube(
     data_cube = insect_data,
-    fun = b3gbi::obs_richness_ts,
+    fun = b3gbi::pielou_evenness_ts,
     grouping_var = "year",
     samples = 1000,
     seed = 123,
@@ -262,7 +262,7 @@ if (file.exists(insect_evenness_path)) {
 ```r
 bootstrap_insect_evenness <- bootstrap_cube(
   data_cube = insect_data,
-  fun = b3gbi::obs_richness_ts,
+  fun = b3gbi::pielou_evenness_ts,
   grouping_var = "year",
   samples = 1000,
   seed = 123,
@@ -315,7 +315,7 @@ if (file.exists(ci_insect_evenness_path)) {
     conf = 0.95,
     aggregate = TRUE,
     data_cube = insect_data,
-    fun = b3gbi::obs_richness_ts,
+    fun = b3gbi::pielou_evenness_ts,
     progress = TRUE)
   saveRDS(ci_insect_evenness, ci_insect_evenness_path)
 }
@@ -329,7 +329,7 @@ ci_insect_evenness <- get_bootstrap_ci(
   conf = 0.95,
   aggregate = TRUE,
   data_cube = insect_data,
-  fun = b3gbi::obs_richness_ts,
+  fun = b3gbi::pielou_evenness_ts,
   progress = TRUE)
 ```
 
