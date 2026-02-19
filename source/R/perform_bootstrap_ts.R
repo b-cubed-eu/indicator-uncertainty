@@ -21,25 +21,28 @@
 #' point. See `boot::boot()`.
 
 perform_bootstrap_ts <- function(
-    data_cube_df,
-    fun,
-    samples = 1000,
-    ref_group = NA,
-    temporal_col_name = "year",
-    seed = NA) {
+  data_cube_df,
+  fun,
+  samples = 1000,
+  ref_group = NA,
+  temporal_col_name = "year",
+  seed = NA
+) {
   require("dplyr")
   require("rlang")
 
   # Check if seed is NA or a number
-  stopifnot("`seed` must be a numeric vector of length 1 or NA." =
-              (is.numeric(seed) | is.na(seed)) &
-              length(seed) == 1)
+  stopifnot(
+    "`seed` must be a numeric vector of length 1 or NA." =
+      (is.numeric(seed) | is.na(seed)) &
+      length(seed) == 1
+  )
 
   # Set seed if provided
   if (!is.na(seed)) {
     if (exists(".Random.seed", envir = .GlobalEnv)) {
       rng_state_old <- get(".Random.seed", envir = .GlobalEnv)
-      on.exit(assign(".Random.seed", rng_state_old, envir = .GlobalEnv))
+      on.exit(assign(".Random.seed", rng_state_old, envir = .GlobalEnv)) # nolint: object_name_linter
     }
     set.seed(seed)
   }
@@ -53,13 +56,16 @@ perform_bootstrap_ts <- function(
 
     # Summarise data by temporal column
     bootstrap_list <- data_cube_df %>%
-      dplyr::summarize(num_occ = sum(.data$obs),
-                       .by = dplyr::all_of(c(temporal_col_name, "taxonKey"))
+      dplyr::summarize(
+        num_occ = sum(.data$obs),
+        .by = dplyr::all_of(c(temporal_col_name, "taxonKey"))
       ) %>%
       dplyr::arrange(.data[[temporal_col_name]]) %>%
-      tidyr::pivot_wider(names_from = dplyr::all_of(temporal_col_name),
-                         values_from = "num_occ",
-                         values_fill = 0) %>%
+      tidyr::pivot_wider(
+        names_from = dplyr::all_of(temporal_col_name),
+        values_from = "num_occ",
+        values_fill = 0
+      ) %>%
       tibble::column_to_rownames("taxonKey") %>%
       as.list() %>%
       # Perform bootstrapping
@@ -68,7 +74,8 @@ perform_bootstrap_ts <- function(
           data = x,
           statistic = boot_statistic,
           R = samples,
-          fun = fun)
+          fun = fun
+        )
       })
   } else {
     # Define bootstrapping for a difference in a calculated statistic
@@ -81,13 +88,16 @@ perform_bootstrap_ts <- function(
 
     # Summarise data by temporal column
     sum_data_list <- data_cube_df %>%
-      dplyr::summarize(num_occ = sum(.data$obs),
-                       .by = dplyr::all_of(c(temporal_col_name, "taxonKey"))
+      dplyr::summarize(
+        num_occ = sum(.data$obs),
+        .by = dplyr::all_of(c(temporal_col_name, "taxonKey"))
       ) %>%
       dplyr::arrange(.data[[temporal_col_name]]) %>%
-      tidyr::pivot_wider(names_from = dplyr::all_of(temporal_col_name),
-                         values_from = "num_occ",
-                         values_fill = 0) %>%
+      tidyr::pivot_wider(
+        names_from = dplyr::all_of(temporal_col_name),
+        values_from = "num_occ",
+        values_fill = 0
+      ) %>%
       tibble::column_to_rownames("taxonKey") %>%
       as.list()
 
@@ -101,7 +111,8 @@ perform_bootstrap_ts <- function(
           statistic = boot_statistic_diff,
           R = samples,
           fun = fun,
-          ref_data = sum_data_list[[as.character(ref_group)]])
+          ref_data = sum_data_list[[as.character(ref_group)]]
+        )
       })
   }
 

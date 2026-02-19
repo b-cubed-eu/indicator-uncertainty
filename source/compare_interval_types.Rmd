@@ -20,10 +20,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r, warning=FALSE, message=FALSE}
 # Load packages
-library(b3gbi)       # Biodiversity indicators for data cubes
-library(tidyverse)   # Data wrangling and visualisation
-library(here)        # Relative paths
-library(knitr)       # Nice tables
+library(b3gbi) # Biodiversity indicators for data cubes
+library(tidyverse) # Data wrangling and visualisation
+library(here) # Relative paths
+library(knitr) # Nice tables
 
 # Source functions
 source(here("source", "R", "bootstrap_cube.R"))
@@ -65,8 +65,10 @@ We process the cube.
 
 ```{r}
 # Prepare cube
-insect_data <- process_cube_old(cube_name, tax_info, first_year = 2011,
-                                last_year = 2020)
+insect_data <- process_cube_old(cube_name, tax_info,
+  first_year = 2011,
+  last_year = 2020
+)
 
 insect_data
 ```
@@ -105,12 +107,14 @@ mean_obs_insect_data %>%
 ```{r}
 mean_obs_insect_data %>%
   ggplot(aes(x = year, y = diversity_val)) +
-    geom_smooth(method = "loess", formula = "y ~ x", se = TRUE,
-                colour = alpha("cornflowerblue", 0.8),
-                fill = alpha("cornflowerblue", 0.1), linetype = "dashed") +
-    geom_line(colour = "orange", linewidth = 1) +
-    theme_minimal() +
-    labs(x = "Year", y = "Mean Number of Observations\nper Grid Cell")
+  geom_smooth(
+    method = "loess", formula = "y ~ x", se = TRUE,
+    colour = alpha("cornflowerblue", 0.8),
+    fill = alpha("cornflowerblue", 0.1), linetype = "dashed"
+  ) +
+  geom_line(colour = "orange", linewidth = 1) +
+  theme_minimal() +
+  labs(x = "Year", y = "Mean Number of Observations\nper Grid Cell")
 ```
 
 **2. Pielou's Evenness**
@@ -158,7 +162,8 @@ if (file.exists(insect_mean_obs_path)) {
     grouping_var = "year",
     samples = 1000,
     seed = 123,
-    progress = TRUE)
+    progress = TRUE
+  )
   saveRDS(bootstrap_insect_mean_obs, insect_mean_obs_path)
 }
 ```
@@ -181,27 +186,40 @@ bias_mean_obs <- bootstrap_insect_mean_obs %>%
   distinct(year, estimate = est_original, `bootstrap estimate` = est_boot)
 
 estimate_mean_obs <- bias_mean_obs %>%
-  pivot_longer(cols = c("estimate", "bootstrap estimate"),
-               names_to = "Legend", values_to = "value") %>%
-  mutate(Legend = factor(Legend, levels = c("estimate", "bootstrap estimate"),
-                         ordered = TRUE))
+  pivot_longer(
+    cols = c("estimate", "bootstrap estimate"),
+    names_to = "Legend", values_to = "value"
+  ) %>%
+  mutate(Legend = factor(Legend,
+    levels = c("estimate", "bootstrap estimate"),
+    ordered = TRUE
+  ))
 
 bootstrap_insect_mean_obs %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = rep_boot, group = year),
-                fill = alpha("cornflowerblue", 0.2)) +
-    geom_segment(data = bias_mean_obs,
-                 aes(xend = year, y = estimate, yend = `bootstrap estimate`),
-                 colour = "darkblue", linewidth = 0.8, linetype = "dashed") +
-    geom_point(data = estimate_mean_obs, aes(y = value, shape = Legend),
-               colour = "firebrick", size = 2) +
-    labs(x = "", y = "Mean Number of Observations\nper Grid Cell",
-         shape = "Legend:") +
-    scale_y_continuous(limits = c(0, NA)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_mean_obs$year))) +
-    theme_minimal() +
-    theme(legend.position = "bottom",
-        legend.title = element_text(face = "bold"))
+  geom_violin(aes(y = rep_boot, group = year),
+    fill = alpha("cornflowerblue", 0.2)
+  ) +
+  geom_segment(
+    data = bias_mean_obs,
+    aes(xend = year, y = estimate, yend = `bootstrap estimate`),
+    colour = "darkblue", linewidth = 0.8, linetype = "dashed"
+  ) +
+  geom_point(
+    data = estimate_mean_obs, aes(y = value, shape = Legend),
+    colour = "firebrick", size = 2
+  ) +
+  labs(
+    x = "", y = "Mean Number of Observations\nper Grid Cell",
+    shape = "Legend:"
+  ) +
+  scale_y_continuous(limits = c(0, NA)) +
+  scale_x_continuous(breaks = sort(unique(bootstrap_insect_mean_obs$year))) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold")
+  )
 ```
 
 We calculate all types of intervals.
@@ -221,7 +239,8 @@ if (file.exists(ci_insect_mean_obs_path)) {
     aggregate = TRUE,
     data_cube = insect_data$data,
     fun = mean_obs,
-    progress = TRUE)
+    progress = TRUE
+  )
   saveRDS(ci_insect_mean_obs, ci_insect_mean_obs_path)
 }
 ```
@@ -254,7 +273,8 @@ if (file.exists(insect_evenness_path)) {
     grouping_var = "year",
     samples = 1000,
     seed = 123,
-    progress = TRUE)
+    progress = TRUE
+  )
   saveRDS(bootstrap_insect_evenness, insect_evenness_path)
 }
 ```
@@ -277,26 +297,37 @@ bias_evenness <- bootstrap_insect_evenness %>%
   distinct(year, estimate = est_original, `bootstrap estimate` = est_boot)
 
 estimate_evenness <- bias_evenness %>%
-  pivot_longer(cols = c("estimate", "bootstrap estimate"),
-               names_to = "Legend", values_to = "value") %>%
-  mutate(Legend = factor(Legend, levels = c("estimate", "bootstrap estimate"),
-                         ordered = TRUE))
+  pivot_longer(
+    cols = c("estimate", "bootstrap estimate"),
+    names_to = "Legend", values_to = "value"
+  ) %>%
+  mutate(Legend = factor(Legend,
+    levels = c("estimate", "bootstrap estimate"),
+    ordered = TRUE
+  ))
 
 bootstrap_insect_evenness %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = rep_boot, group = year),
-                fill = alpha("cornflowerblue", 0.2)) +
-    geom_segment(data = bias_evenness,
-                 aes(xend = year, y = estimate, yend = `bootstrap estimate`),
-                 colour = "darkblue", linewidth = 0.8, linetype = "dashed") +
-    geom_point(data = estimate_evenness, aes(y = value, shape = Legend),
-               colour = "firebrick", size = 2) +
-    labs(x = "", y = "Pielou's Evenness", shape = "Legend:") +
-    scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_evenness$year))) +
-    theme_minimal() +
-    theme(legend.position = "bottom",
-          legend.title = element_text(face = "bold"))
+  geom_violin(aes(y = rep_boot, group = year),
+    fill = alpha("cornflowerblue", 0.2)
+  ) +
+  geom_segment(
+    data = bias_evenness,
+    aes(xend = year, y = estimate, yend = `bootstrap estimate`),
+    colour = "darkblue", linewidth = 0.8, linetype = "dashed"
+  ) +
+  geom_point(
+    data = estimate_evenness, aes(y = value, shape = Legend),
+    colour = "firebrick", size = 2
+  ) +
+  labs(x = "", y = "Pielou's Evenness", shape = "Legend:") +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
+  scale_x_continuous(breaks = sort(unique(bootstrap_insect_evenness$year))) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold")
+  )
 ```
 
 We calculate all types of intervals.
@@ -316,7 +347,8 @@ if (file.exists(ci_insect_evenness_path)) {
     aggregate = TRUE,
     data_cube = insect_data,
     fun = b3gbi::pielou_evenness_ts,
-    progress = TRUE)
+    progress = TRUE
+  )
   saveRDS(ci_insect_evenness, ci_insect_evenness_path)
 }
 ```
@@ -349,7 +381,8 @@ if (file.exists(insect_richness_path)) {
     grouping_var = "year",
     samples = 1000,
     seed = 123,
-    progress = TRUE)
+    progress = TRUE
+  )
   saveRDS(bootstrap_insect_richness, insect_richness_path)
 }
 ```
@@ -372,26 +405,37 @@ bias_richness <- bootstrap_insect_richness %>%
   distinct(year, estimate = est_original, `bootstrap estimate` = est_boot)
 
 estimate_richness <- bias_richness %>%
-  pivot_longer(cols = c("estimate", "bootstrap estimate"),
-               names_to = "Legend", values_to = "value") %>%
-  mutate(Legend = factor(Legend, levels = c("estimate", "bootstrap estimate"),
-                         ordered = TRUE))
+  pivot_longer(
+    cols = c("estimate", "bootstrap estimate"),
+    names_to = "Legend", values_to = "value"
+  ) %>%
+  mutate(Legend = factor(Legend,
+    levels = c("estimate", "bootstrap estimate"),
+    ordered = TRUE
+  ))
 
 bootstrap_insect_richness %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = rep_boot, group = year),
-                fill = alpha("cornflowerblue", 0.2)) +
-    geom_segment(data = bias_richness,
-                 aes(xend = year, y = estimate, yend = `bootstrap estimate`),
-                 colour = "darkblue", linewidth = 0.8, linetype = "dashed") +
-    geom_point(data = estimate_richness, aes(y = value, shape = Legend),
-               colour = "firebrick", size = 2) +
-    labs(x = "", y = "Observed Species Richness", shape = "Legend:") +
-    scale_y_continuous(limits = c(0, NA)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_richness$year))) +
-    theme_minimal() +
-    theme(legend.position = "bottom",
-          legend.title = element_text(face = "bold"))
+  geom_violin(aes(y = rep_boot, group = year),
+    fill = alpha("cornflowerblue", 0.2)
+  ) +
+  geom_segment(
+    data = bias_richness,
+    aes(xend = year, y = estimate, yend = `bootstrap estimate`),
+    colour = "darkblue", linewidth = 0.8, linetype = "dashed"
+  ) +
+  geom_point(
+    data = estimate_richness, aes(y = value, shape = Legend),
+    colour = "firebrick", size = 2
+  ) +
+  labs(x = "", y = "Observed Species Richness", shape = "Legend:") +
+  scale_y_continuous(limits = c(0, NA)) +
+  scale_x_continuous(breaks = sort(unique(bootstrap_insect_richness$year))) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold")
+  )
 ```
 
 We calculate all types of intervals.
@@ -411,7 +455,8 @@ if (file.exists(ci_insect_richness_path)) {
     aggregate = TRUE,
     data_cube = insect_data,
     fun = b3gbi::obs_richness_ts,
-    progress = TRUE)
+    progress = TRUE
+  )
   saveRDS(ci_insect_richness, ci_insect_richness_path)
 }
 ```
@@ -433,14 +478,17 @@ ci_insect_richness <- get_bootstrap_ci(
 ```{r}
 ci_insect_mean_obs <- ci_insect_mean_obs %>%
   mutate(int_type = factor(int_type,
-                           levels = c("norm", "basic", "perc", "bca")))
+    levels = c("norm", "basic", "perc", "bca")
+  ))
 
 ci_insect_evenness <- ci_insect_evenness %>%
   mutate(int_type = factor(int_type,
-                           levels = c("norm", "basic", "perc", "bca")))
+    levels = c("norm", "basic", "perc", "bca")
+  ))
 ci_insect_richness <- ci_insect_richness %>%
   mutate(int_type = factor(int_type,
-                           levels = c("norm", "basic", "perc", "bca"))) %>%
+    levels = c("norm", "basic", "perc", "bca")
+  )) %>%
   drop_na()
 ```
 
@@ -448,69 +496,90 @@ We visualise the distribution of the bootstrap replicates and the confidence int
 
 ```{r}
 my_theme <- theme_minimal() +
-    theme(
-      axis.text = element_text(size = 12),
-      axis.title = element_text(size = 15)
-    ) +
-    theme(
-      legend.position = "bottom",
-      legend.title = element_text(face = "bold", size = 12),
-      legend.text = element_text(size = 12)
-      )
+  theme(
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 15)
+  ) +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold", size = 12),
+    legend.text = element_text(size = 12)
+  )
 ```
 
 ```{r, fig.width = 10, echo=FALSE, warning=FALSE}
 p_ci_mean_obs <- bootstrap_insect_mean_obs %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = rep_boot, group = year),
-                fill = alpha("cornflowerblue", 0.2)) +
-    geom_point(data = estimate_mean_obs, aes(y = value, shape = Legend),
-               colour = "firebrick", size = 2, alpha = 0.5) +
-    geom_errorbar(data = ci_insect_mean_obs,
-                  aes(ymin = ll, ymax = ul, colour = int_type),
-                  position = position_dodge(0.8), linewidth = 0.8) +
-    labs(y = "Mean Number of Observations\nper Grid Cell",
-         colour = "Interval type:", x = "", shape = "Legend:") +
-    scale_y_continuous(limits = c(0, NA)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_mean_obs$year))) +
-    my_theme
+  geom_violin(aes(y = rep_boot, group = year),
+    fill = alpha("cornflowerblue", 0.2)
+  ) +
+  geom_point(
+    data = estimate_mean_obs, aes(y = value, shape = Legend),
+    colour = "firebrick", size = 2, alpha = 0.5
+  ) +
+  geom_errorbar(
+    data = ci_insect_mean_obs,
+    aes(ymin = ll, ymax = ul, colour = int_type),
+    position = position_dodge(0.8), linewidth = 0.8
+  ) +
+  labs(
+    y = "Mean Number of Observations\nper Grid Cell",
+    colour = "Interval type:", x = "", shape = "Legend:"
+  ) +
+  scale_y_continuous(limits = c(0, NA)) +
+  scale_x_continuous(breaks = sort(unique(bootstrap_insect_mean_obs$year))) +
+  my_theme
 p_ci_mean_obs
 ```
 
 ```{r, fig.width = 10, echo=FALSE, warning=FALSE}
 p_ci_evenness <- bootstrap_insect_evenness %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = rep_boot, group = year),
-                fill = alpha("cornflowerblue", 0.2)) +
-    geom_point(data = estimate_evenness, aes(y = value, shape = Legend),
-               colour = "firebrick", size = 2, alpha = 0.5) +
-    geom_errorbar(data = ci_insect_evenness,
-                  aes(ymin = ll, ymax = ul, colour = int_type),
-                  position = position_dodge(0.8), linewidth = 0.8) +
-    labs(y = "Pielou's Evenness", colour = "Interval type:", x = "",
-         shape = "Legend:") +
-    scale_y_continuous(limits = c(NA, 1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_evenness$year))) +
-    my_theme
+  geom_violin(aes(y = rep_boot, group = year),
+    fill = alpha("cornflowerblue", 0.2)
+  ) +
+  geom_point(
+    data = estimate_evenness, aes(y = value, shape = Legend),
+    colour = "firebrick", size = 2, alpha = 0.5
+  ) +
+  geom_errorbar(
+    data = ci_insect_evenness,
+    aes(ymin = ll, ymax = ul, colour = int_type),
+    position = position_dodge(0.8), linewidth = 0.8
+  ) +
+  labs(
+    y = "Pielou's Evenness", colour = "Interval type:", x = "",
+    shape = "Legend:"
+  ) +
+  scale_y_continuous(limits = c(NA, 1), breaks = seq(-10, 10, 0.25)) +
+  scale_x_continuous(breaks = sort(unique(bootstrap_insect_evenness$year))) +
+  my_theme
 p_ci_evenness
 ```
 
 ```{r, fig.width = 10, echo=FALSE, warning=FALSE}
 p_ci_richness <- bootstrap_insect_richness %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = rep_boot, group = year),
-                fill = alpha("cornflowerblue", 0.2)) +
-    geom_point(data = estimate_richness, aes(y = value, shape = Legend),
-               colour = "firebrick", size = 2, alpha = 0.5) +
-    geom_errorbar(data = ci_insect_richness,
-                  aes(ymin = ll, ymax = ul, colour = int_type),
-                  position = position_dodge(0.8), linewidth = 0.8,
-                  width = 0.5) +
-    labs(y = "Observed Species Richness", colour = "Interval type:", x = "",
-         shape = "Legend:") +
-    scale_y_continuous(limits = c(0, NA)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_richness$year))) +
-    my_theme
+  geom_violin(aes(y = rep_boot, group = year),
+    fill = alpha("cornflowerblue", 0.2)
+  ) +
+  geom_point(
+    data = estimate_richness, aes(y = value, shape = Legend),
+    colour = "firebrick", size = 2, alpha = 0.5
+  ) +
+  geom_errorbar(
+    data = ci_insect_richness,
+    aes(ymin = ll, ymax = ul, colour = int_type),
+    position = position_dodge(0.8), linewidth = 0.8,
+    width = 0.5
+  ) +
+  labs(
+    y = "Observed Species Richness", colour = "Interval type:", x = "",
+    shape = "Legend:"
+  ) +
+  scale_y_continuous(limits = c(0, NA)) +
+  scale_x_continuous(breaks = sort(unique(bootstrap_insect_richness$year))) +
+  my_theme
 p_ci_richness
 ```
 
@@ -520,51 +589,58 @@ ggsave(
   plot = p_ci_mean_obs,
   dpi = 300,
   width = 10,
-  height = 5)
+  height = 5
+)
 
 ggsave(
   filename = file.path(out_path, "compare_ci_evenness.png"),
   plot = p_ci_evenness,
   dpi = 300,
   width = 10,
-  height = 5)
+  height = 5
+)
 
 ggsave(
   filename = file.path(out_path, "compare_ci_richness.png"),
   plot = p_ci_richness,
   dpi = 300,
   width = 10,
-  height = 5)
+  height = 5
+)
 ```
 
 The interval width increases when the bootstrap standard error increases, as expected.
 
 ```{r}
 ci_insect_evenness %>%
-    mutate(indicator = "Pielou's Evenness") %>%
-    bind_rows(
-        ci_insect_richness %>%
-            mutate(indicator = "Observed Species Richness"),
-        ci_insect_mean_obs %>%
-            mutate(indicator = "Mean Number of Observations\nper Grid Cell")
-    ) %>%
-    mutate(ci_width = ul - ll,
-           indicator = factor(
-             indicator,
-             levels = c("Mean Number of Observations\nper Grid Cell",
-                        "Pielou's Evenness",
-                        "Observed Species Richness"
-                        )
-             )
-    ) %>%
-    distinct(year, se_boot, indicator) %>%
-    ggplot(aes(x = indicator, y = se_boot)) +
-    geom_boxplot(fill = alpha("cornflowerblue", 0.2),
-                 outlier.colour = "firebrick") +
-    geom_jitter(size = 1.5, width = 0.2) +
-    labs(y = "Bootstrap Standard Error", x = "") +
-    facet_wrap(~indicator, ncol = 3, scales = "free") +
-    theme_minimal()
+  mutate(indicator = "Pielou's Evenness") %>%
+  bind_rows(
+    ci_insect_richness %>%
+      mutate(indicator = "Observed Species Richness"),
+    ci_insect_mean_obs %>%
+      mutate(indicator = "Mean Number of Observations\nper Grid Cell")
+  ) %>%
+  mutate(
+    ci_width = ul - ll,
+    indicator = factor(
+      indicator,
+      levels = c(
+        "Mean Number of Observations\nper Grid Cell",
+        "Pielou's Evenness",
+        "Observed Species Richness"
+      )
+    )
+  ) %>%
+  distinct(year, se_boot, indicator) %>%
+  ggplot(aes(x = indicator, y = se_boot)) +
+  geom_boxplot(
+    fill = alpha("cornflowerblue", 0.2),
+    outlier.colour = "firebrick"
+  ) +
+  geom_jitter(size = 1.5, width = 0.2) +
+  labs(y = "Bootstrap Standard Error", x = "") +
+  facet_wrap(~indicator, ncol = 3, scales = "free") +
+  theme_minimal()
 ```
 
 ```{r, echo=FALSE, warning=FALSE}
@@ -576,28 +652,32 @@ ci_insect_evenness %>%
     ci_insect_mean_obs %>%
       mutate(indicator = "Mean Number of Observations\nper Grid Cell")
   ) %>%
-  mutate(ci_width = ul - ll,
-           indicator = factor(
-             indicator,
-             levels = c("Mean Number of Observations\nper Grid Cell",
-                        "Pielou's Evenness",
-                        "Observed Species Richness"
-                        )
-             )
+  mutate(
+    ci_width = ul - ll,
+    indicator = factor(
+      indicator,
+      levels = c(
+        "Mean Number of Observations\nper Grid Cell",
+        "Pielou's Evenness",
+        "Observed Species Richness"
+      )
+    )
   ) %>%
   distinct(year, se_boot, int_type, ci_width, indicator) %>%
   ggplot(aes(x = se_boot, y = ci_width, colour = int_type)) +
-    geom_smooth(method = "lm", formula = "y ~ x") +
-    geom_point(size = 1.5) +
-    labs(x = "Bootstrap Standard Error", y = "Interval Width",
-         colour = "Interval type") +
-    facet_wrap(~indicator, ncol = 2, scales = "free") +
-    theme_minimal() +
-    theme(
-      legend.title = element_text(face = "bold"),
-      legend.position = c(1, 0),
-      legend.justification = c(2, -0.25)
-    )
+  geom_smooth(method = "lm", formula = "y ~ x") +
+  geom_point(size = 1.5) +
+  labs(
+    x = "Bootstrap Standard Error", y = "Interval Width",
+    colour = "Interval type"
+  ) +
+  facet_wrap(~indicator, ncol = 2, scales = "free") +
+  theme_minimal() +
+  theme(
+    legend.title = element_text(face = "bold"),
+    legend.position = c(1, 0),
+    legend.justification = c(2, -0.25)
+  )
 ```
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
@@ -609,14 +689,16 @@ ci_insect_evenness %>%
     ci_insect_mean_obs %>%
       mutate(indicator = "Mean Number of Observations")
   ) %>%
-  mutate(ci_width = ul - ll,
-         indicator = factor(
-           indicator,
-           levels = c("Mean Number of Observations",
-                      "Pielou's Evenness",
-                      "Observed Species Richness"
-                      )
-           )
+  mutate(
+    ci_width = ul - ll,
+    indicator = factor(
+      indicator,
+      levels = c(
+        "Mean Number of Observations",
+        "Pielou's Evenness",
+        "Observed Species Richness"
+      )
+    )
   ) %>%
   distinct(year, se_boot, int_type, ci_width, indicator) %>%
   group_by(int_type, indicator) %>%
@@ -632,30 +714,34 @@ For species richness there is a negative relationship.
 
 ```{r}
 ci_insect_evenness %>%
-    mutate(indicator = "Pielou's Evenness") %>%
-    bind_rows(
-        ci_insect_richness %>%
-            mutate(indicator = "Observed Species Richness"),
-        ci_insect_mean_obs %>%
-            mutate(indicator = "Mean Number of Observations\nper Grid Cell")
-    ) %>%
-    mutate(ci_width = ul - ll,
-           indicator = factor(
-             indicator,
-             levels = c("Mean Number of Observations\nper Grid Cell",
-                        "Pielou's Evenness",
-                        "Observed Species Richness"
-                        )
-             )
-    ) %>%
-    distinct(year, bias_boot, indicator) %>%
-    ggplot(aes(x = indicator, y = bias_boot)) +
-    geom_boxplot(fill = alpha("cornflowerblue", 0.2),
-                 outlier.colour = "firebrick") +
-    geom_jitter(size = 1.5, width = 0.2) +
-    labs(y = "Bootstrap Bias", x = "") +
-    facet_wrap(~indicator, ncol = 3, scales = "free") +
-    theme_minimal()
+  mutate(indicator = "Pielou's Evenness") %>%
+  bind_rows(
+    ci_insect_richness %>%
+      mutate(indicator = "Observed Species Richness"),
+    ci_insect_mean_obs %>%
+      mutate(indicator = "Mean Number of Observations\nper Grid Cell")
+  ) %>%
+  mutate(
+    ci_width = ul - ll,
+    indicator = factor(
+      indicator,
+      levels = c(
+        "Mean Number of Observations\nper Grid Cell",
+        "Pielou's Evenness",
+        "Observed Species Richness"
+      )
+    )
+  ) %>%
+  distinct(year, bias_boot, indicator) %>%
+  ggplot(aes(x = indicator, y = bias_boot)) +
+  geom_boxplot(
+    fill = alpha("cornflowerblue", 0.2),
+    outlier.colour = "firebrick"
+  ) +
+  geom_jitter(size = 1.5, width = 0.2) +
+  labs(y = "Bootstrap Bias", x = "") +
+  facet_wrap(~indicator, ncol = 3, scales = "free") +
+  theme_minimal()
 ```
 
 ```{r, echo=FALSE, warning=FALSE}
@@ -667,29 +753,33 @@ ci_insect_evenness %>%
     ci_insect_mean_obs %>%
       mutate(indicator = "Mean Number of Observations\nper Grid Cell")
   ) %>%
-  mutate(ci_width = ul - ll,
-         indicator = factor(
-           indicator,
-           levels = c("Mean Number of Observations\nper Grid Cell",
-                      "Pielou's Evenness",
-                      "Observed Species Richness"
-                      )
-           )
+  mutate(
+    ci_width = ul - ll,
+    indicator = factor(
+      indicator,
+      levels = c(
+        "Mean Number of Observations\nper Grid Cell",
+        "Pielou's Evenness",
+        "Observed Species Richness"
+      )
+    )
   ) %>%
   distinct(year, bias_boot, int_type, ci_width, indicator) %>%
   mutate(abs_bias = abs(bias_boot)) %>%
   ggplot(aes(x = abs_bias, y = ci_width, colour = int_type)) +
-    geom_smooth(method = "lm", formula = "y ~ x") +
-    geom_point(size = 1.5) +
-    labs(x = "Bootstrap Bias (absolute value)", y = "Interval Width",
-         colour = "Interval type") +
-    facet_wrap(~indicator, ncol = 2, scales = "free") +
-    theme_minimal() +
-    theme(
-      legend.title = element_text(face = "bold"),
-      legend.position = c(1, 0),
-      legend.justification = c(2, -0.25)
-    )
+  geom_smooth(method = "lm", formula = "y ~ x") +
+  geom_point(size = 1.5) +
+  labs(
+    x = "Bootstrap Bias (absolute value)", y = "Interval Width",
+    colour = "Interval type"
+  ) +
+  facet_wrap(~indicator, ncol = 2, scales = "free") +
+  theme_minimal() +
+  theme(
+    legend.title = element_text(face = "bold"),
+    legend.position = c(1, 0),
+    legend.justification = c(2, -0.25)
+  )
 ```
 
 ```{r, echo=FALSE}
@@ -701,14 +791,16 @@ ci_insect_evenness %>%
     ci_insect_mean_obs %>%
       mutate(indicator = "Mean Number of Observations")
   ) %>%
-  mutate(ci_width = ul - ll,
-         indicator = factor(
-           indicator,
-           levels = c("Mean Number of Observations",
-                      "Pielou's Evenness",
-                      "Observed Species Richness"
-                      )
-           )
+  mutate(
+    ci_width = ul - ll,
+    indicator = factor(
+      indicator,
+      levels = c(
+        "Mean Number of Observations",
+        "Pielou's Evenness",
+        "Observed Species Richness"
+      )
+    )
   ) %>%
   distinct(year, bias_boot, int_type, ci_width, indicator) %>%
   mutate(abs_bias = abs(bias_boot)) %>%
@@ -731,30 +823,34 @@ ci_insect_evenness %>%
     ci_insect_mean_obs %>%
       mutate(indicator = "Mean Number of Observations\nper Grid Cell")
   ) %>%
-  mutate(ci_width = ul - ll,
-         indicator = factor(
-           indicator,
-           levels = c("Mean Number of Observations\nper Grid Cell",
-                      "Pielou's Evenness",
-                      "Observed Species Richness"
-                      )
-           )
+  mutate(
+    ci_width = ul - ll,
+    indicator = factor(
+      indicator,
+      levels = c(
+        "Mean Number of Observations\nper Grid Cell",
+        "Pielou's Evenness",
+        "Observed Species Richness"
+      )
+    )
   ) %>%
   distinct(year, bias_boot, int_type, ci_width, indicator) %>%
   mutate(abs_bias = abs(bias_boot)) %>%
   filter(!(indicator == "Mean Number of Observations" & bias_boot > 2)) %>%
   ggplot(aes(x = abs_bias, y = ci_width, colour = int_type)) +
-    geom_smooth(method = "lm", formula = "y ~ x") +
-    geom_point(size = 1.5) +
-    labs(x = "Bootstrap Bias (absolute value)", y = "Interval Width",
-         colour = "Interval type") +
-    facet_wrap(~indicator, ncol = 2, scales = "free") +
-    theme_minimal() +
-    theme(
-      legend.title = element_text(face = "bold"),
-      legend.position = c(1, 0),
-      legend.justification = c(2, -0.25)
-    )
+  geom_smooth(method = "lm", formula = "y ~ x") +
+  geom_point(size = 1.5) +
+  labs(
+    x = "Bootstrap Bias (absolute value)", y = "Interval Width",
+    colour = "Interval type"
+  ) +
+  facet_wrap(~indicator, ncol = 2, scales = "free") +
+  theme_minimal() +
+  theme(
+    legend.title = element_text(face = "bold"),
+    legend.position = c(1, 0),
+    legend.justification = c(2, -0.25)
+  )
 ```
 
 ```{r, echo=FALSE}
@@ -766,14 +862,16 @@ ci_insect_evenness %>%
     ci_insect_mean_obs %>%
       mutate(indicator = "Mean Number of Observations")
   ) %>%
-  mutate(ci_width = ul - ll,
-         indicator = factor(
-           indicator,
-           levels = c("Mean Number of Observations",
-                      "Pielou's Evenness",
-                      "Observed Species Richness"
-                      )
-           )
+  mutate(
+    ci_width = ul - ll,
+    indicator = factor(
+      indicator,
+      levels = c(
+        "Mean Number of Observations",
+        "Pielou's Evenness",
+        "Observed Species Richness"
+      )
+    )
   ) %>%
   distinct(year, bias_boot, int_type, ci_width, indicator) %>%
   mutate(abs_bias = abs(bias_boot)) %>%
@@ -848,7 +946,8 @@ incidence_estimator <- function(data, index) {
     summarise(
       s0 = n_distinct(.data$taxonKey),
       N = n_distinct(.data$cellCode),
-      .by = .data$year) %>%
+      .by = .data$year
+    ) %>%
     left_join(a1_df, by = join_by(.data$year)) %>%
     left_join(a2_df, by = join_by(.data$year))
 
@@ -859,33 +958,34 @@ incidence_estimator <- function(data, index) {
           .data$s0 + ((.data$a1 * (.data$a1 - 1)) / (2 * (.data$a2 + 1))) +
             ((.data$N - 1) / .data$N),
           .data$s0 + (.data$a1^2 / (2 * .data$a2)) + ((.data$N - 1) / .data$N)
-          )
-        ) %>%
+        )
+      ) %>%
       select("year", "diversity_val")
-
   } else if (index == "jack1") {
     out_df <- summary_df %>%
       mutate(
         diversity_val = .data$s0 + (.data$a1 * ((.data$N - 1) / .data$N))
-        ) %>%
+      ) %>%
       select("year", "diversity_val")
-
   } else if (index == "jack2") {
     out_df <- summary_df %>%
       mutate(
         a1_part = .data$a1 * (((2 * .data$N) - 3) / .data$N),
         a2_part = .data$a2 * ((.data$N - 2)^2 / (.data$N * (.data$N - 1))),
         diversity_val = .data$s0 + .data$a1_part - .data$a2_part
-        ) %>%
+      ) %>%
       select("year", "diversity_val")
-
   } else if (index == "boot") {
     p_df <- data %>%
-      mutate(N = n_distinct(.data$cellCode),
-             .by = .data$year) %>%
+      mutate(
+        N = n_distinct(.data$cellCode),
+        .by = .data$year
+      ) %>%
       count(.data$taxonKey, .data$year, .data$N) %>%
-      mutate(p = .data$n / .data$N,
-             calc = (1 - .data$p)^.data$N) %>%
+      mutate(
+        p = .data$n / .data$N,
+        calc = (1 - .data$p)^.data$N
+      ) %>%
       summarise(
         sum_of_calc = sum(.data$calc),
         .by = .data$year
@@ -897,7 +997,6 @@ incidence_estimator <- function(data, index) {
         diversity_val = .data$s0 + .data$sum_of_calc
       ) %>%
       select("year", "diversity_val")
-
   } else {
     stop("`index` must be one of 'chao', 'jack1'', 'jack2', 'boot'")
   }
@@ -923,7 +1022,8 @@ if (file.exists(insect_chao_path)) {
     grouping_var = "year",
     samples = 1000,
     seed = 123,
-    progress = TRUE)
+    progress = TRUE
+  )
   saveRDS(bootstrap_insect_chao, insect_chao_path)
 }
 ```
@@ -952,7 +1052,8 @@ if (file.exists(insect_jack1_path)) {
     grouping_var = "year",
     samples = 1000,
     seed = 123,
-    progress = TRUE)
+    progress = TRUE
+  )
   saveRDS(bootstrap_insect_jack1, insect_jack1_path)
 }
 ```
@@ -981,7 +1082,8 @@ if (file.exists(insect_jack2_path)) {
     grouping_var = "year",
     samples = 1000,
     seed = 123,
-    progress = TRUE)
+    progress = TRUE
+  )
   saveRDS(bootstrap_insect_jack2, insect_jack2_path)
 }
 ```
@@ -1010,7 +1112,8 @@ if (file.exists(insect_boot_path)) {
     grouping_var = "year",
     samples = 1000,
     seed = 123,
-    progress = TRUE)
+    progress = TRUE
+  )
   saveRDS(bootstrap_insect_boot, insect_boot_path)
 }
 ```
@@ -1044,7 +1147,8 @@ if (file.exists(ci_insect_chao_path)) {
     data_cube = insect_data$data,
     fun = incidence_estimator,
     index = "chao",
-    progress = TRUE)
+    progress = TRUE
+  )
   saveRDS(ci_insect_chao, ci_insect_chao_path)
 }
 ```
@@ -1078,7 +1182,8 @@ if (file.exists(ci_insect_jack1_path)) {
     data_cube = insect_data$data,
     fun = incidence_estimator,
     index = "jack1",
-    progress = TRUE)
+    progress = TRUE
+  )
   saveRDS(ci_insect_jack1, ci_insect_jack1_path)
 }
 ```
@@ -1112,7 +1217,8 @@ if (file.exists(ci_insect_jack2_path)) {
     data_cube = insect_data$data,
     fun = incidence_estimator,
     index = "jack2",
-    progress = TRUE)
+    progress = TRUE
+  )
   saveRDS(ci_insect_jack2, ci_insect_jack2_path)
 }
 ```
@@ -1146,7 +1252,8 @@ if (file.exists(ci_insect_boot_path)) {
     data_cube = insect_data$data,
     fun = incidence_estimator,
     index = "boot",
-    progress = TRUE)
+    progress = TRUE
+  )
   saveRDS(ci_insect_boot, ci_insect_boot_path)
 }
 ```
@@ -1167,20 +1274,24 @@ ci_insect_boot <- get_bootstrap_ci(
 ```{r}
 ci_insect_chao <- ci_insect_chao %>%
   mutate(int_type = factor(int_type,
-                           levels = c("norm", "basic", "perc", "bca"))) %>%
+    levels = c("norm", "basic", "perc", "bca")
+  )) %>%
   drop_na()
 
 ci_insect_jack2 <- ci_insect_jack2 %>%
   mutate(int_type = factor(int_type,
-                           levels = c("norm", "basic", "perc", "bca"))) %>%
+    levels = c("norm", "basic", "perc", "bca")
+  )) %>%
   drop_na()
 ci_insect_jack2 <- ci_insect_jack2 %>%
   mutate(int_type = factor(int_type,
-                           levels = c("norm", "basic", "perc", "bca"))) %>%
+    levels = c("norm", "basic", "perc", "bca")
+  )) %>%
   drop_na()
 ci_insect_boot <- ci_insect_boot %>%
   mutate(int_type = factor(int_type,
-                           levels = c("norm", "basic", "perc", "bca"))) %>%
+    levels = c("norm", "basic", "perc", "bca")
+  )) %>%
   drop_na()
 ```
 
@@ -1189,26 +1300,37 @@ bias_chao <- bootstrap_insect_chao %>%
   distinct(year, estimate = est_original, `bootstrap estimate` = est_boot)
 
 estimate_chao <- bias_chao %>%
-  pivot_longer(cols = c("estimate", "bootstrap estimate"),
-               names_to = "Legend", values_to = "value") %>%
-  mutate(Legend = factor(Legend, levels = c("estimate", "bootstrap estimate"),
-                         ordered = TRUE))
+  pivot_longer(
+    cols = c("estimate", "bootstrap estimate"),
+    names_to = "Legend", values_to = "value"
+  ) %>%
+  mutate(Legend = factor(Legend,
+    levels = c("estimate", "bootstrap estimate"),
+    ordered = TRUE
+  ))
 
 bootstrap_insect_chao %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = rep_boot, group = year),
-                fill = alpha("cornflowerblue", 0.2)) +
-    geom_point(data = estimate_chao, aes(y = value, shape = Legend),
-               colour = "firebrick", size = 2, alpha = 0.5) +
-    geom_errorbar(data = ci_insect_chao,
-                  aes(ymin = ll, ymax = ul, colour = int_type),
-                  position = position_dodge(0.8), linewidth = 0.8,
-                  width = 0.5) +
-    labs(y = "Observed Species Richness", colour = "Interval type:", x = "",
-         shape = "Legend:") +
-    scale_y_continuous(limits = c(0, NA)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_chao$year))) +
-    my_theme
+  geom_violin(aes(y = rep_boot, group = year),
+    fill = alpha("cornflowerblue", 0.2)
+  ) +
+  geom_point(
+    data = estimate_chao, aes(y = value, shape = Legend),
+    colour = "firebrick", size = 2, alpha = 0.5
+  ) +
+  geom_errorbar(
+    data = ci_insect_chao,
+    aes(ymin = ll, ymax = ul, colour = int_type),
+    position = position_dodge(0.8), linewidth = 0.8,
+    width = 0.5
+  ) +
+  labs(
+    y = "Observed Species Richness", colour = "Interval type:", x = "",
+    shape = "Legend:"
+  ) +
+  scale_y_continuous(limits = c(0, NA)) +
+  scale_x_continuous(breaks = sort(unique(bootstrap_insect_chao$year))) +
+  my_theme
 ```
 
 ```{r}
@@ -1216,26 +1338,37 @@ bias_jack1 <- bootstrap_insect_jack1 %>%
   distinct(year, estimate = est_original, `bootstrap estimate` = est_boot)
 
 estimate_jack1 <- bias_jack1 %>%
-  pivot_longer(cols = c("estimate", "bootstrap estimate"),
-               names_to = "Legend", values_to = "value") %>%
-  mutate(Legend = factor(Legend, levels = c("estimate", "bootstrap estimate"),
-                         ordered = TRUE))
+  pivot_longer(
+    cols = c("estimate", "bootstrap estimate"),
+    names_to = "Legend", values_to = "value"
+  ) %>%
+  mutate(Legend = factor(Legend,
+    levels = c("estimate", "bootstrap estimate"),
+    ordered = TRUE
+  ))
 
 bootstrap_insect_jack1 %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = rep_boot, group = year),
-                fill = alpha("cornflowerblue", 0.2)) +
-    geom_point(data = estimate_jack1, aes(y = value, shape = Legend),
-               colour = "firebrick", size = 2, alpha = 0.5) +
-    geom_errorbar(data = ci_insect_jack1,
-                  aes(ymin = ll, ymax = ul, colour = int_type),
-                  position = position_dodge(0.8), linewidth = 0.8,
-                  width = 0.5) +
-    labs(y = "Observed Species Richness", colour = "Interval type:", x = "",
-         shape = "Legend:") +
-    scale_y_continuous(limits = c(0, NA)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_jack1$year))) +
-    my_theme
+  geom_violin(aes(y = rep_boot, group = year),
+    fill = alpha("cornflowerblue", 0.2)
+  ) +
+  geom_point(
+    data = estimate_jack1, aes(y = value, shape = Legend),
+    colour = "firebrick", size = 2, alpha = 0.5
+  ) +
+  geom_errorbar(
+    data = ci_insect_jack1,
+    aes(ymin = ll, ymax = ul, colour = int_type),
+    position = position_dodge(0.8), linewidth = 0.8,
+    width = 0.5
+  ) +
+  labs(
+    y = "Observed Species Richness", colour = "Interval type:", x = "",
+    shape = "Legend:"
+  ) +
+  scale_y_continuous(limits = c(0, NA)) +
+  scale_x_continuous(breaks = sort(unique(bootstrap_insect_jack1$year))) +
+  my_theme
 ```
 
 ```{r}
@@ -1243,26 +1376,37 @@ bias_jack2 <- bootstrap_insect_jack2 %>%
   distinct(year, estimate = est_original, `bootstrap estimate` = est_boot)
 
 estimate_jack2 <- bias_jack2 %>%
-  pivot_longer(cols = c("estimate", "bootstrap estimate"),
-               names_to = "Legend", values_to = "value") %>%
-  mutate(Legend = factor(Legend, levels = c("estimate", "bootstrap estimate"),
-                         ordered = TRUE))
+  pivot_longer(
+    cols = c("estimate", "bootstrap estimate"),
+    names_to = "Legend", values_to = "value"
+  ) %>%
+  mutate(Legend = factor(Legend,
+    levels = c("estimate", "bootstrap estimate"),
+    ordered = TRUE
+  ))
 
 bootstrap_insect_jack2 %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = rep_boot, group = year),
-                fill = alpha("cornflowerblue", 0.2)) +
-    geom_point(data = estimate_jack2, aes(y = value, shape = Legend),
-               colour = "firebrick", size = 2, alpha = 0.5) +
-    geom_errorbar(data = ci_insect_jack2,
-                  aes(ymin = ll, ymax = ul, colour = int_type),
-                  position = position_dodge(0.8), linewidth = 0.8,
-                  width = 0.5) +
-    labs(y = "Observed Species Richness", colour = "Interval type:", x = "",
-         shape = "Legend:") +
-    scale_y_continuous(limits = c(0, NA)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_jack2$year))) +
-    my_theme
+  geom_violin(aes(y = rep_boot, group = year),
+    fill = alpha("cornflowerblue", 0.2)
+  ) +
+  geom_point(
+    data = estimate_jack2, aes(y = value, shape = Legend),
+    colour = "firebrick", size = 2, alpha = 0.5
+  ) +
+  geom_errorbar(
+    data = ci_insect_jack2,
+    aes(ymin = ll, ymax = ul, colour = int_type),
+    position = position_dodge(0.8), linewidth = 0.8,
+    width = 0.5
+  ) +
+  labs(
+    y = "Observed Species Richness", colour = "Interval type:", x = "",
+    shape = "Legend:"
+  ) +
+  scale_y_continuous(limits = c(0, NA)) +
+  scale_x_continuous(breaks = sort(unique(bootstrap_insect_jack2$year))) +
+  my_theme
 ```
 
 ```{r}
@@ -1270,26 +1414,37 @@ bias_boot <- bootstrap_insect_boot %>%
   distinct(year, estimate = est_original, `bootstrap estimate` = est_boot)
 
 estimate_boot <- bias_boot %>%
-  pivot_longer(cols = c("estimate", "bootstrap estimate"),
-               names_to = "Legend", values_to = "value") %>%
-  mutate(Legend = factor(Legend, levels = c("estimate", "bootstrap estimate"),
-                         ordered = TRUE))
+  pivot_longer(
+    cols = c("estimate", "bootstrap estimate"),
+    names_to = "Legend", values_to = "value"
+  ) %>%
+  mutate(Legend = factor(Legend,
+    levels = c("estimate", "bootstrap estimate"),
+    ordered = TRUE
+  ))
 
 bootstrap_insect_boot %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = rep_boot, group = year),
-                fill = alpha("cornflowerblue", 0.2)) +
-    geom_point(data = estimate_boot, aes(y = value, shape = Legend),
-               colour = "firebrick", size = 2, alpha = 0.5) +
-    geom_errorbar(data = ci_insect_boot,
-                  aes(ymin = ll, ymax = ul, colour = int_type),
-                  position = position_dodge(0.8), linewidth = 0.8,
-                  width = 0.5) +
-    labs(y = "Observed Species Richness", colour = "Interval type:", x = "",
-         shape = "Legend:") +
-    scale_y_continuous(limits = c(0, NA)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_boot$year))) +
-    my_theme
+  geom_violin(aes(y = rep_boot, group = year),
+    fill = alpha("cornflowerblue", 0.2)
+  ) +
+  geom_point(
+    data = estimate_boot, aes(y = value, shape = Legend),
+    colour = "firebrick", size = 2, alpha = 0.5
+  ) +
+  geom_errorbar(
+    data = ci_insect_boot,
+    aes(ymin = ll, ymax = ul, colour = int_type),
+    position = position_dodge(0.8), linewidth = 0.8,
+    width = 0.5
+  ) +
+  labs(
+    y = "Observed Species Richness", colour = "Interval type:", x = "",
+    shape = "Legend:"
+  ) +
+  scale_y_continuous(limits = c(0, NA)) +
+  scale_x_continuous(breaks = sort(unique(bootstrap_insect_boot$year))) +
+  my_theme
 ```
 
 ## Conclusion

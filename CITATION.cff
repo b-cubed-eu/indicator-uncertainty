@@ -34,3 +34,4 @@ repository-code: https://github.com/b-cubed-eu/indicator-uncertainty/
 type: software
 abstract: "Scripts to explore calculation, interpretation and visualisation of uncertainty
   related to indicators based on biodiversity data cubes."
+version: 1.4.1

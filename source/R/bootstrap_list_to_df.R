@@ -40,7 +40,8 @@ bootstrap_list_to_df <- function(bootstrap_list, temporal_list_name = "year") {
     dplyr::rowwise() %>%
     dplyr::mutate(
       diff = .data$est_boot - .data$est_original,
-      {{ temporal_list_name }} := as.numeric(.data[[temporal_list_name]])) %>%
+      {{ temporal_list_name }} := as.numeric(.data[[temporal_list_name]])
+    ) %>%
     dplyr::group_by(.data[[temporal_list_name]]) %>%
     dplyr::mutate(bias_boot = mean(.data$diff)) %>%
     dplyr::ungroup() %>%

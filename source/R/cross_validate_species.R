@@ -106,7 +106,8 @@ cross_validate_species <- function(
     purrr::map(
       cross_validate_f,
       fun = fun,
-      .progress = ifelse(progress, "Cross-Validation", progress))
+      .progress = ifelse(progress, "Cross-Validation", progress)
+    )
 
   # Summarise CV statistics in dataframe
   out_df <- results %>%
@@ -129,7 +130,8 @@ cross_validate_species <- function(
       mre = mean(.data$rel_diff),
       mse = mean(.data$sq_error),
       rmse = sqrt(.data$mse),
-      .by = all_of(grouping_var)) %>%
+      .by = all_of(grouping_var)
+    ) %>%
     dplyr::arrange(.data[[grouping_var]]) %>%
     dplyr::select("id_cv", all_of(grouping_var), "species_left_out", "rep_cv",
                   "est_original", dplyr::everything())
