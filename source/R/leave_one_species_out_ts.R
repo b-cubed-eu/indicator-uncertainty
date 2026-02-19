@@ -28,29 +28,33 @@
 #' (MSE) and Root Mean Squared Error (RMSE).
 
 leave_one_species_out_ts <- function(
-    data_cube_df,
-    fun,
-    crossv_method = c("loo", "kfold"),
-    k = ifelse(crossv_method == "kfold", 5, NA),
-    temporal_col_name = "year") {
+  data_cube_df,
+  fun,
+  crossv_method = c("loo", "kfold"),
+  k = ifelse(crossv_method == "kfold", 5, NA),
+  temporal_col_name = "year"
+) {
   require("dplyr")
   require("rlang")
 
   # Pivot data by temporal column
   pivot_dataset <- data_cube_df %>%
-    dplyr::summarize(num_occ = sum(.data$obs),
-                     .by = dplyr::all_of(c(temporal_col_name, "taxonKey"))
+    dplyr::summarize(
+      num_occ = sum(.data$obs),
+      .by = dplyr::all_of(c(temporal_col_name, "taxonKey"))
     ) %>%
     dplyr::arrange(.data[[temporal_col_name]]) %>%
-    tidyr::pivot_wider(names_from = dplyr::all_of(temporal_col_name),
-                       values_from = "num_occ",
-                       values_fill = 0) %>%
+    tidyr::pivot_wider(
+      names_from = dplyr::all_of(temporal_col_name),
+      values_from = "num_occ",
+      values_fill = 0
+    ) %>%
     tibble::column_to_rownames("taxonKey")
 
   # Calculate indicator based on all data
   true_indicator_list <- pivot_dataset %>%
     as.list() %>%
-    purrr::map(~fun(.))
+    purrr::map(~ fun(.))
 
   # Create dataframe
   true_indicator <- data.frame(diversity_val = unlist(true_indicator_list)) %>%
@@ -58,12 +62,16 @@ leave_one_species_out_ts <- function(
     dplyr::mutate(!!temporal_col_name := as.numeric(.data[[temporal_col_name]]))
 
   # Check if crossv_method is loo or kfold
-  crossv_method <- tryCatch({
-    match.arg(crossv_method, c("loo", "kfold"))
-  }, error = function(e) {
-    stop("`crossv_method` must be one of 'loo', 'kfold'.",
-         call. = FALSE)
-  })
+  crossv_method <- tryCatch(
+    {
+      match.arg(crossv_method, c("loo", "kfold"))
+    },
+    error = function(e) {
+      stop("`crossv_method` must be one of 'loo', 'kfold'.",
+        call. = FALSE
+      )
+    }
+  )
 
   if (crossv_method == "loo") {
     # Create cross validation datasets
@@ -79,7 +87,8 @@ leave_one_species_out_ts <- function(
     cv_dataset <- modelr::crossv_kfold(pivot_dataset, id = "id_cv", k = k)
 
     # Get species left out
-    species_left_out_list <- lapply(lapply(cv_dataset$test, as.integer),
+    species_left_out_list <- lapply(
+      lapply(cv_dataset$test, as.integer),
       function(indices) {
         rownames(pivot_dataset)[indices]
       }
@@ -102,7 +111,7 @@ leave_one_species_out_ts <- function(
       tibble::rownames_to_column(var = temporal_col_name) %>%
       dplyr::mutate(
         !!temporal_col_name := as.numeric(.data[[temporal_col_name]])
-        )
+      )
 
     # Merge with the true indicator to enable comparison
     indicator_result %>%
@@ -121,8 +130,10 @@ leave_one_species_out_ts <- function(
     dplyr::mutate(id_cv = as.numeric(.data$id_cv)) %>%
     dplyr::as_tibble() %>%
     dplyr::full_join(species_df, by = join_by("id_cv")) %>%
-    dplyr::select(c(all_of(temporal_col_name), "species_left_out", "id_cv",
-                    dplyr::everything())) %>%
+    dplyr::select(c(
+      all_of(temporal_col_name), "species_left_out", "id_cv",
+      dplyr::everything()
+    )) %>%
     dplyr::arrange(.data[[temporal_col_name]]) %>%
     dplyr::mutate(
       mse = mean(.data$sq_error),

@@ -69,8 +69,8 @@ data <- data %>%
                           uncertainty == "Medium" ~ 25,
                           uncertainty == "High" ~ 30),
     blur_size2 = case_when(uncertainty == "Low" ~ NA,
-                      uncertainty == "Medium" ~ 15,
-                      uncertainty == "High" ~ 30),
+                           uncertainty == "Medium" ~ 15,
+                           uncertainty == "High" ~ 30),
     alpha_value = case_when(uncertainty == "Low" ~ 1,
                             uncertainty == "Medium" ~ 0.6,
                             uncertainty == "High" ~ 0.3),
@@ -94,15 +94,18 @@ p_blur <- ggplot() +
   geom_point_blur(
     data = data_sf %>% filter(uncertainty == "High"),
     aes(x = x, y = y, colour = estimate, blur_size = blur_size),
-    size = 1) +
+    size = 1
+  ) +
   geom_point_blur(
     data = data_sf %>% filter(uncertainty == "Medium"),
     aes(x = x, y = y, colour = estimate, blur_size = blur_size),
-    size = 15) +
+    size = 15
+  ) +
   geom_point(
     data = data_sf %>% filter(uncertainty == "Low"),
     aes(x = x, y = y, colour = estimate),
-    size = 30) +
+    size = 30
+  ) +
   scale_colour_viridis_c(option = "D") +
   scale_blur_size_continuous(range = c(20, 35)) +
   theme_minimal() +
@@ -150,15 +153,18 @@ p_blur2 <- ggplot() +
   geom_point_blur(
     data = data_sf %>% filter(uncertainty == "High"),
     aes(x = x, y = y, colour = estimate, blur_size = blur_size2),
-    size = 1) +
+    size = 1
+  ) +
   geom_point_blur(
     data = data_sf %>% filter(uncertainty == "Medium"),
     aes(x = x, y = y, colour = estimate, blur_size = blur_size2),
-    size = 10) +
+    size = 10
+  ) +
   geom_point(
     data = data_sf %>% filter(uncertainty == "Low"),
     aes(x = x, y = y, colour = estimate),
-    size = 30) +
+    size = 30
+  ) +
   scale_colour_viridis_c(option = "D") +
   scale_blur_size_continuous(range = c(15, 15)) +
   theme_minimal() +
@@ -356,27 +362,31 @@ ggsave(
   plot = p_blur,
   dpi = 300,
   width = 6,
-  height = 5)
+  height = 5
+)
 
 ggsave(
   filename = file.path(out_path, "spat_uncertainty_blursize.png"),
   plot = p_blur2,
   dpi = 300,
   width = 6,
-  height = 5)
+  height = 5
+)
 
 ggsave(
   filename = file.path(out_path, "spat_uncertainty_trans.png"),
   plot = p_transparency2,
   dpi = 300,
   width = 6,
-  height = 5)
+  height = 5
+)
 
 ggsave(
   filename = file.path(out_path, "spat_uncertainty_transsize.png"),
   plot = p_transparency3,
   dpi = 300,
   width = 6,
-  height = 5)
+  height = 5
+)
 ```
 

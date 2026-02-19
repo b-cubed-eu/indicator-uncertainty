@@ -20,9 +20,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r, warning=FALSE, message=FALSE}
 # Load packages
-library(b3gbi)       # Biodiversity indicators for data cubes
-library(tidyverse)   # Data wrangling and visualisation
-library(here)        # Relative paths
+library(b3gbi) # Biodiversity indicators for data cubes
+library(tidyverse) # Data wrangling and visualisation
+library(here) # Relative paths
 
 # Source functions
 source(here("source", "R", "perform_bootstrap_ts.R"))
@@ -43,7 +43,8 @@ We use the Mammal data of Denmark from **b3gbi**.
 
 ```{r}
 cube_file <- system.file("extdata", "denmark_mammals_cube_eqdgc.csv",
-                         package = "b3gbi")
+  package = "b3gbi"
+)
 denmark_cube <- process_cube(cube_file, first_year = 2005, last_year = 2013)
 denmark_cube
 ```
@@ -88,7 +89,8 @@ bootstrap_list_denmark <- denmark_cube$data %>%
       data = x,
       statistic = boot_statistic,
       R = boot_samples,
-      fun = mean_obs)
+      fun = mean_obs
+    )
   })
 
 # Summarise in dataframe
@@ -103,7 +105,8 @@ Calculate confidence intervals.
 ci_denmark <- get_bootstrap_ci_old(
   bootstrap_list_denmark,
   fun = mean_obs,
-  type = c("perc", "bca", "norm", "basic"))
+  type = c("perc", "bca", "norm", "basic")
+)
 
 # Join dataframes
 bootstrap_denmark_final <- bootstrap_denmark_full %>%
@@ -120,17 +123,21 @@ estimate_df <- bootstrap_denmark_final %>%
 
 bootstrap_denmark_final %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = est_boot, group = year),
-                fill = alpha("cornflowerblue", 0.2)) +
-    geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
-                  position = position_dodge(0.8), linewidth = 1) +
-    geom_point(data = estimate_df, aes(y = estimate),
-               colour = "firebrick", size = 2) +
-    labs(y = "Mean number of observations", colour = "Confidence interval") +
-    scale_y_continuous(limits = c(0, NA), breaks = seq(0, 50, 5)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_denmark_final$year))) +
-    theme_minimal() +
-    theme(legend.position = "bottom")
+  geom_violin(aes(y = est_boot, group = year),
+    fill = alpha("cornflowerblue", 0.2)
+  ) +
+  geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
+    position = position_dodge(0.8), linewidth = 1
+  ) +
+  geom_point(
+    data = estimate_df, aes(y = estimate),
+    colour = "firebrick", size = 2
+  ) +
+  labs(y = "Mean number of observations", colour = "Confidence interval") +
+  scale_y_continuous(limits = c(0, NA), breaks = seq(0, 50, 5)) +
+  scale_x_continuous(breaks = sort(unique(bootstrap_denmark_final$year))) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 ```
 
 ## Custom functions
@@ -141,8 +148,9 @@ Perform the same analysis with own functions.
 # Define function for calculating statistic
 mean_obs2 <- function(data) {
   aggregate(data$obs,
-            by = list(year = data$year),
-            FUN = mean) |>
+    by = list(year = data$year),
+    FUN = mean
+  ) |>
     dplyr::rename("diversity_val" = "x")
 }
 
@@ -153,7 +161,8 @@ bootstrap_denmark2 <- bootstrap_cube(
   grouping_var = "year",
   samples = 1000,
   seed = 123,
-  progress = TRUE)
+  progress = TRUE
+)
 
 # Calculate confidence intervals
 ci_denmark2 <- get_bootstrap_ci(
@@ -164,7 +173,8 @@ ci_denmark2 <- get_bootstrap_ci(
   aggregate = FALSE,
   data_cube = denmark_cube$data,
   fun = mean_obs2,
-  progress = TRUE)
+  progress = TRUE
+)
 ```
 
 Visualise results.
@@ -175,17 +185,21 @@ estimate_df2 <- ci_denmark2 %>%
 
 ci_denmark2 %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = rep_boot, group = year),
-                fill = alpha("cornflowerblue", 0.2)) +
-    geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
-                  position = position_dodge(0.8), linewidth = 1) +
-    geom_point(data = estimate_df2, aes(y = estimate),
-               colour = "firebrick", size = 2) +
-    labs(y = "Mean number of observations", colour = "Confidence interval") +
-    scale_y_continuous(limits = c(0, NA), breaks = seq(0, 50, 5)) +
-    scale_x_continuous(breaks = sort(unique(ci_denmark2$year))) +
-    theme_minimal() +
-    theme(legend.position = "bottom")
+  geom_violin(aes(y = rep_boot, group = year),
+    fill = alpha("cornflowerblue", 0.2)
+  ) +
+  geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
+    position = position_dodge(0.8), linewidth = 1
+  ) +
+  geom_point(
+    data = estimate_df2, aes(y = estimate),
+    colour = "firebrick", size = 2
+  ) +
+  labs(y = "Mean number of observations", colour = "Confidence interval") +
+  scale_y_continuous(limits = c(0, NA), breaks = seq(0, 50, 5)) +
+  scale_x_continuous(breaks = sort(unique(ci_denmark2$year))) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 ```
 
 # Comparison
@@ -200,40 +214,46 @@ for (i in seq_along(year_list)) {
   year_group <- year_list[[i]]
 
   p <- bind_rows(
-      bootstrap_denmark_final %>%
-        mutate(package = "boot",
-               int_type = ifelse(int_type == "normal", "norm", int_type),
-               int_type = ifelse(int_type == "percent", "perc", int_type)) %>%
-        rename("rep_boot" = "est_boot"),
-      ci_denmark2 %>%
-        mutate(package = "dubicube")
-    ) %>%
+    bootstrap_denmark_final %>%
+      mutate(
+        package = "boot",
+        int_type = ifelse(int_type == "normal", "norm", int_type),
+        int_type = ifelse(int_type == "percent", "perc", int_type)
+      ) %>%
+      rename("rep_boot" = "est_boot"),
+    ci_denmark2 %>%
+      mutate(package = "dubicube")
+  ) %>%
     filter(year %in% year_group) %>%
     ggplot(aes(x = package)) +
-      geom_violin(aes(y = rep_boot, group = package),
-                  fill = alpha("cornflowerblue", 0.2)) +
-      geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
-                    position = position_dodge(0.8), linewidth = 1,
-                    width = 0.5) +
-      labs(y = "Mean number of observations", colour = "Confidence interval") +
-      scale_y_continuous(limits = c(0, NA), breaks = seq(0, 50, 5)) +
-      facet_grid(int_type ~ year) +
-      theme_minimal() +
-      theme(legend.position = "bottom")
+    geom_violin(aes(y = rep_boot, group = package),
+      fill = alpha("cornflowerblue", 0.2)
+    ) +
+    geom_errorbar(aes(ymin = ll, ymax = ul, colour = int_type),
+      position = position_dodge(0.8), linewidth = 1,
+      width = 0.5
+    ) +
+    labs(y = "Mean number of observations", colour = "Confidence interval") +
+    scale_y_continuous(limits = c(0, NA), breaks = seq(0, 50, 5)) +
+    facet_grid(int_type ~ year) +
+    theme_minimal() +
+    theme(legend.position = "bottom")
   print(p)
 }
 ```
 
 ```{r}
 bind_rows(
-    bootstrap_denmark_final %>%
-      mutate(package = "boot",
-             int_type = ifelse(int_type == "normal", "norm", int_type),
-             int_type = ifelse(int_type == "percent", "perc", int_type)) %>%
-      rename("rep_boot" = "est_boot"),
-    ci_denmark2 %>%
-      mutate(package = "dubicube")
-  ) %>%
+  bootstrap_denmark_final %>%
+    mutate(
+      package = "boot",
+      int_type = ifelse(int_type == "normal", "norm", int_type),
+      int_type = ifelse(int_type == "percent", "perc", int_type)
+    ) %>%
+    rename("rep_boot" = "est_boot"),
+  ci_denmark2 %>%
+    mutate(package = "dubicube")
+) %>%
   distinct(year, package, int_type, ll, ul) %>%
   arrange(year, int_type, package) %>%
   knitr::kable(digits = 5)

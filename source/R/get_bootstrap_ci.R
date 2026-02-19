@@ -25,23 +25,26 @@
 #' confidence level of the intervals (`conf_level`).
 
 get_bootstrap_ci <- function(
-    bootstrap_samples_df,
-    grouping_var,
-    type = c("perc", "bca", "norm", "basic"),
-    conf = 0.95,
-    aggregate = TRUE,
-    data_cube = NULL,
-    fun = NULL,
-    ...,
-    ref_group = NA,
-    jackknife = ifelse(is.element("bca", type), "usual", NULL),
-    progress = FALSE) {
+  bootstrap_samples_df,
+  grouping_var,
+  type = c("perc", "bca", "norm", "basic"),
+  conf = 0.95,
+  aggregate = TRUE,
+  data_cube = NULL,
+  fun = NULL,
+  ...,
+  ref_group = NA,
+  jackknife = ifelse(is.element("bca", type), "usual", NULL),
+  progress = FALSE
+) {
   require("dplyr")
   require("rlang")
 
   # Check if type is correct
-  stopifnot("`type` must be one of 'perc', 'bca', 'norm', 'basic'." =
-              all(is.element(type, c("perc", "bca", "norm", "basic", "all"))))
+  stopifnot(
+    "`type` must be one of 'perc', 'bca', 'norm', 'basic'." =
+      all(is.element(type, c("perc", "bca", "norm", "basic", "all")))
+  )
 
   # Calculate intervals
   out_list <- vector(mode = "list", length = length(type))
@@ -70,12 +73,16 @@ get_bootstrap_ci <- function(
     }
     if (any(t == "all" | t == "bca")) {
       # Check if jackknife is usual or pos
-      jackknife <- tryCatch({
-        match.arg(jackknife, c("usual", "pos"))
-      }, error = function(e) {
-        stop("`jackknife` must be one of 'usual', 'pos'.",
-             call. = FALSE)
-      })
+      jackknife <- tryCatch(
+        {
+          match.arg(jackknife, c("usual", "pos"))
+        },
+        error = function(e) {
+          stop("`jackknife` must be one of 'usual', 'pos'.",
+            call. = FALSE
+          )
+        }
+      )
 
       # Perform jackknifing
       if (inherits(data_cube, "processed_cube")) {
@@ -95,7 +102,8 @@ get_bootstrap_ci <- function(
               filter(!!sym(grouping_var) == group) %>%
               pull(.data$diversity_val)
           },
-          .progress = ifelse(progress, "Jackknife estimation", progress)) %>%
+          .progress = ifelse(progress, "Jackknife estimation", progress)
+        ) %>%
           unlist()
 
         jackknife_df <- data_cube$data %>%
@@ -113,7 +121,8 @@ get_bootstrap_ci <- function(
               filter(!!sym(grouping_var) == group) %>%
               pull(.data$diversity_val)
           },
-          .progress = ifelse(progress, "Jackknife estimation", progress)) %>%
+          .progress = ifelse(progress, "Jackknife estimation", progress)
+        ) %>%
           unlist()
 
         jackknife_df <- data_cube %>%
@@ -150,7 +159,7 @@ get_bootstrap_ci <- function(
           jack_rep = jackknife_df %>%
             filter(.data[[grouping_var]] == ref_group) %>%
             pull(.data$jack_rep)
-          ) %>%
+        ) %>%
           rename("theta1" = "diversity_val") %>%
           rowwise() %>%
           mutate(jack_rep = .data$theta1 - .data$jack_rep) %>%
@@ -162,18 +171,21 @@ get_bootstrap_ci <- function(
       }
 
       acceleration_df <- jackknife_df %>%
-        left_join(bootstrap_samples_df %>%
-                    distinct(!!sym(grouping_var), .data$est_original),
-                  by = join_by(!!grouping_var)) %>%
-        mutate(n = n(),
-               .by = grouping_var) %>%
+        left_join(
+          bootstrap_samples_df %>%
+            distinct(!!sym(grouping_var), .data$est_original),
+          by = join_by(!!grouping_var)
+        ) %>%
+        mutate(
+          n = n(),
+          .by = grouping_var
+        ) %>%
         rowwise() %>%
         mutate(intensity = ifelse(
           jackknife == "usual",
           (n - 1) * (.data$est_original - .data$jack_rep),
           (n + 1) * (.data$jack_rep - .data$est_original)
-          )
-        ) %>%
+        )) %>%
         ungroup() %>%
         summarise(
           numerator = sum(.data$intensity^3),

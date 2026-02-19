@@ -43,7 +43,7 @@ bootstrap_cube <- function(
   if (!is.na(seed)) {
     if (exists(".Random.seed", envir = .GlobalEnv)) {
       rng_state_old <- get(".Random.seed", envir = .GlobalEnv)
-      on.exit(assign(".Random.seed", rng_state_old, envir = .GlobalEnv))
+      on.exit(assign(".Random.seed", rng_state_old, envir = .GlobalEnv)) # nolint: object_name_linter
     }
     set.seed(seed)
   }
@@ -86,7 +86,8 @@ bootstrap_cube <- function(
       bootstrap_resample,
       fun = fun,
       ...,
-      .progress = ifelse(progress, "Bootstrapping", progress))
+      .progress = ifelse(progress, "Bootstrapping", progress)
+    )
 
   if (!is.na(ref_group)) {
     # Calculate true statistic
@@ -135,7 +136,8 @@ bootstrap_cube <- function(
     dplyr::mutate(
       est_boot = mean(.data$rep_boot),
       se_boot = stats::sd(.data$rep_boot),
-      .by = all_of(grouping_var)) %>%
+      .by = all_of(grouping_var)
+    ) %>%
     dplyr::mutate(bias_boot = .data$est_boot - .data$est_original) %>%
     dplyr::arrange(.data[[grouping_var]]) %>%
     dplyr::select("sample", all_of(grouping_var), "est_original",

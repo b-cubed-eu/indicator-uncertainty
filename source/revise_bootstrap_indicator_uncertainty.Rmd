@@ -20,11 +20,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r, warning=FALSE, message=FALSE}
 # Load packages
-library(b3gbi)       # Biodiversity indicators for data cubes
-library(tidyverse)   # Data wrangling and visualisation
-library(here)        # Relative paths
+library(b3gbi) # Biodiversity indicators for data cubes
+library(tidyverse) # Data wrangling and visualisation
+library(here) # Relative paths
 library(effectclass) # Classification and visualisation of effects
-library(knitr)       # Nice tables
+library(knitr) # Nice tables
 
 # Source functions
 source(here("source", "R", "bootstrap_cube.R"))
@@ -36,8 +36,10 @@ source(here("source", "R", "utils.R"))
 # Cache folder
 cache_path <- here("data", "cache")
 dir.create(cache_path, showWarnings = FALSE, recursive = TRUE)
-out_path <- here("output", "figures",
-                 "revise_bootstrap_indicator_uncertainty")
+out_path <- here(
+  "output", "figures",
+  "revise_bootstrap_indicator_uncertainty"
+)
 dir.create(out_path, showWarnings = FALSE, recursive = TRUE)
 ```
 
@@ -83,7 +85,8 @@ print(map_obs_rich_insects)
 ```{r}
 # Plot diversity metric
 plot(map_obs_rich_insects,
-     title = "Observed Species Richness: Insects in Europe")
+  title = "Observed Species Richness: Insects in Europe"
+)
 ```
 
 ## Calculate an index over time
@@ -116,8 +119,8 @@ insect_data_new$data %>%
   group_by(year) %>%
   summarise(n_obs = sum(obs)) %>%
   ggplot() +
-    geom_bar(aes(x = as.factor(year), y = n_obs), stat = "identity") +
-    labs(x = "year", y = "number of observations")
+  geom_bar(aes(x = as.factor(year), y = n_obs), stat = "identity") +
+  labs(x = "year", y = "number of observations")
 ```
 
 # Bootstrapping
@@ -177,7 +180,8 @@ if (file.exists(bootstrap_insect_data_path)) {
     grouping_var = "year",
     samples = 1000,
     seed = 123,
-    progress = TRUE)
+    progress = TRUE
+  )
   saveRDS(bootstrap_insect_data, bootstrap_insect_data_path)
 }
 ```
@@ -200,23 +204,31 @@ bias_df <- bootstrap_insect_data %>%
   distinct(year, estimate = est_original, `bootstrap estimate` = est_boot)
 
 estimate_df <- bias_df %>%
-  pivot_longer(cols = c("estimate", "bootstrap estimate"),
-               names_to = "Legend", values_to = "value") %>%
-  mutate(Legend = factor(Legend, levels = c("estimate", "bootstrap estimate"),
-                         ordered = TRUE))
+  pivot_longer(
+    cols = c("estimate", "bootstrap estimate"),
+    names_to = "Legend", values_to = "value"
+  ) %>%
+  mutate(Legend = factor(Legend,
+    levels = c("estimate", "bootstrap estimate"),
+    ordered = TRUE
+  ))
 
 bootstrap_insect_data %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = rep_boot, group = year)) +
-    geom_segment(data = bias_df,
-                 aes(xend = year, y = estimate, yend = `bootstrap estimate`),
-                 colour = "cornflowerblue", linewidth = 1) +
-    geom_point(data = estimate_df, aes(y = value, shape = Legend),
-               colour = "firebrick", size = 2) +
-    labs(y = "evenness") +
-    theme(legend.position = "bottom") +
-    scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data$year)))
+  geom_violin(aes(y = rep_boot, group = year)) +
+  geom_segment(
+    data = bias_df,
+    aes(xend = year, y = estimate, yend = `bootstrap estimate`),
+    colour = "cornflowerblue", linewidth = 1
+  ) +
+  geom_point(
+    data = estimate_df, aes(y = value, shape = Legend),
+    colour = "firebrick", size = 2
+  ) +
+  labs(y = "evenness") +
+  theme(legend.position = "bottom") +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
+  scale_x_continuous(breaks = sort(unique(bootstrap_insect_data$year)))
 ```
 
 There are multiple intervals that can be calculated, see `bootstrap_indicator_uncertainty_old.Rmd`.
@@ -236,7 +248,8 @@ if (file.exists(ci_insect_data_path)) {
     aggregate = TRUE,
     data_cube = insect_data_new,
     fun = b3gbi::pielou_evenness_ts,
-    progress = TRUE)
+    progress = TRUE
+  )
   saveRDS(ci_df, ci_insect_data_path)
 }
 ```
@@ -260,18 +273,25 @@ We visualise the distribution of the bootstrap replicates and the confidence int
 ```{r, fig.width = 10, echo=FALSE, warning=FALSE}
 p <- bootstrap_insect_data %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = rep_boot, group = year),
-                fill = alpha("cornflowerblue", 0.2)) +
-    geom_point(data = estimate_df, aes(y = value, shape = Legend),
-               colour = "firebrick", size = 2, alpha = 0.5) +
-    geom_errorbar(data = ci_df, aes(ymin = ll, ymax = ul, colour = int_type),
-                  position = position_dodge(0.8), linewidth = 1) +
-    labs(y = "evenness", colour = "Interval type:", x = "",
-         shape = "Legend:") +
-    scale_y_continuous(limits = c(NA, 1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data$year))) +
-    theme_minimal() +
-    theme(legend.position = "bottom")
+  geom_violin(aes(y = rep_boot, group = year),
+    fill = alpha("cornflowerblue", 0.2)
+  ) +
+  geom_point(
+    data = estimate_df, aes(y = value, shape = Legend),
+    colour = "firebrick", size = 2, alpha = 0.5
+  ) +
+  geom_errorbar(
+    data = ci_df, aes(ymin = ll, ymax = ul, colour = int_type),
+    position = position_dodge(0.8), linewidth = 1
+  ) +
+  labs(
+    y = "evenness", colour = "Interval type:", x = "",
+    shape = "Legend:"
+  ) +
+  scale_y_continuous(limits = c(NA, 1), breaks = seq(-10, 10, 0.25)) +
+  scale_x_continuous(breaks = sort(unique(bootstrap_insect_data$year))) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 p
 ```
 
@@ -282,10 +302,12 @@ ci_df %>%
   mutate(ci_width = ul - ll) %>%
   distinct(year, se_boot, int_type, ci_width) %>%
   ggplot(aes(x = se_boot, y = ci_width, colour = int_type)) +
-    geom_point() +
-    geom_smooth(method = "lm", formula = "y ~ x") +
-    labs(x = "bootstrap standard error", y = "interval width",
-         colour = "Confidence\ninterval")
+  geom_point() +
+  geom_smooth(method = "lm", formula = "y ~ x") +
+  labs(
+    x = "bootstrap standard error", y = "interval width",
+    colour = "Confidence\ninterval"
+  )
 ```
 
 ```{r, echo=FALSE}
@@ -306,10 +328,12 @@ ci_df %>%
   mutate(ci_width = ul - ll) %>%
   distinct(year, bias_boot, int_type, ci_width) %>%
   ggplot(aes(x = bias_boot, y = ci_width, colour = int_type)) +
-    geom_point() +
-    geom_smooth(method = "lm", formula = "y ~ x") +
-    labs(x = "bootstrap bias", y = "interval width",
-         colour = "Confidence\ninterval")
+  geom_point() +
+  geom_smooth(method = "lm", formula = "y ~ x") +
+  labs(
+    x = "bootstrap bias", y = "interval width",
+    colour = "Confidence\ninterval"
+  )
 ```
 
 ```{r, echo=FALSE}
@@ -337,14 +361,14 @@ During the resampling process of bootstrapping, they might be included or not, w
 p_nobs <- insect_data_new$data %>%
   summarise(n = sum(obs), .by = c("year", "taxonKey")) %>%
   ggplot(aes(x = as.factor(year), y = n, colour = as.factor(taxonKey))) +
-    geom_text(aes(label = as.factor(taxonKey))) +
-    labs(x = "", y = "Number of Observations") +
-    theme_minimal() +
-    theme(
-      axis.text = element_text(size = 12),
-      axis.title = element_text(size = 15)
-    ) +
-    theme(legend.position = "")
+  geom_text(aes(label = as.factor(taxonKey))) +
+  labs(x = "", y = "Number of Observations") +
+  theme_minimal() +
+  theme(
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 15)
+  ) +
+  theme(legend.position = "")
 p_nobs
 ```
 
@@ -354,7 +378,8 @@ ggsave(
   plot = p_nobs,
   dpi = 300,
   width = 10,
-  height = 6)
+  height = 6
+)
 ```
 
 We can calculate a measure for each species of how much it influences the indicator.
@@ -407,7 +432,8 @@ $$
 ```{r, echo=FALSE, message=FALSE}
 # Bootstrapping
 cv_results_loo_path <- file.path(
-  cache_path, "cv_results_loo.Rds")
+  cache_path, "cv_results_loo.Rds"
+)
 if (file.exists(cv_results_loo_path)) {
   cv_results_loo <- readRDS(cv_results_loo_path)
 } else {
@@ -416,7 +442,8 @@ if (file.exists(cv_results_loo_path)) {
     fun = b3gbi::pielou_evenness_ts,
     grouping_var = "year",
     crossv_method = "loo",
-    progress = TRUE)
+    progress = TRUE
+  )
   saveRDS(cv_results_loo, cv_results_loo_path)
 }
 ```
@@ -436,8 +463,10 @@ original_ests <- cv_results_loo %>%
   mutate(label = paste("hat(theta) ==", round(est_original, 3)))
 p_loo_error <- ggplot(cv_results_loo, aes(x = as.factor(year))) +
   geom_hline(yintercept = 0, colour = "black", linetype = "dashed") +
-  geom_text(aes(y = error, colour = as.factor(species_left_out),
-                label = as.factor(species_left_out))) +
+  geom_text(aes(
+    y = error, colour = as.factor(species_left_out),
+    label = as.factor(species_left_out)
+  )) +
   geom_label(data = original_ests, aes(label = label), y = 0.9, parse = TRUE) +
   labs(x = "", y = "LOSO-CV Error") +
   scale_y_continuous(breaks = seq(-1, 1, 0.2), limits = c(-0.25, 0.9)) +
@@ -485,7 +514,8 @@ ggsave(
   plot = p_loo_error,
   dpi = 300,
   width = 10,
-  height = 6)
+  height = 6
+)
 ```
 
 We look at the relative error (RE).
@@ -494,7 +524,7 @@ We look at the relative error (RE).
 # Define custom break points
 break_points <- c(
   10, seq(25, max(cv_results_loo$perc_diff, na.rm = TRUE) + 25, 25)
-  )
+)
 
 # Apply custom breaks
 cv_results_loo <- cv_results_loo %>%
@@ -504,7 +534,9 @@ cv_results_loo <- cv_results_loo %>%
       perc_diff,
       breaks = break_points,
       right = TRUE,
-      include.lowest = TRUE))
+      include.lowest = TRUE
+    )
+  )
 
 cv_results_loo %>%
   count(year, perc_diff_category, name = "n_species") %>%
@@ -520,7 +552,8 @@ cv_results_kfold <- cross_validate_species(
   grouping_var = "year",
   crossv_method = "kfold",
   k = 10,
-  progress = TRUE)
+  progress = TRUE
+)
 ```
 
 They are very different.
@@ -568,14 +601,14 @@ We can visualise trends over time using LOESS smoothers.
 
 ```{r, fig.width = 10, echo=FALSE, warning=FALSE}
 my_theme <- theme_minimal() +
-    theme(
-      axis.text = element_text(size = 12),
-      axis.title = element_text(size = 15)
-    ) +
-    theme(
-      legend.title = element_text(face = "bold", size = 12),
-      legend.text = element_text(size = 12)
-      )
+  theme(
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 15)
+  ) +
+  theme(
+    legend.title = element_text(face = "bold", size = 12),
+    legend.text = element_text(size = 12)
+  )
 
 linecolour <- "darkorange"
 ribboncolour <- "goldenrod1"
@@ -584,37 +617,46 @@ envelopecolour <- "lightsteelblue1"
 
 p_trend_evenness <- summary_df %>%
   ggplot(aes(x = year, y = est_original)) +
-    geom_smooth(
-        colour = alpha(trendlinecolour, 0.5),
-        linetype = "solid",
-        method = "loess",
-        formula = "y ~ x",
-        se = FALSE) +
-    geom_smooth(
-      aes(y = ul),
-      colour = alpha(envelopecolour, 1),
-      linetype = "dashed",
-      method = "loess",
-      formula = "y ~ x",
-      se = FALSE) +
-    geom_smooth(
-      aes(y = ll),
-      colour = alpha(envelopecolour, 1),
-      linetype = "dashed",
-      method = "loess",
-      formula = "y ~ x",
-      se = FALSE) +
-    geom_ribbon(aes(ymin = predict(loess(ll ~ year)),
-                    ymax = predict(loess(ul ~ year))),
-                alpha = 0.2,
-                fill = envelopecolour) +
-    geom_errorbar(aes(ymin = ll, ymax = ul), colour = ribboncolour,
-                  linewidth = 0.8) +
-    geom_point(colour = linecolour, size = 3) +
-    labs(y = "Pielou's Evenness", x = "") +
-    scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(breaks = sort(unique(summary_df$year))) +
-    my_theme
+  geom_smooth(
+    colour = alpha(trendlinecolour, 0.5),
+    linetype = "solid",
+    method = "loess",
+    formula = "y ~ x",
+    se = FALSE
+  ) +
+  geom_smooth(
+    aes(y = ul),
+    colour = alpha(envelopecolour, 1),
+    linetype = "dashed",
+    method = "loess",
+    formula = "y ~ x",
+    se = FALSE
+  ) +
+  geom_smooth(
+    aes(y = ll),
+    colour = alpha(envelopecolour, 1),
+    linetype = "dashed",
+    method = "loess",
+    formula = "y ~ x",
+    se = FALSE
+  ) +
+  geom_ribbon(
+    aes(
+      ymin = predict(loess(ll ~ year)),
+      ymax = predict(loess(ul ~ year))
+    ),
+    alpha = 0.2,
+    fill = envelopecolour
+  ) +
+  geom_errorbar(aes(ymin = ll, ymax = ul),
+    colour = ribboncolour,
+    linewidth = 0.8
+  ) +
+  geom_point(colour = linecolour, size = 3) +
+  labs(y = "Pielou's Evenness", x = "") +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
+  scale_x_continuous(breaks = sort(unique(summary_df$year))) +
+  my_theme
 p_trend_evenness
 ```
 
@@ -624,7 +666,8 @@ ggsave(
   plot = p_trend_evenness,
   dpi = 300,
   width = 10,
-  height = 5)
+  height = 5
+)
 ```
 
 However, this does not inform us about differences between years.
@@ -660,7 +703,8 @@ insect_eveness_effects <- add_classification_as_factor(
   cl_columns = c("ll", "ul"),
   threshold = 0.1,
   reference = 0.5,
-  coarse = TRUE)
+  coarse = TRUE
+)
 ```
 
 ```{r, echo=FALSE}
@@ -674,10 +718,10 @@ Coarse classification:
 ```{r}
 insect_eveness_effects %>%
   ggplot(aes(x = year, y = est_original, ymin = ll, ymax = ul)) +
-    stat_effect(reference = 0.5, threshold = c(0.4, 0.6), detailed = FALSE) +
-    labs(y = "evenness") +
-    scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year)))
+  stat_effect(reference = 0.5, threshold = c(0.4, 0.6), detailed = FALSE) +
+  labs(y = "evenness") +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
+  scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year)))
 ```
 
 We can create this figure ourselves:
@@ -685,20 +729,25 @@ We can create this figure ourselves:
 ```{r}
 insect_eveness_effects %>%
   ggplot(aes(x = year)) +
-    geom_hline(yintercept = 0.5, linetype = "longdash", colour = "black") +
-    geom_hline(yintercept = c(0.4, 0.6), linetype = "dotdash") +
-    geom_errorbar(aes(ymin = ll, ymax = ul, colour = effect_coarse),
-                  linewidth = 1.5, show.legend = TRUE) +
-    geom_point(aes(y = est_original), colour = "black", size = 3.5) +
-    scale_colour_manual(values =  c("chartreuse3",
-                                    "gold",
-                                    "firebrick1",
-                                    "skyblue"),
-                        drop = FALSE) +
-    labs(y = "evenness", colour = "Classification") +
-    scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year))) +
-    theme_minimal()
+  geom_hline(yintercept = 0.5, linetype = "longdash", colour = "black") +
+  geom_hline(yintercept = c(0.4, 0.6), linetype = "dotdash") +
+  geom_errorbar(aes(ymin = ll, ymax = ul, colour = effect_coarse),
+    linewidth = 1.5, show.legend = TRUE
+  ) +
+  geom_point(aes(y = est_original), colour = "black", size = 3.5) +
+  scale_colour_manual(
+    values = c(
+      "chartreuse3",
+      "gold",
+      "firebrick1",
+      "skyblue"
+    ),
+    drop = FALSE
+  ) +
+  labs(y = "evenness", colour = "Classification") +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
+  scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year))) +
+  theme_minimal()
 ```
 
 Fine classification:
@@ -715,26 +764,31 @@ insect_eveness_effects %>%
 ```{r, fig.width = 10, echo=FALSE, warning=FALSE}
 p_effect_evenness <- insect_eveness_effects %>%
   ggplot(aes(x = year)) +
-    geom_hline(yintercept = 0.5, linetype = "longdash", colour = "black") +
-    geom_hline(yintercept = c(0.4, 0.6), linetype = "dotdash") +
-    geom_errorbar(aes(ymin = ll, ymax = ul, colour = effect),
-                  linewidth = 1.5, show.legend = TRUE) +
-    geom_point(aes(y = est_original), colour = "black", size = 3.5) +
-    scale_colour_manual(values =  c("darkgreen",
-                                    "chartreuse3",
-                                    "darkolivegreen1",
-                                    "gold",
-                                    "orange",
-                                    "firebrick1",
-                                    "darkred",
-                                    "gray80",
-                                    "gray30",
-                                    "grey55"),
-                        drop = FALSE) +
-    labs(x = "", y = "Pielou's Evenness", colour = "Classification:") +
-    scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year))) +
-    my_theme
+  geom_hline(yintercept = 0.5, linetype = "longdash", colour = "black") +
+  geom_hline(yintercept = c(0.4, 0.6), linetype = "dotdash") +
+  geom_errorbar(aes(ymin = ll, ymax = ul, colour = effect),
+    linewidth = 1.5, show.legend = TRUE
+  ) +
+  geom_point(aes(y = est_original), colour = "black", size = 3.5) +
+  scale_colour_manual(
+    values = c(
+      "darkgreen",
+      "chartreuse3",
+      "darkolivegreen1",
+      "gold",
+      "orange",
+      "firebrick1",
+      "darkred",
+      "gray80",
+      "gray30",
+      "grey55"
+    ),
+    drop = FALSE
+  ) +
+  labs(x = "", y = "Pielou's Evenness", colour = "Classification:") +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(-10, 10, 0.25)) +
+  scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year))) +
+  my_theme
 p_effect_evenness
 ```
 
@@ -744,7 +798,8 @@ ggsave(
   plot = p_effect_evenness,
   dpi = 300,
   width = 10,
-  height = 5)
+  height = 5
+)
 ```
 
 ## Comparing with a statistic
@@ -766,7 +821,8 @@ This can be done using the `ref_group` argument.
 ```{r, echo=FALSE, message=FALSE}
 # Bootstrapping
 bootstrap_insect_data_path2 <- file.path(
-  cache_path, "bootstrap_insect_data_diff.Rds")
+  cache_path, "bootstrap_insect_data_diff.Rds"
+)
 if (file.exists(bootstrap_insect_data_path2)) {
   bootstrap_insect_data_diff <- readRDS(bootstrap_insect_data_path2)
 } else {
@@ -777,7 +833,8 @@ if (file.exists(bootstrap_insect_data_path2)) {
     samples = 1000,
     ref_group = 2020,
     seed = 123,
-    progress = TRUE)
+    progress = TRUE
+  )
   saveRDS(bootstrap_insect_data_diff, bootstrap_insect_data_path2)
 }
 ```
@@ -798,7 +855,8 @@ We calculate the BCa interval.
 ```{r, echo=FALSE, message=FALSE}
 # Calculate confidence intervals
 ci_insect_data_path2 <- file.path(
-  cache_path, "ci_diff_df.Rds")
+  cache_path, "ci_diff_df.Rds"
+)
 if (file.exists(ci_insect_data_path2)) {
   ci_diff_df <- readRDS(ci_insect_data_path2)
 } else {
@@ -811,7 +869,8 @@ if (file.exists(ci_insect_data_path2)) {
     fun = b3gbi::pielou_evenness_ts,
     ref_group = 2020,
     aggregate = TRUE,
-    progress = TRUE)
+    progress = TRUE
+  )
   saveRDS(ci_diff_df, ci_insect_data_path2)
 }
 ```
@@ -834,23 +893,31 @@ We visualise the intervals.
 ```{r, fig.width = 10, echo=FALSE, warning=FALSE}
 estimate_diff_df <- bootstrap_insect_data_diff %>%
   distinct(year, estimate = est_original, `bootstrap estimate` = est_boot) %>%
-  pivot_longer(cols = c("estimate", "bootstrap estimate"),
-               names_to = "Legend", values_to = "value") %>%
-  mutate(Legend = factor(Legend, levels = c("estimate", "bootstrap estimate"),
-                         ordered = TRUE))
+  pivot_longer(
+    cols = c("estimate", "bootstrap estimate"),
+    names_to = "Legend", values_to = "value"
+  ) %>%
+  mutate(Legend = factor(Legend,
+    levels = c("estimate", "bootstrap estimate"),
+    ordered = TRUE
+  ))
 
 bootstrap_insect_data_diff %>%
   ggplot(aes(x = year)) +
-    geom_violin(aes(y = rep_boot, group = year)) +
-    geom_point(data = estimate_diff_df, aes(y = value, shape = Legend),
-               colour = "firebrick", size = 3, alpha = 0.5) +
-    geom_errorbar(data = ci_diff_df, aes(ymin = ll, ymax = ul),
-                  linewidth = 1, width = 0.4, colour = "cornflowerblue") +
-    labs(y = "evenness") +
-    scale_y_continuous(limits = c(-1, 1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(breaks = sort(unique(bootstrap_insect_data_diff$year))) +
-    theme_minimal() +
-    theme(legend.position = "bottom")
+  geom_violin(aes(y = rep_boot, group = year)) +
+  geom_point(
+    data = estimate_diff_df, aes(y = value, shape = Legend),
+    colour = "firebrick", size = 3, alpha = 0.5
+  ) +
+  geom_errorbar(
+    data = ci_diff_df, aes(ymin = ll, ymax = ul),
+    linewidth = 1, width = 0.4, colour = "cornflowerblue"
+  ) +
+  labs(y = "evenness") +
+  scale_y_continuous(limits = c(-1, 1), breaks = seq(-10, 10, 0.25)) +
+  scale_x_continuous(breaks = sort(unique(bootstrap_insect_data_diff$year))) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 ```
 
 We classify the effects as we did before.
@@ -867,7 +934,8 @@ insect_eveness_diff_effects <- add_classification_as_factor(
   cl_columns = c("ll", "ul"),
   threshold = 0.2,
   reference = 0,
-  coarse = TRUE)
+  coarse = TRUE
+)
 ```
 
 ```{r, echo=FALSE}
@@ -881,27 +949,34 @@ We visualise these effects.
 # Visualise
 p_effect_evenness2 <- insect_eveness_diff_effects %>%
   ggplot(aes(x = year)) +
-    geom_hline(yintercept = 0, linetype = "longdash", colour = "black") +
-    geom_hline(yintercept = c(-0.2, 0.2), linetype = "dotdash") +
-    geom_errorbar(aes(ymin = ll, ymax = ul, colour = effect),
-                  linewidth = 1.5, show.legend = TRUE) +
-    geom_point(aes(y = est_original), colour = "black", size = 3.5) +
-    scale_colour_manual(values =  c("darkgreen",
-                                    "chartreuse3",
-                                    "darkolivegreen1",
-                                    "gold",
-                                    "orange",
-                                    "firebrick1",
-                                    "darkred",
-                                    "gray80",
-                                    "gray30",
-                                    "grey55"),
-                        drop = FALSE) +
-    labs(x = "", y = "Difference in Pielou's Evenness\ncompared to 2020",
-         colour = "Classification:") +
-    scale_y_continuous(limits = c(-1, 1), breaks = seq(-10, 10, 0.25)) +
-    scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year))) +
-    my_theme
+  geom_hline(yintercept = 0, linetype = "longdash", colour = "black") +
+  geom_hline(yintercept = c(-0.2, 0.2), linetype = "dotdash") +
+  geom_errorbar(aes(ymin = ll, ymax = ul, colour = effect),
+    linewidth = 1.5, show.legend = TRUE
+  ) +
+  geom_point(aes(y = est_original), colour = "black", size = 3.5) +
+  scale_colour_manual(
+    values = c(
+      "darkgreen",
+      "chartreuse3",
+      "darkolivegreen1",
+      "gold",
+      "orange",
+      "firebrick1",
+      "darkred",
+      "gray80",
+      "gray30",
+      "grey55"
+    ),
+    drop = FALSE
+  ) +
+  labs(
+    x = "", y = "Difference in Pielou's Evenness\ncompared to 2020",
+    colour = "Classification:"
+  ) +
+  scale_y_continuous(limits = c(-1, 1), breaks = seq(-10, 10, 0.25)) +
+  scale_x_continuous(breaks = sort(unique(insect_eveness_effects$year))) +
+  my_theme
 p_effect_evenness2
 ```
 
@@ -911,7 +986,8 @@ ggsave(
   plot = p_effect_evenness2,
   dpi = 300,
   width = 10,
-  height = 5)
+  height = 5
+)
 ```
 
 # Conclusion
