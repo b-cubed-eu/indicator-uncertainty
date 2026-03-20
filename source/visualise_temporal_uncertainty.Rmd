@@ -32,7 +32,7 @@ dir.create(out_path, showWarnings = FALSE, recursive = TRUE)
 
 # Goal
 
-Create figures for temporal uncertainty. Based on [this **dubicube** tutorial](https://b-cubed-eu.github.io/dubicube/articles/visualising-temporal-trends.html).
+Create figures for temporal uncertainty. Based on [this tutorial](https://b-cubed-eu.github.io/dubicube/articles/visualising-temporal-trends.html).
 
 # Indicator calculation
 
@@ -46,7 +46,7 @@ acacia_cube <- process_cube(
 )
 
 # Indicator calculation
-impactIndicator <- compute_impact_indicator(
+impact_indicator <- compute_impact_indicator(
   cube = acacia_cube,
   impact_data = eicat_acacia,
   method = "mean_cum",
@@ -55,9 +55,9 @@ impactIndicator <- compute_impact_indicator(
 )
 
 # Visualise
-p1 <- plot(impactIndicator)
-p2 <- plot(impactIndicator, trend = "line")
-p3 <- plot(impactIndicator, trend = "smooth")
+p1 <- plot(impact_indicator)
+p2 <- plot(impact_indicator, trend = "line")
+p3 <- plot(impact_indicator, trend = "smooth")
 ```
 
 ```{r, fig.height=10}
@@ -78,7 +78,7 @@ out_ci_list <- vector(mode = "list", length = length(coverages))
 
 for (i in seq_along(coverages)) {
   cov <- coverages[i]
-  
+
   ci_cov <- compute_impact_indicator(
     cube = acacia_cube,
     impact_data = eicat_acacia,
@@ -88,7 +88,7 @@ for (i in seq_along(coverages)) {
     boot_args = list(seed = 123)
   )$impact %>%
     mutate(conf = cov)
-  
+
   out_ci_list[[i]] <- ci_cov
 }
 out_ci <- bind_rows(out_ci_list) %>%
