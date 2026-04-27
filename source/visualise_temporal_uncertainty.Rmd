@@ -1,0 +1,214 @@
+---
+title: "Visualisation of temporal uncertainty"
+author: "Ward Langeraert"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_collapsed: true
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_dir = "../output/reports") })
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, warning=FALSE, message=FALSE}
+# Load packages
+library(ggplot2)      # visualisation
+library(dplyr)        # data wrangling
+library(b3gbi)        # indicator processing, v0.8.15
+library(impIndicator) # impact indicator calculation, v0.6.0
+
+# Out path
+out_path <- here::here("output", "figures", "visualise_temporal_uncertainty")
+dir.create(out_path, showWarnings = FALSE, recursive = TRUE)
+```
+
+# Goal
+
+Create figures for temporal uncertainty. Based on [this tutorial](https://b-cubed-eu.github.io/dubicube/articles/visualising-temporal-trends.html).
+
+# Indicator calculation
+
+```{r}
+# Data
+acacia_cube <- process_cube(
+  cube_name = cube_acacia_SA,
+  grid_type = "eqdgc",
+  first_year = 2010,
+  last_year = 2024
+)
+
+# Indicator calculation
+impact_indicator <- compute_impact_indicator(
+  cube = acacia_cube,
+  impact_data = eicat_acacia,
+  method = "mean_cum",
+  ci_type = "perc",
+  boot_args = list(seed = 123)
+)
+
+# Visualise
+p1 <- plot(impact_indicator)
+p2 <- plot(impact_indicator, trend = "line")
+p3 <- plot(impact_indicator, trend = "smooth")
+```
+
+```{r, fig.height=10}
+cowplot::plot_grid(p1, p2, p3, ncol = 1, labels = c("A.", "B.", "C."),
+                   label_size = 20)
+```
+
+# Fan plots
+
+```{r}
+# Set up coverage levels
+max_prob <- 0.95
+step <- 0.2
+coverages <- seq(max_prob, 1e-3, by = -step)
+
+# Loop over coverages
+out_ci_list <- vector(mode = "list", length = length(coverages))
+
+for (i in seq_along(coverages)) {
+  cov <- coverages[i]
+
+  ci_cov <- compute_impact_indicator(
+    cube = acacia_cube,
+    impact_data = eicat_acacia,
+    method = "mean_cum",
+    ci_type = "perc",
+    confidence_level = cov,
+    boot_args = list(seed = 123)
+  )$impact %>%
+    mutate(conf = cov)
+
+  out_ci_list[[i]] <- ci_cov
+}
+out_ci <- bind_rows(out_ci_list) %>%
+  mutate(
+    year = as.numeric(year)
+  )
+
+# For visualisation of envelopes
+alpha_levels <- sapply(coverages, function(i) 1 - i / (i + step))
+names(alpha_levels) <- as.character(coverages)
+
+# Convert conf to character so it can match alpha_levels
+out_ci <- out_ci %>%
+  mutate(
+    conf_chr = as.character(conf),
+    year_num = as.numeric(as.factor(year)) # Numeric year for xmin/xmax
+  )
+
+# Visualise
+bar_width <- 0.9
+
+breaks_pretty_int <- function(n = 5, ...) {
+  force_all(n, ...)
+  n_default <- n
+  function(x, n = n_default) {
+    breaks <- pretty(x, n, ...)
+    names(breaks) <- attr(breaks, "labels")
+    breaks
+  }
+}
+
+force_all <- function(...) {
+  list(...)
+}
+
+p4 <- ggplot(out_ci, aes()) +
+  geom_rect(
+    aes(
+      xmin = year - bar_width / 2,
+      xmax = year + bar_width / 2,
+      ymin = ll,
+      ymax = ul,
+      fill = conf_chr,
+      alpha = conf_chr
+    )
+  ) +
+  # Colour ribbons
+  scale_alpha_manual(values = alpha_levels, name = "conf") +
+  scale_fill_manual(values = rep("cornflowerblue", length(alpha_levels)),
+                    name = "conf") +
+  # Settings
+  labs(y = "Impact value", x = "Year", title = "Overall impact indicator") +
+  theme_minimal() +
+  theme(
+    text = element_text(size = 14)
+  ) +
+  scale_x_continuous(
+    breaks =  breaks_pretty_int(10),
+  ) +
+  scale_y_continuous(breaks = breaks_pretty_int(n = 6))
+
+p5 <- ggplot(out_ci, aes(x = year)) +
+  geom_ribbon(aes(ymin = ll, ymax = ul, fill = conf_chr, alpha = conf_chr)) +
+  # Colour ribbons
+  scale_alpha_manual(values = alpha_levels, name = "conf") +
+  scale_fill_manual(values = rep("cornflowerblue", length(alpha_levels)),
+                    name = "conf") +
+  # Settings
+  labs(y = "Impact value", x = "Year", title = "Overall impact indicator") +
+  theme_minimal() +
+  theme(
+    text = element_text(size = 14)
+  ) +
+  scale_x_continuous(breaks = breaks_pretty_int(n = 10)) +
+  scale_y_continuous(breaks = breaks_pretty_int(n = 6))
+
+# Predict smooth ymin/ymax
+p6 <- out_ci %>%
+  group_by(conf_chr) %>%
+  mutate(ymin = predict(loess(ll ~ year)),
+         ymax = predict(loess(ul ~ year))) %>%
+  ungroup() %>%
+  # Visualise
+  ggplot(aes(x = year)) +
+  geom_ribbon(
+    aes(ymin = ymin, ymax = ymax, fill = conf_chr, alpha = conf_chr)
+  ) +
+  # Colour ribbons
+  scale_alpha_manual(values = alpha_levels, name = "conf") +
+  scale_fill_manual(values = rep("cornflowerblue", length(alpha_levels)),
+                    name = "conf") +
+  # Settings
+  labs(y = "Impact value", x = "Year", title = "Overall impact indicator") +
+  theme_minimal() +
+  theme(
+    text = element_text(size = 14)
+  ) +
+  scale_x_continuous(breaks = breaks_pretty_int(n = 10)) +
+  scale_y_continuous(breaks = breaks_pretty_int(n = 6))
+```
+
+```{r, fig.height=10}
+cowplot::plot_grid(p4, p5, p6, ncol = 1, labels = c("A.", "B.", "C."),
+                   label_size = 20)
+```
+
+# Save figure
+
+```{r}
+p <- cowplot::plot_grid(
+  p1 + ggtitle(""), p4 + ggtitle(""),
+  p2 + ggtitle(""), p5 + ggtitle(""),
+  p3 + ggtitle(""), p6 + ggtitle(""),
+  ncol = 2, labels = c("A.", "B.", "", "", "", ""), label_size = 20
+)
+
+ggsave(
+  filename = file.path(out_path, "temporal_visualisation.png"),
+  plot = p,
+  height = 12,
+  width = 12
+)
+```

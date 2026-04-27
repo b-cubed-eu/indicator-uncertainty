@@ -13,3 +13,7 @@ spelling:
   ignore:
   - .github
   - LICENSE.md
+pak:
+- b-cubed-eu/b3gbi
+- b-cubed-eu/impIndicator
+- coolbutuseless/ggblur

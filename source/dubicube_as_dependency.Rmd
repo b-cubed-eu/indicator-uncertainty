@@ -1,0 +1,76 @@
+---
+title: "Dubicube as dependency in impIndicator"
+author: "Ward Langeraert"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_collapsed: true
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_dir = "../output/reports") })
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, warning=FALSE, message=FALSE, include=FALSE}
+# Load packages
+library(b3gbi)        # indicator processing, v0.8.15
+library(impIndicator) # impact indicator calculation, v0.6.0
+```
+
+# Goal
+
+Create minimal reproducible example of uncertainty calculation and visualisation with impIndicator.
+
+# Minimal reproducible example
+
+We load the impIndicator package and the b3gbi package.
+
+```r
+library(b3gbi)
+library(impIndicator)
+```
+
+We use the b3gbi package to process the cube into a standardised format. We select the data from 2010 until 2024.
+
+```{r}
+acacia_cube <- process_cube(
+  cube_name = cube_acacia_SA,
+  grid_type = "eqdgc",
+  first_year = 2010,
+  last_year = 2024
+)
+```
+
+We calculate the overall impact indicator with 95 % percentile intervals. We use the default arguments for interval calculation but show them here explicitly for illustrative purposes. The package thus provides logical default arguments for simple interval calculation. Yet, it is also possible to adjust specific bootstrap parameters. The `boot_args` argument is a named list of additional arguments that you can pass to `dubicube::bootstrap_cube()`. By default, 1000 bootstrap samples and no seed are used. The `ci_args` argument is a named list of additional arguments that you can pass to `dubicube::calculate_bootstrap_ci()`. By default we do not account for bootstrap bias.
+
+```{r}
+impact_indicator <- compute_impact_indicator(
+  # Indicator arguments
+  cube = acacia_cube,
+  impact_data = eicat_acacia,
+  method = "mean_cum",
+  # Interval arguments (all default)
+  ci_type = "perc",
+  confidence_level = 0.95,
+  boot_args = list(samples = 1000, seed = NA),
+  ci_args = list(no_bias = TRUE)
+)
+```
+
+Plotting the indicator object gives us estimates and error bars.
+
+```{r}
+plot(impact_indicator)
+```
+
+We can add a smoother to the figure to visualise a continuous trend.
+
+```{r}
+plot(impact_indicator, trend = "smooth")
+```
